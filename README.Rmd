@@ -1,0 +1,24 @@
+---
+output: github_document
+---
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = '#>')
+```
+
+# examinr R package
+
+<!-- begin badges -->
+<!-- [![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/examinr)](https://CRAN.R-project.org/package=examinr) -->
+```{r, results='asis', echo=FALSE, eval=TRUE}
+branch_name <- Sys.getenv('GIT_BRANCH', '')
+if (nchar(branch_name) == 0L) {
+  branch_name <- tryCatch(system('git rev-parse --abbrev-ref HEAD', intern = TRUE),
+                          error = function (e) { warning("error: ", as.character(e));  return('master') },
+                          warning = function (w) { warning("warning: ", as.character(w)); return('master') })
+}
+cat(sprintf('[![Build Status](https://travis-ci.com/dakep/examinr.svg?branch=%s)](https://travis-ci.com/dakep/examinr)',
+            branch_name))
+```
+<!-- end badges -->
+
+Easily create exams in R by writing Rmarkdown files as interactive shiny documents.
