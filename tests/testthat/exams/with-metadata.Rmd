@@ -1,0 +1,14 @@
+---
+title: "Exam"
+output: examinr::exam_document
+exam:
+  id: myexam
+  version: 0.1.0
+  sections:
+    render: client
+    order: fixed
+    fixed:
+     - "Introduction"
+     - "Final comments"
+runtime: shiny_prerendered
+---

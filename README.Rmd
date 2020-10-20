@@ -22,3 +22,11 @@ cat(sprintf('[![Build Status](https://travis-ci.com/dakep/examinr.svg?branch=%s)
 <!-- end badges -->
 
 Easily create exams in R by writing Rmarkdown files as interactive shiny documents.
+
+## Notes
+
+### Exams
+
+- Every R code chunk which should **not** be evaluated in the user's session, must have option `exam.static = TRUE` set.
+  This option cannot be set globally for all code chunks.
+- Exercise code chunks are defined via chunk option `exercise=TRUE` and support the options listed in [exercise_options()].

@@ -1,3 +1,6 @@
 .Rproj.user
 *.Rproj
 .DS_Store
+.vscode
+node_modules
+package-lock.json

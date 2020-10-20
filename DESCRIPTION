@@ -5,17 +5,41 @@ Version: 0.1.0
 Authors@R: person("David", "Kepplinger", , "david.kepplinger@gmail.com",
         role = c("aut", "cre"))
 Description: Create online exams in R as interactive shiny documents.
-  Supports different question types and different strategies to deter
-  cheating.
+  Supports different question types, including coding exercises, and
+  strategies to deter cheating.
 License: MIT + file LICENSE
 Imports:
   rmarkdown (>= 2.0),
   shiny,
+  withr,
+  digest,
+  rlang,
+  jsonlite,
+  parallel,
+  knitr (>= 1.23),
+  commonmark,
+  xml2,
+  ellipsis,
   htmltools,
   stringr,
   stringi,
   base64enc
+Suggests:
+  DBI,
+  testthat
+Collate:
+    'authentication_provider.R'
+    'exam_format.R'
+    'exercise_evaluators.R'
+    'state_frame.R'
+    'exam_options.R'
+    'exam_sections.R'
+    'question_types.R'
+    'r_exercise_chunk.R'
+    'storage_provider.R'
+    'utilities.R'
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
+VignetteBuilder: knitr

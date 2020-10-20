@@ -1,2 +1,11 @@
 ^.*\.Rproj$
+^\.git$
 ^\.Rproj\.user$
+^\.travis\.yml$
+^README\.Rmd$
+^cran-comments.md$
+^.*\.vscode.*$
+^\.eslintrc\.json$
+^srcwww$
+^tools$
+^node_modules$

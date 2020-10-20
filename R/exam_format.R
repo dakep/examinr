@@ -1,18 +1,62 @@
-library(rmarkdown)
-library(shiny)
-library(htmltools)
-library(knitr)
-library(stringr)
-library(stringi)
-library(base64enc)
-
-#' @importFrom rmarkdown html_document
-#' @importFrom stringr str_remove regex
+#' Exam Output Format
+#'
+#' @param use_cdn load javascript libraries from external content delivery networks (CDNs).
+#'   Use this if the shiny server is slow at serving static resources, but beware of the downsides of
+#'   relying on content from a third-party!
+#' @param question_context,points_context,exercise_button_context,next_button_context contextual style classes for
+#'   question panels, points labels, exercise buttons, and section navigation buttons.
+#'   Can be `default` or any of the bootstrap 3 contextual classes listed at
+#'   <https://getbootstrap.com/docs/3.3/css/#helper-classes-colors>.
+#'   These can also be set on a per-question or per-exercise level by specifying code chunk options
+#'   `exam.question_context`, `exam.points_context` and `exercise.button_context`.
+#'   A section-specific button context can be set via [section_specific_options()].
+#' @param ... passed on to [html_document()][rmarkdown::html_document()]. Parameters `section_divs` and `toc` are not
+#'   supported.
+#'
+#' These status messages can also be overwritten by setting the exercise chunk options `exercise.status_xyz`, where
+#' `xyz` is one of the status message types listed above.
+#'
+#' @importFrom rmarkdown output_format html_document html_dependency_jquery
+#' @importFrom htmltools htmlDependency
+#' @importFrom stringr str_starts str_sub
+#' @importFrom utils packageVersion
+#'
 #' @export
-exam_document <- function (keep_run_document = FALSE, section_divs = TRUE, toc = FALSE, self_contained = FALSE, ...) {
+exam_document <- function (use_cdn = FALSE, question_context = 'default', points_context = 'info',
+                           exercise_button_context = points_context, next_button_context = 'primary', ...) {
   rmd_input_file <- NULL
 
-  additional_args <- list(...)
+  html_document_args <- list(...)
+  html_document_args$section_divs <- TRUE
+  html_document_args$anchor_sections <- FALSE
+  html_document_args$toc <- FALSE
+
+  additional_dependencies <- if (isTRUE(use_cdn)) {
+    list(htmlDependency('ace', '1.4.12', c(href='https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12'),
+                        head = '<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.js"
+          integrity="sha512-GoORoNnxst42zE3rYPj4bNBm0Q6ZRXKNH2D9nEmNvVF/z24ywVnijAWVi/09iBiVDQVf3UlZHpzhAJIdd9BXqw=="
+                        crossorigin="anonymous"></script>
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-r.min.js"
+          integrity="sha512-Ywj4QTNVz4uBn0XqobDKK5pgwN5/bK1/RBAUxDq+2luI+mvA6pteiuuWXZZ4i6UQUnUMwa/UD+9MqOr2hn9H9g=="
+                        crossorigin="anonymous"></script>
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-textmate.min.js"
+          integrity="sha512-EfT0yrRqRKdVeJXcphL/4lzFc33WZJv6xAe34FMpICOAMJQmlfsTn/Bt/+eUarjewh1UMJQcdoFulncymeLUgw=="
+                        crossorigin="anonymous"></script>'))
+  } else {
+    list(htmlDependency('ace', '1.4.12', package = 'examinr', src = 'lib', script = 'ace-1.4.12.js'))
+  }
+
+  html_document_args$extra_dependencies <- c(html_document_args$extra_dependencies %||% list(),
+                                             additional_dependencies,
+                                             list(htmlDependency('exam', packageVersion('examinr'),
+                                                                 package = 'examinr', src = 'www',
+                                                                 script = 'exam.min.js', stylesheet = 'exam.min.css'),
+                                                  html_dependency_jquery()))
+
+  is_render <- isTRUE(html_document_args[['.examinr_is_render_serverside']])
+  html_document_args[['.examinr_is_render_serverside']] <- NULL
+
+  .support_code$reset()
 
   out <- output_format(
     pandoc = list(to = 'html5'),
@@ -21,34 +65,76 @@ exam_document <- function (keep_run_document = FALSE, section_divs = TRUE, toc =
     },
     post_processor = function (metadata, input_file, output_file, clean, verbose, ...) {
       return(sections_to_serverside_content(metadata, rmd_input_file, output_file, clean, verbose,
-                                            is_render = isTRUE(additional_args[['.examinr_is_render_serverside']]),
-                                            ...))
+                                            is_render = is_render, ...))
     },
-    base_format = html_document(section_divs = section_divs, toc = toc, self_containted = self_contained, ...),
-    knitr = list(opts_chunk = list(examinr.exam = TRUE),
-                 opts_hooks = list(examinr.exam = function (options) {
-                   initialize_exam()
-                   return (options)
-                 })))
+    base_format = do.call(html_document, html_document_args),
+    knitr = list(opts_chunk = list(examinr.exam = TRUE,
+                                   exam.question_context = question_context,
+                                   exam.points_context = points_context,
+                                   exam.exercise_button_context = exercise_button_context,
+                                   exam.next_button_context = next_button_context,
+                                   exam.static = FALSE),
+                 opts_hooks = list(examinr.exam = opts_hook_exam_format,
+                                   examinr.sectionchunk = .exam_section_opts_hook),
+                 knit_hooks = list(examinr.exam = knit_hook_possible_exercise)))
+
   return(out)
 }
 
-#' @importFrom rmarkdown yaml_front_matter
+#' @importFrom knitr opts_knit knit_meta_add
+#' @importFrom rmarkdown metadata
+#' @importFrom rlang abort
+opts_hook_exam_format <- function (options, ...) {
+  if (!isTRUE(getOption('knitr.in.progress'))) {
+    return(options)
+  }
+
+  if (!isTRUE(knitr::opts_knit$get('rmarkdown.runtime') == 'shiny_prerendered')) {
+    abort("examinr exams can only be used with runtime: shiny_prerendered.")
+  }
+
+  if (!isTRUE(opts_knit$get('examinr.exam.initialized'))) {
+    # Initialize the exam ...
+    sections_options_from_metadata(rmarkdown::metadata$exam$sections)
+
+    # Parse metadata
+    # shiny_prerendered_chunk('server', sprintf('stat305templates:::.initialize_lab_server(session, metadata = %s)',
+    #                                           dput_object(rmarkdown::metadata$lab)), singleton = TRUE)
+    #
+    # shiny_prerendered_chunk('server-start', 'stat305templates:::.generate_lab_key()', singleton = TRUE)
+
+    opts_knit$set(examinr.exam.initialized = TRUE)
+  }
+
+  if (!isTRUE(opts_chunk$get('exercise_options_set'))) {
+    # Set the global exercise options
+    exercise_options()
+  }
+
+  if (is.null(options[['context']]) || isTRUE(options[['context']] == 'render')) {
+    # Check all chunks within the "render" context for R exercise
+    return(opts_hook_possible_exercise(options, ...))
+  } else {
+    return(options)
+  }
+}
+
+#' @importFrom rmarkdown render
 #' @importFrom rlang abort inform
 #' @importFrom stringi stri_trim_both
-#' @importFrom stringr str_detect str_starts fixed str_match str_sub
+#' @importFrom stringr str_detect str_starts fixed str_match str_sub str_replace_all str_remove regex
 sections_to_serverside_content <- function (metadata, input_file, output_file, clean, verbose, is_render = TRUE, ...) {
   if (isTRUE(is_render)) {
     return(output_file)
   }
 
-  if (is.null(metadata$exam$sections) || !isTRUE(metadata$exam$sections$render == 'server')) {
+  if (!isTRUE(.sections_data$get('render') == 'server')) {
     if (verbose) inform("Exam file does not use server-side content.")
     return(output_file)
   }
 
   run_document <- file.path(dirname(input_file),
-                            sprintf('%s.exam.Rmd',
+                            sprintf('%s.server.Rmd',
                                     str_remove(basename(input_file), regex('\\.rmd$', ignore_case = TRUE))))
 
   if (verbose) inform(sprintf("Creating exam file with server-side content as %s.", basename(run_document)))
@@ -60,6 +146,9 @@ sections_to_serverside_content <- function (metadata, input_file, output_file, c
     on.exit(unlink(run_document, force = TRUE), add = TRUE, after = FALSE)
   }
 
+  section_specifics <- .sections_data$get('specific')
+  static_rchunks <- unlist(.exam_data$get('implied_static_chunks'), recursive = FALSE, use.names = FALSE)
+
   infh <- file(input_file, open = 'rt', encoding = 'UTF-8')
   on.exit(close(infh), add = TRUE, after = FALSE)
 
@@ -67,43 +156,46 @@ sections_to_serverside_content <- function (metadata, input_file, output_file, c
 
   inside_section <- FALSE
   inside_fixed_section <- FALSE
-  current_section_id <- ''
-  current_section_ns_id <- ''
+  current_section <- ''
+  current_section_ui_id <- ''
+  section_chunk_counter <- 1L
   inside_code_chunk <- FALSE
+  run_chunk_server <- FALSE
   section_content <- vector('list')
 
   for (line in input_lines) {
     if (inside_code_chunk) {
       ## Inside a code chunk
-      writeLines(line, outfh)
+      if (run_chunk_server) {
+        section_content <- c(section_content, line)
+      } else {
+        writeLines(line, outfh)
+      }
       if (line == '```') {
+        run_chunk_server <- FALSE
         inside_code_chunk <- FALSE
       }
     } else if (str_starts(line, fixed('# '))) {
       ## A new section starts
       if (inside_section) {
         # a new section starts. output previous section.
-        output_section_chunk(outfh, section_content, current_section_id, current_section_ns_id)
+        output_section_chunk(outfh, section_content, current_section, current_section_ui_id, section_chunk_counter)
+        section_chunk_counter <- section_chunk_counter + 1L
         section_content <- vector('list')
       }
       if (inside_section || inside_fixed_section) {
-        end_section_chunk(outfh, current_section_id, current_section_ns_id)
+        end_section_chunk(outfh, current_section, current_section_ui_id)
       }
 
       inside_section <- TRUE
       inside_fixed_section <- FALSE
-      current_section_id <- if (str_detect(line, '\\s+\\{.*\\}\\s*$')) {
-        str_match(line, '^#\\s+(.+)\\s+\\{.*\\}\\s*$')[[2]]
-      } else {
-        str_sub(line, 2L)
-      }
-      current_section_id <- stri_trim_both(str_replace_all(tolower(current_section_id), '[^a-zA-Z0-9]+', '-'),
-                                           pattern = '[^\\p{Wspace}\\-]')
-      current_section_ns_id <- random_ui_id(current_section_id)
+      current_section <- normalize_section_name(line)
+      current_section_ui_id <- random_ui_id(current_section)
+      section_chunk_counter <- 1L
+
 
       # capture a new section, unless the next section is a "fixed" section
-      if (!is.null(metadata$exam$sections$fixed) &&
-          any(str_detect(line, pattern = paste('#\\s+', metadata$exam$sections$fixed, '(\\s|$)', sep = '')))) {
+      if (isTRUE(section_specifics[[current_section]]$fixed)) {
         inside_fixed_section <- TRUE
         inside_section <- FALSE
       }
@@ -111,16 +203,28 @@ sections_to_serverside_content <- function (metadata, input_file, output_file, c
       writeLines('\n', outfh)
       writeLines(line, outfh)
       writeLines('\n', outfh)
+      start_section_chunk(outfh, current_section, current_section_ui_id)
 
     } else if (str_starts(line, fixed('```{'))) {
       ## A code chunk begins
       inside_code_chunk <- TRUE
-      if (inside_section) {
-        output_section_chunk(outfh, section_content, current_section_id, current_section_ns_id)
-        section_content <- vector('list')
-      }
+      run_chunk_server <- FALSE
 
-      writeLines(line, outfh)
+      if (inside_section) {
+        # Check if the chunk is to be run on the server
+        run_chunk_server <- move_rchunk_into_section(line, static_rchunks)
+        if (run_chunk_server) {
+          section_content <- c(section_content, line)
+        } else {
+          output_section_chunk(outfh, section_content, current_section, current_section_ui_id, section_chunk_counter)
+          section_chunk_counter <- section_chunk_counter + 1L
+          section_content <- vector('list')
+
+          writeLines(line, outfh)
+        }
+      } else {
+        writeLines(line, outfh)
+      }
     } else if (inside_section) {
       ## Inside a section
       section_content <- c(section_content, line)
@@ -131,10 +235,10 @@ sections_to_serverside_content <- function (metadata, input_file, output_file, c
   }
 
   if (inside_section) {
-    output_section_chunk(outfh, section_content, current_section_id, current_section_ns_id)
+    output_section_chunk(outfh, section_content, current_section, current_section_ui_id, section_chunk_counter)
   }
   if (inside_fixed_section || inside_section) {
-    end_section_chunk(outfh, current_section_id, current_section_ns_id)
+    end_section_chunk(outfh, current_section, current_section_ui_id)
   }
 
   close(outfh)
@@ -144,7 +248,22 @@ sections_to_serverside_content <- function (metadata, input_file, output_file, c
   return(basename(new_output))
 }
 
-output_section_chunk <- function (out_con, content, section_id, section_ns_id) {
+## Does the R chunk need to be extracted and put into the section chunk?
+#' @importFrom stringr str_detect str_match
+move_rchunk_into_section <- function (line, static_chunks) {
+  label <- str_match(line, '```\\{r\\s+([^,\\}\\s]+)')[[2L]]
+  # Check if the chunk label
+  if (!is.na(label) && isTRUE(label %in% static_chunks)) {
+    return(FALSE)
+  }
+  # Check if the chunk has any of the options
+  return(!any(str_detect(line, c('r\\s+setup,', 'context\\s*=\\s*[\'"]server(?:\\-start)?[\'"]',
+                                 # 'examinr\\.sectionchunk\\s*=\\s*T(?:RUE)?',
+                                 'exam\\.exercise\\s*=\\s*T(?:RUE)?',
+                                 'exam\\.static\\s*=\\s*T(?:RUE)?'))))
+}
+
+output_section_chunk <- function (out_con, content, section, section_ns, chunk_counter) {
   if (length(content) > 0L) {
     content <- unlist(content, recursive = FALSE, use.names = FALSE)
 
@@ -153,47 +272,22 @@ output_section_chunk <- function (out_con, content, section_id, section_ns_id) {
       writeLines(content, out_con)
     } else {
       content_enc <- serialize_object(content)
-      writeLines(c('```{r, eval=TRUE, echo=FALSE}',
-                   sprintf('examinr:::section_chunk("%s", "%s", examinr:::unserialize_object("%s"))',
-                           section_id, section_ns_id, content_enc),
+      writeLines(c('```{r, examinr.sectionchunk=TRUE}',
+                   sprintf('examinr:::section_chunk("%s", "%s", "%s", %d)',
+                           section, section_ns, content_enc, chunk_counter),
                    '```'), con = out_con)
     }
   }
 }
 
-end_section_chunk <- function (out_con, section_id, section_ns_id) {
-  writeLines(c('```{r, eval=TRUE, echo=FALSE}',
-               sprintf('examinr:::section_end("%s", "%s")', section_id, section_ns_id),
+start_section_chunk <- function (out_con, section, section_ns) {
+  writeLines(c('```{r, examinr.sectionchunk=TRUE}',
+               sprintf('examinr:::section_start("%s", "%s")', section, section_ns),
                '```'), con = out_con)
 }
 
-#' @importFrom htmltools tagList
-#' @importFrom rmarkdown shiny_prerendered_chunk
-#' @importFrom shiny observeEvent renderPrint textOutput actionButton
-section_chunk <- function (section_id, section_ns_id, content) {
-  content_enc <- serialize_object(unlist(content, recursive = FALSE, use.names = FALSE))
-  output_id <- sprintf('out_%09d', sample.int(.Machine$integer.max, 1L))
-  btn_id <- sprintf('btn_%09d', sample.int(.Machine$integer.max, 1L))
-  shiny_prerendered_chunk('server', sprintf('observeEvent(input[["%s"]], { output[["%s"]] <- renderPrint(examinr:::unserialize_object("%s"))})',
-                                            btn_id, output_id, content_enc))
-  tagList(actionButton(btn_id, label="Hit me"), textOutput(output_id))
-}
-
-section_end <- function (section_id, section_ns_id) {
-  cat("---------- END SECTION `",  section_id, "` (", section_ns_id, ") ---------------", sep = "")
-}
-
-#' @importFrom knitr opts_knit knit_meta_add
-#' @importFrom rmarkdown metadata shiny_prerendered_chunk html_dependency_jquery html_dependency_bootstrap
-initialize_exam <- function () {
-  if (isTRUE(getOption('knitr.in.progress')) && !isTRUE(opts_knit$get('examinr.exam.initialized'))) {
-    knit_meta_add(list(html_dependency_jquery()))
-
-    # Parse metadata
-    # shiny_prerendered_chunk('server', sprintf('stat305templates:::.initialize_lab_server(session, metadata = %s)',
-    #                                           dput_object(rmarkdown::metadata$lab)), singleton = TRUE)
-    #
-    # shiny_prerendered_chunk('server-start', 'stat305templates:::.generate_lab_key()', singleton = TRUE)
-    opts_knit$set(examinr.exam.initialized = TRUE)
-  }
+end_section_chunk <- function (out_con, section, section_ns) {
+  writeLines(c('```{r, examinr.sectionchunk=TRUE}',
+               sprintf('examinr:::section_end("%s", "%s")', section, section_ns),
+               '```'), con = out_con)
 }
