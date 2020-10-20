@@ -1,5 +1,10 @@
 "use strict";
 
+/*
+ * Some parts of this file are dervied from the learnr project, which is licensed under the Apache 2.0 license.
+ * Original work Copyright 2019 RStudio
+ * Modified work Copyright 2020 David Kepplinger
+ */
 window.Exam = function () {
   'use strict';
 
