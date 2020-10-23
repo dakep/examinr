@@ -255,7 +255,7 @@ render_question_body <- function (question, ns, ...) {
 }
 
 #' @importFrom shiny textAreaInput textInput numericInput NS
-#' @importFrom rlang call2
+#' @importFrom rlang exec
 #' @importFrom htmltools tagAppendAttributes
 render_question_body.textquestion <- function (question, ns, ...) {
   args <- with(question, list(inputId = ns(label), label = input_label, value = '', width = width,
@@ -273,7 +273,7 @@ render_question_body.textquestion <- function (question, ns, ...) {
                       text = 'textInput',
                       numeric = 'numericInput')
 
-  input <- eval(call2(input_fun, !!!args))
+  input <- exec(input_fun, !!!args)
 
   if (question$type == 'textarea') {
     tagAppendAttributes(input, style = sprintf('width: %s;', question$width))

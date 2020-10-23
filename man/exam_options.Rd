@@ -30,6 +30,7 @@ the sections. See section \emph{Data provider} for details.}
 
 \item{exercise_data_provider}{a data provider function which generates the user-specific (e.g., randomized) data
 for \emph{all} exercise chunks. Similar to \code{data_provider}, but gets an argument \code{chunk_label} instead of \code{section}.
+See the section on \emph{Exercise Data Providers} below.
 Note that exercise chunks have access \emph{only} to the data returned by this data provider.
 The enclosing environment of the returned environment (or list) will be set to the empty environment, \code{\link[=emptyenv]{emptyenv()}}.}
 
@@ -53,8 +54,8 @@ Only non-missing options are set, the others are kept at their previous values.
 \section{Data provider}{
 
 Each section is rendered in a \emph{sterile} environment, containing only the data returned by the data provider.
-This data provider is called every time a section is rendered and should return the static as well as
-the user-specific randomized values.
+This data provider is called every time a section is rendered and should return a list or environment with all
+the objects required to render the section. This includes the user-specific randomized values.
 
 The data provider is a function taking arguments
 \itemize{
@@ -66,5 +67,26 @@ The data provider is a function taking arguments
 The data provider function returns a list or an environment containing all objects required to render the sections.
 Internally, the markdown code for each section is rendered with \code{\link[rmarkdown:render]{rmarkdown::render()}} in the environment returned
 by the data provider.
+}
+
+\section{Exercise Data Providers}{
+
+The user code is run in a separate environment, possibly in a different R process.
+This environment consists only of the objects in the list (or environment) returned by the exercise data provider.
+The exercise data provider is run in the server R process and is called with the following arguments:
+\itemize{
+\item \code{user}: the user object as returned by the authentication provider (or the \emph{auto-completion} user, see below),
+\item \code{label}: the exercise chunk label,
+\item \code{...}: further arguments for future additions.
+}
+
+If the exercise data provider returns an environment, the enclosing environment will be set to the
+empty environment, \code{\link[=emptyenv]{emptyenv()}}.
+
+The exercise data provider is called once when the shiny server starts with the \emph{auto-completion} user object
+to ensure auto-completion knows about all available objects.
+The exercise data provider can test if the given user is the \emph{auto-completion} user with the function
+\code{\link[=is_autocompletion_user]{is_autocompletion_user()}}. This user only has the required properties as defined by
+\link[=authentication_provider]{authentication providers}.
 }
 

@@ -1,7 +1,7 @@
 #' @include state_frame.R
 .support_code <- state_frame()
 
-#' @importFrom rlang abort
+#' @importFrom rlang abort expr
 #' @importFrom stringr str_ends fixed str_sub
 #' @importFrom knitr all_labels knit_code
 #' @importFrom rmarkdown shiny_prerendered_chunk
@@ -18,40 +18,54 @@ opts_hook_possible_exercise <- function (options, ...) {
                     options$label))
     }
 
+    if (isTRUE(options$exercise.autocomplete %||% TRUE)) {
+      shiny_prerendered_chunk(context = 'server', 'examinr:::bind_exercise_autocomplete()', singleton = TRUE)
+    }
+
+    # Collect the support chunks
+    support_code <- list(setup = get_support_code(options$exercise.setup),
+                         solution = get_support_code(options$exercise.solution))
     shiny_prerendered_chunk(context = 'server-start', sprintf(
-      'examinr:::register_exercise_options(options = "%s", exercise_label = "%s")',
-      serialize_object(options), options$label))
+      'examinr:::register_exercise(options = "%s", exercise_label = "%s", support_code = "%s")',
+      serialize_object(options), options$label, serialize_object(support_code)))
 
     .exam_data$append(implied_static_chunks = options$label)
   } else {
-    exercise_chunk_labels <- all_labels(eval(quote(exercise == TRUE)))  # quote to silence R CMD check
-    for (type in c('setup', 'solution', 'check')) {
-      if (isTRUE(str_ends(options$label, fixed(paste('-', type, sep = ''))))) {
-        exercise_label <- str_sub(options$label, end = -nchar(type) - 2)
-        if (isTRUE(exercise_label %in% exercise_chunk_labels)) {
-          # Collect the code for the server context
-          chunk_code <- options$code
-          attr(chunk_code, 'chunk_opts') <- extract_relevant_chunk_options(options)
+    # Check if the chunk is a support chunk for any exercise.
+    associated_exercises <- if (isTRUE(options$label == options$exercise.setup) ||
+                                isTRUE(options$label == options$exercise.solution)) {
+      # First check if the chunk is a globally set support chunk
+      options$label
+    } else {
+      filter_expr <- expr(all_labels(exercise == TRUE &&
+                                       (exercise.setup == !!(options$label) ||
+                                          exercise.solution == !!(options$label))))
+      eval(filter_expr)
+    }
 
-          # Don't evaluate or print the code in the chunk.
-          options$eval <- FALSE
-          options$echo <- FALSE
-          options$include <- FALSE
-
-          if (!is.null(chunk_code)) {
-            shiny_prerendered_chunk(context = 'server-start', sprintf(
-              'examinr:::register_support_code(code = "%s", what = "%s", exercise_label = "%s")',
-              serialize_object(chunk_code), type, exercise_label))
-          }
-
-          .exam_data$append(implied_static_chunks = options$label)
-        }
-        break
-      }
+    if (length(associated_exercises) > 0L) {
+      # Don't evaluate or print the code chunk, but we'll leave the user settings for printing
+      # untouched.
+      options$eval <- FALSE
     }
   }
 
   return(options)
+}
+
+#' @importFrom knitr all_labels knit_code
+#' @importFrom rlang expr
+get_support_code <- function (support_label) {
+  if (is.null(support_label) || !nzchar(support_label)) {
+    return(NULL)
+  }
+
+  if (support_label %in% all_labels()) {
+    .exam_data$append(implied_static_chunks = support_label)
+    return(knit_code$get(support_label))
+  }
+
+  return(NULL)
 }
 
 ## Extract options from exercise / exercise support chunks which should be re-established
@@ -102,7 +116,7 @@ knit_hook_possible_exercise <- function (before, options, envir, ...) {
                           button = options$exercise.button,
                           engine = tolower(options$engine %||% 'r'),
                           lines = options$exercise.lines %||% 5,
-                          completion = options$exercise.completion %||% FALSE)
+                          autocomplete = options$exercise.autocomplete %||% TRUE)
 
     exercise_div <- sprintf('<div class="examinr-exercise"><script type="application/json">%s</script>',
                             toJSON(exercise_data, force = TRUE, auto_unbox = TRUE, digits = NA, null = 'null'))
@@ -115,19 +129,22 @@ knit_hook_possible_exercise <- function (before, options, envir, ...) {
   }
 }
 
-#' @importFrom rlang exec `:=`
-register_support_code <- function (code, what, exercise_label) {
-  code <- unserialize_object(code)
-  exec(.support_code$append, !!exercise_label := exec('list', !!what := code))
-}
-
-#' @importFrom rlang exec `:=`
-register_exercise_options <- function (options, exercise_label, force = TRUE, unserialize = TRUE) {
+#' @importFrom rlang is_missing exec `:=`
+register_exercise <- function (options, exercise_label, support_code, force = TRUE, unserialize = TRUE) {
   if (isTRUE(unserialize)) {
     options <- unserialize_object(options)
+    if (!is_missing(support_code)) {
+      support_code <- unserialize_object(support_code)
+    }
   }
   if (isTRUE(force) || is.null(.exam_data$get('exercise_chunk_options')[[exercise_label]])) {
     .exam_data$append(exercise_chunk_options = exec('list', !!exercise_label := options))
+  }
+  if (isTRUE(force) || is.null(.support_code$get(exercise_label))) {
+    exec(.support_code$append, !!exercise_label := support_code)
+  }
+  if (isTRUE(options$exercise.autocomplete)) {
+    prepare_exercise_autocomplete(exercise_label, support_code)
   }
 }
 
@@ -252,14 +269,14 @@ render_exercise_result <- function (label, result) {
 }
 
 #' @importFrom stringr str_remove str_replace_all str_detect
-check_exercise_code <- function (input) {
+check_exercise_code <- function (input, exercise_data) {
   # Check if the code is empty
   if (str_detect(input$code, '^\\s*$')) {
     return(exercise_result_empty(input$label))
   }
 
   # Check if the code is syntactically valid (if it's R code)
-  if (isTRUE(input$engine == 'r')) {
+  if (isTRUE(exercise_data$engine == 'r')) {
     invalid_syntax <- tryCatch({
       str2expression(input$code)
       NULL
@@ -268,8 +285,8 @@ check_exercise_code <- function (input) {
     })
 
     if (!is.null(invalid_syntax)) {
-      exercise_result_error(sprintf('%s <pre><code>%s</code></pre>', get_exercise_option(input$label, 'status_invalid'),
-                                    invalid_syntax))
+      return(exercise_result_error(sprintf('%s <pre><code>%s</code></pre>',
+                                           get_exercise_option(input$label, 'status_invalid'), invalid_syntax)))
     }
   }
 
@@ -286,7 +303,7 @@ exercise_chunk_server <- function (exercise_data) {
       output_id <- paste(exercise_data$label, 'out', sep = '-')
 
       # First do some preliminary checks of the code
-      check_result <- check_exercise_code(input_data)
+      check_result <- check_exercise_code(input_data, exercise_data)
       if (!is.null(check_result)) {
         # The checks have not passed. Update the output and be done.
         output[[paste(exercise_data$label, 'out', sep = '-')]] <- render_exercise_result(
@@ -373,9 +390,11 @@ evaluate_exercise <- function (user_code, support_code, options, envir, label) {
 
   # Set package-internal state if necessary
   register_global_exercise_options(options$global, force = FALSE, unserialize = FALSE)
-  register_exercise_options(options$chunk, label, force = FALSE, unserialize = FALSE)
+  register_exercise(options$chunk, label, support_code, force = FALSE, unserialize = FALSE)
 
-  output_html <- render(tmpfile, output_format = out, quiet = TRUE)
+  parent.env(envir) <- globalenv()
+
+  output_html <- render(tmpfile, output_format = out, quiet = TRUE, envir = envir)
   on.exit(unlink(output_html, force = TRUE), add = TRUE)
 
   html_output_str <- paste(readLines(output_html, encoding = 'UTF-8'), collapse = '\n')

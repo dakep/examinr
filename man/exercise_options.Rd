@@ -13,6 +13,9 @@ exercise_options(
   autocomplete,
   df_print,
   points,
+  setup,
+  solution,
+  checker,
   status_notrun,
   status_invalid,
   status_error,
@@ -40,6 +43,13 @@ as the R-markdown document, but can be changed if needed. See argument \code{df_
 \link[rmarkdown:html_document]{html_document()} for details.}
 
 \item{points}{the default number of points an exercise is worth. Default: 1.}
+
+\item{setup}{the name of an R code chunk which is evaluated before the user code.}
+
+\item{solution}{the name of an R code chunk which gives the solution to the exerise code chunk.
+This really only makes sense if set on a per-chunk basis.}
+
+\item{checker}{a function (or the name of a function) which checks the R code in the exercise chunk.}
 
 \item{status_notrun}{status message if the exercise code has not yet been executed in this session. Default message:
 \emph{Run the code by clicking the button in the top right corner of the exercise.}}

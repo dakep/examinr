@@ -3,9 +3,12 @@
 \name{authentication_provider}
 \alias{authentication_provider}
 \alias{rsconnect_authentication_provider}
+\alias{is_autocompletion_user}
 \title{Authentication Providers}
 \usage{
 rsconnect_authentication_provider(shiny_session)
+
+is_autocompletion_user(user)
 }
 \arguments{
 \item{shiny_session}{the shiny session object.}
@@ -21,12 +24,14 @@ Any additional information will be proxied to all callback functions receiving a
 }
 \description{
 Exams are tied to a single \emph{user}.
-Each user has a unique randomization of the exam and all answers are tied to the user.
+Each user can get a unique randomization of the exam and all answers are tied to the user.
 The exam format does not determine the user, but invokes the authentication provider configured with \code{setup_exam()}
 to determine the user's identification.
 }
 \section{Functions}{
 \itemize{
 \item \code{rsconnect_authentication_provider}: use the rstudio-connect user.
+
+\item \code{is_autocompletion_user}: check if the given user is the dummy \emph{auto-completion} user.
 }}
 

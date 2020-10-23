@@ -31,27 +31,12 @@ exam_document <- function (use_cdn = FALSE, question_context = 'default', points
   html_document_args$anchor_sections <- FALSE
   html_document_args$toc <- FALSE
 
-  additional_dependencies <- if (isTRUE(use_cdn)) {
-    list(htmlDependency('ace', '1.4.12', c(href='https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12'),
-                        head = '<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.js"
-          integrity="sha512-GoORoNnxst42zE3rYPj4bNBm0Q6ZRXKNH2D9nEmNvVF/z24ywVnijAWVi/09iBiVDQVf3UlZHpzhAJIdd9BXqw=="
-                        crossorigin="anonymous"></script>
-                        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-r.min.js"
-          integrity="sha512-Ywj4QTNVz4uBn0XqobDKK5pgwN5/bK1/RBAUxDq+2luI+mvA6pteiuuWXZZ4i6UQUnUMwa/UD+9MqOr2hn9H9g=="
-                        crossorigin="anonymous"></script>
-                        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-textmate.min.js"
-          integrity="sha512-EfT0yrRqRKdVeJXcphL/4lzFc33WZJv6xAe34FMpICOAMJQmlfsTn/Bt/+eUarjewh1UMJQcdoFulncymeLUgw=="
-                        crossorigin="anonymous"></script>'))
-  } else {
-    list(htmlDependency('ace', '1.4.12', package = 'examinr', src = 'lib', script = 'ace-1.4.12.js'))
-  }
-
-  html_document_args$extra_dependencies <- c(html_document_args$extra_dependencies %||% list(),
-                                             additional_dependencies,
-                                             list(htmlDependency('exam', packageVersion('examinr'),
-                                                                 package = 'examinr', src = 'www',
-                                                                 script = 'exam.min.js', stylesheet = 'exam.min.css'),
-                                                  html_dependency_jquery()))
+  html_document_args$extra_dependencies <- c(html_document_args$extra_dependencies %||% list(), list(
+    html_dependency_jquery(),
+    html_dependency_ace(use_cdn),
+    htmlDependency('exam', packageVersion('examinr'),
+                   package = 'examinr', src = 'www',
+                   script = 'exam.min.js', stylesheet = 'exam.min.css')))
 
   is_render <- isTRUE(html_document_args[['.examinr_is_render_serverside']])
   html_document_args[['.examinr_is_render_serverside']] <- NULL

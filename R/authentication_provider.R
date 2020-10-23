@@ -1,10 +1,9 @@
 #' Authentication Providers
 #'
 #' Exams are tied to a single _user_.
-#' Each user has a unique randomization of the exam and all answers are tied to the user.
+#' Each user can get a unique randomization of the exam and all answers are tied to the user.
 #' The exam format does not determine the user, but invokes the authentication provider configured with `setup_exam()`
 #' to determine the user's identification.
-#'
 #'
 #' @param shiny_session the shiny session object.
 #' @return a list with user information. The list must contain the following elements:
@@ -29,3 +28,12 @@ rsconnect_authentication_provider <- function (shiny_session) {
   return(list(user_id = user_id, seed = digest2int(user_id)))
 }
 
+#' @describeIn authentication_provider check if the given user is the dummy _auto-completion_ user.
+#' @export
+is_autocompletion_user <- function (user) {
+  return(isTRUE(attr(user, 'autocompletion', exact = TRUE)))
+}
+
+autocompletion_user <- function () {
+  return(structure(list(user_id = 'Auto-completion User', seed = 0L), autocompletion = TRUE))
+}

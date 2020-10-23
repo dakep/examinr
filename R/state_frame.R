@@ -44,7 +44,7 @@ args_to_list <- function (...) {
   args <- args[!vapply(args, is_missing, FUN.VALUE = logical(1L), USE.NAMES = FALSE)]
 
   # Check the non-missing arguments.
-  if (length(args) == 1L && is.null(names(args)) && is.list(args[[1L]])) {
+  if (length(args) == 1L && (is.null(names(args)) || all(!nzchar(names(args)))) && is.list(args[[1L]])) {
     args <- args[[1L]]
   }
   if (is.null(names(args)) || any(nchar(names(args)) == 0L)) {
