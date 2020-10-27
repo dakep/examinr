@@ -4,14 +4,19 @@
 \alias{dbi_storage_provider}
 \title{DBI-Backed Exam Storage}
 \usage{
-dbi_storage_provider(conn, table_name, hash_user = FALSE)
+dbi_storage_provider(conn, table_name, hash_user = FALSE, hash_key = TRUE)
 }
 \arguments{
 \item{conn}{a \link[DBI:DBIConnection-class]{DBIConnection} object, as returned by \link[DBI:dbConnect]{dbConnect()}}
 
 \item{table_name}{the name of the table to store the exam data in.}
 
-\item{hash_user}{store the user id as a SHA256 hash to protect the identity.}
+\item{hash_user}{store the user id as a SHA256 HMAC to protect the identity.}
+
+\item{hash_key}{if \code{hash_user=TRUE}, the pre-shared secret key. If \code{TRUE} (the default), uses the concatenated
+\emph{exam_id} and \emph{exam_version}. If \code{NULL}, uses no HMAC but a plain SHA256 hash of the user id
+(\strong{strongly discouraged}). Anything else is cast to \link[base:character]{character} string
+(or kept as \link[base:raw]{raw} vector) and used as key.}
 }
 \description{
 Store exam data in an SQL database using DBI.
@@ -36,8 +41,9 @@ A sample definition of the table for PostgreSQL is as follows:\preformatted{CREA
   user_id character varying(64) NOT NULL,
   exam_id character varying(255) NOT NULL,
   exam_version character varying(64) NOT NULL,
+  section character varying (255) NOT NULL,
   timestamp timestamp NOT NULL DEFAULT current_timestamp,
   section_data text);
-CREATE INDEX section_data_index on section_data (user_id, exam_id, exam_version);
+CREATE INDEX section_data_index on section_data (user_id, exam_id, exam_version, section);
 }
 }

@@ -1,9 +1,12 @@
 #' Exam Output Format
 #'
+#' @param id the exam id string
+#' @param version the exam version string
+#' @param sections section configuration, see [sections_options()] for details.
 #' @param use_cdn load javascript libraries from external content delivery networks (CDNs).
 #'   Use this if the shiny server is slow at serving static resources, but beware of the downsides of
 #'   relying on content from a third-party!
-#' @param question_context,points_context,exercise_button_context,next_button_context contextual style classes for
+#' @param question_context,points_context,exercise_button_context contextual style classes for
 #'   question panels, points labels, exercise buttons, and section navigation buttons.
 #'   Can be `default` or any of the bootstrap 3 contextual classes listed at
 #'   <https://getbootstrap.com/docs/3.3/css/#helper-classes-colors>.
@@ -22,8 +25,9 @@
 #' @importFrom utils packageVersion
 #'
 #' @export
-exam_document <- function (use_cdn = FALSE, question_context = 'default', points_context = 'info',
-                           exercise_button_context = points_context, next_button_context = 'primary', ...) {
+exam_document <- function (id = 'exam', version = '0.1', use_cdn = FALSE, sections = list(),
+                           question_context = 'default', points_context = 'info',
+                           exercise_button_context = points_context, ...) {
   rmd_input_file <- NULL
 
   html_document_args <- list(...)
@@ -41,8 +45,6 @@ exam_document <- function (use_cdn = FALSE, question_context = 'default', points
   is_render <- isTRUE(html_document_args[['.examinr_is_render_serverside']])
   html_document_args[['.examinr_is_render_serverside']] <- NULL
 
-  .support_code$reset()
-
   out <- output_format(
     pandoc = list(to = 'html5'),
     pre_knit = function (input, ...) {
@@ -57,11 +59,14 @@ exam_document <- function (use_cdn = FALSE, question_context = 'default', points
                                    exam.question_context = question_context,
                                    exam.points_context = points_context,
                                    exam.exercise_button_context = exercise_button_context,
-                                   exam.next_button_context = next_button_context,
                                    exam.static = FALSE),
+                 opts_knit = list(examinr.exam_initialized = FALSE,
+                                  examinr.exercise_options_set = FALSE),
                  opts_hooks = list(examinr.exam = opts_hook_exam_format,
                                    examinr.sectionchunk = .exam_section_opts_hook),
-                 knit_hooks = list(examinr.exam = knit_hook_possible_exercise)))
+                 knit_hooks = list(exercise = knit_hook_exercise)))
+
+  sections_options_from_metadata(sections)
 
   return(out)
 }
@@ -74,24 +79,19 @@ opts_hook_exam_format <- function (options, ...) {
     return(options)
   }
 
-  if (!isTRUE(knitr::opts_knit$get('rmarkdown.runtime') == 'shiny_prerendered')) {
+  if (!isTRUE(opts_knit$get('rmarkdown.runtime') == 'shiny_prerendered')) {
     abort("examinr exams can only be used with runtime: shiny_prerendered.")
   }
 
-  if (!isTRUE(opts_knit$get('examinr.exam.initialized'))) {
-    # Initialize the exam ...
-    sections_options_from_metadata(rmarkdown::metadata$exam$sections)
+  if (!isTRUE(opts_knit$get('examinr.exam_initialized'))) {
+    # Initialize sections on the server
+    shiny_prerendered_chunk('server', sprintf('examinr:::initialize_sections("%s")',
+                                              serialize_object(.sections_data$get('options'))))
 
-    # Parse metadata
-    # shiny_prerendered_chunk('server', sprintf('stat305templates:::.initialize_lab_server(session, metadata = %s)',
-    #                                           dput_object(rmarkdown::metadata$lab)), singleton = TRUE)
-    #
-    # shiny_prerendered_chunk('server-start', 'stat305templates:::.generate_lab_key()', singleton = TRUE)
-
-    opts_knit$set(examinr.exam.initialized = TRUE)
+    opts_knit$set(examinr.exam_initialized = TRUE)
   }
 
-  if (!isTRUE(opts_chunk$get('exercise_options_set'))) {
+  if (!isTRUE(opts_knit$get('examinr.exercise_options_set'))) {
     # Set the global exercise options
     exercise_options()
   }
@@ -104,6 +104,11 @@ opts_hook_exam_format <- function (options, ...) {
   }
 }
 
+## Function to take care of all the static initialization on the UI side
+initialize_ui <- function () {
+  initialize_sections_ui()
+}
+
 #' @importFrom rmarkdown render
 #' @importFrom rlang abort inform
 #' @importFrom stringi stri_trim_both
@@ -113,10 +118,8 @@ sections_to_serverside_content <- function (metadata, input_file, output_file, c
     return(output_file)
   }
 
-  if (!isTRUE(.sections_data$get('render') == 'server')) {
-    if (verbose) inform("Exam file does not use server-side content.")
-    return(output_file)
-  }
+  # Reset the support code state, as it will be re-read in the second run
+  .support_code$reset()
 
   run_document <- file.path(dirname(input_file),
                             sprintf('%s.server.Rmd',
@@ -131,7 +134,7 @@ sections_to_serverside_content <- function (metadata, input_file, output_file, c
     on.exit(unlink(run_document, force = TRUE), add = TRUE, after = FALSE)
   }
 
-  section_specifics <- .sections_data$get('specific')
+  section_specifics <- .sections_data$get('options')$specific
   static_rchunks <- unlist(.exam_data$get('implied_static_chunks'), recursive = FALSE, use.names = FALSE)
 
   infh <- file(input_file, open = 'rt', encoding = 'UTF-8')
@@ -226,6 +229,8 @@ sections_to_serverside_content <- function (metadata, input_file, output_file, c
     end_section_chunk(outfh, current_section, current_section_ui_id)
   }
 
+  initialize_ui_chunk(outfh)
+
   close(outfh)
   new_output <- render(run_document, quiet = !verbose, envir = parent.frame(), clean = clean,
                        output_options = list('.examinr_is_render_serverside' = TRUE))
@@ -243,36 +248,42 @@ move_rchunk_into_section <- function (line, static_chunks) {
   }
   # Check if the chunk has any of the options
   return(!any(str_detect(line, c('r\\s+setup,', 'context\\s*=\\s*[\'"]server(?:\\-start)?[\'"]',
-                                 # 'examinr\\.sectionchunk\\s*=\\s*T(?:RUE)?',
                                  'exam\\.exercise\\s*=\\s*T(?:RUE)?',
                                  'exam\\.static\\s*=\\s*T(?:RUE)?'))))
 }
 
-output_section_chunk <- function (out_con, content, section, section_ns, chunk_counter) {
+output_section_chunk <- function (out_con, content, section, section_ui_id, chunk_counter) {
   if (length(content) > 0L) {
     content <- unlist(content, recursive = FALSE, use.names = FALSE)
 
-    # if it's only empty lines, just output empty lines.
-    if (all(nchar(content) == 0L)) {
+    # If the section content is to be rendered on the client, or if it's only empty lines,
+    # output content as-is
+    if (!isTRUE(.sections_data$get('options')$render == 'server') || all(!nzchar(content))) {
       writeLines(content, out_con)
     } else {
       content_enc <- serialize_object(content)
       writeLines(c('```{r, examinr.sectionchunk=TRUE}',
                    sprintf('examinr:::section_chunk("%s", "%s", "%s", %d)',
-                           section, section_ns, content_enc, chunk_counter),
+                           section, section_ui_id, content_enc, chunk_counter),
                    '```'), con = out_con)
     }
   }
 }
 
-start_section_chunk <- function (out_con, section, section_ns) {
+start_section_chunk <- function (out_con, section, section_ui_id) {
   writeLines(c('```{r, examinr.sectionchunk=TRUE}',
-               sprintf('examinr:::section_start("%s", "%s")', section, section_ns),
+               sprintf('examinr:::section_start("%s", "%s")', section, section_ui_id),
                '```'), con = out_con)
 }
 
-end_section_chunk <- function (out_con, section, section_ns) {
+end_section_chunk <- function (out_con, section, section_ui_id) {
   writeLines(c('```{r, examinr.sectionchunk=TRUE}',
-               sprintf('examinr:::section_end("%s", "%s")', section, section_ns),
+               sprintf('examinr:::section_end("%s", "%s")', section, section_ui_id),
+               '```'), con = out_con)
+}
+
+initialize_ui_chunk <- function (out_con) {
+  writeLines(c('```{r, examinr.sectionchunk=TRUE}',
+               'examinr:::initialize_ui()',
                '```'), con = out_con)
 }

@@ -59,11 +59,13 @@ test_that("Exam options only from metadata", {
   metadata <- rmarkdown::yaml_front_matter(test_path('exams', 'with-metadata.Rmd'))
 
   examinr:::sections_options_from_metadata(metadata$exam$sections)
-  expect_equal(examinr:::.sections_data$get('render'), 'client')
-  expect_equal(examinr:::.sections_data$get('order'), 'fixed')
-  expect_equal(examinr:::.sections_data$get('next_button_label'), 'Next section')
-  expect_list_equal(examinr:::.sections_data$get('specific'),
-                    list(introduction = list(fixed = TRUE), 'final-comments' = list(fixed = TRUE)))
+  expect_list_equal(examinr:::.sections_data$get('options'), list(
+    render = 'client',
+    order = 'fixed',
+    progressive = TRUE,
+    next_button_label = 'Next section',
+    next_button_context = 'primary',
+    specific = list(introduction = list(fixed = TRUE), 'final-comments' = list(fixed = TRUE))))
 })
 
 test_that("Exam options from metadata and programmatically set", {
@@ -76,18 +78,20 @@ test_that("Exam options from metadata and programmatically set", {
   })
 
   # Set sections options beforehand
-  sections_options(render = 'server', next_button_label = 'Forward')
+  metadata <- rmarkdown::yaml_front_matter(test_path('exams', 'with-metadata.Rmd'))
+  examinr:::sections_options_from_metadata(metadata$exam$sections)
+
+  sections_options(render = 'server', next_button_label = 'Forward', progressive = FALSE)
   section_specific_options('Introduction', fix_order = FALSE, next_button_label = 'Start')
   section_specific_options('Section 1', fix_order = TRUE)
 
-  metadata <- rmarkdown::yaml_front_matter(test_path('exams', 'with-metadata.Rmd'))
-
-  examinr:::sections_options_from_metadata(metadata$exam$sections)
-  expect_equal(examinr:::.sections_data$get('render'), 'server')
-  expect_equal(examinr:::.sections_data$get('order'), 'fixed')
-  expect_equal(examinr:::.sections_data$get('next_button_label'), 'Forward')
-  expect_list_equal(examinr:::.sections_data$get('specific'),
-                    list(introduction = list(fixed = FALSE, next_button_label = 'Start'),
-                         'section-1' = list(fixed = TRUE),
-                         'final-comments' = list(fixed = TRUE)))
+  expect_list_equal(examinr:::.sections_data$get('options'), list(
+    render = 'server',
+    order = 'fixed',
+    progressive = FALSE,
+    next_button_label = 'Forward',
+    next_button_context = 'primary',
+    specific = list(introduction = list(fixed = FALSE, next_button_label = 'Start'),
+                    'section-1' = list(fixed = TRUE),
+                    'final-comments' = list(fixed = TRUE))))
 })

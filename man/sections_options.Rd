@@ -5,7 +5,15 @@
 \alias{section_specific_options}
 \title{Exam Sections Options}
 \usage{
-sections_options(render, order, fixed, next_button_label, .force = TRUE)
+sections_options(
+  render,
+  order,
+  progressive,
+  fixed,
+  next_button_label,
+  next_button_context,
+  .force = TRUE
+)
 
 section_specific_options(
   section,
@@ -19,20 +27,23 @@ section_specific_options(
 If rendered on the server, the section content will only be sent to the client (i.e., the browser)
 when the section is displayed. This ensures users do not see the section content before navigating to the section.}
 
-\item{order}{should be section order be fixed (\code{"fixed"}) or randomized (\code{"random"}) for each user.}
+\item{order}{if \code{progressive=TRUE}, should be section order be fixed (\code{"fixed"}) or randomized (\code{"random"})
+for each user.}
+
+\item{progressive}{are sections displayed one after another or all at once? If all sections are displayed at
+once, only the last section button is shown.}
 
 \item{fixed}{if \code{order="random"}, a character vector of sections (their names) which will be fixed the order.}
 
 \item{next_button_label}{the label for the button at the end of a section. If \code{NA}, no button will be displayed.
 Default button label is \emph{Next section}.}
 
+\item{next_button_context}{bootstrap 3 contextual class applied to the button. See
+\url{https://getbootstrap.com/docs/3.3/css/#buttons-options} for a list of available classes.}
+
 \item{.force}{force the given options over already specified options. Default to \code{TRUE}.}
 
 \item{section}{name of the section for which to set specific options.}
-
-\item{next_button_context}{bootstrap 3 contextual class applied to the button. Takes precedence over the global
-specification in the \code{\link[=exam_document]{exam_document()}} output format. See
-\url{https://getbootstrap.com/docs/3.3/css/#buttons-options} for a list of available classes.}
 
 \item{fix_order}{logical if the section should remain fixed in order.}
 }

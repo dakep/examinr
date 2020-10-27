@@ -27,7 +27,10 @@
     })
 ))
 
-.sections_data <- state_frame(list(render = NULL, order = NULL, next_button_label = NULL, specific = list()))
+.sections_data <- state_frame(list(options = list(render = 'server', progressive = TRUE, order = 'random',
+                                                  next_button_label = 'Next section', next_button_context = 'primary',
+                                                  specific = list()),
+                                   sections = list()))
 
 #' Set Options for an Exam
 #'
@@ -98,8 +101,8 @@
 exam_options <- function (auth_provider, storage_provider, data_provider, exercise_data_provider,
                           exercise_evaluator, cache_data = c('no', 'both', 'data', 'exercise_data'),
                           points_format) {
-  if (isTRUE(getOption('knitr.in.progress')) && !isTRUE(opts_knit$get('context') == 'server')) {
-    abort("`exam_options()` must be called in a server context.")
+  if (isTRUE(getOption('knitr.in.progress')) && !isTRUE(opts_knit$get('context') == 'server-start')) {
+    abort("`exam_options()` must be called in a `server-start` context.")
   }
 
   cache_data <- match.arg(cache_data)
@@ -235,7 +238,7 @@ get_current_user <- function (session) {
 #' @param status_timeout status message if the exercise code takes too long to run. Default message:
 #'   _Code takes too long to execute._
 #'
-#' @importFrom knitr opts_chunk
+#' @importFrom knitr opts_chunk opts_knit
 #' @importFrom rmarkdown shiny_prerendered_chunk
 #' @export
 exercise_options <- function (title, button, button_context, timelimit, lines, autocomplete, df_print, points,
@@ -278,7 +281,7 @@ exercise_options <- function (title, button, button_context, timelimit, lines, a
 
   names(global_exercise_options) <- paste('exercise', names(global_exercise_options), sep = '.')
   opts_chunk$set(global_exercise_options)
-  opts_chunk$set(exercise_options_set = TRUE)
+  opts_knit$set(examinr.exercise_options_set = TRUE)
 }
 
 #' Exam Sections Options
@@ -298,33 +301,37 @@ exercise_options <- function (title, button, button_context, timelimit, lines, a
 #' @param render render the sections on the server (`"server"`) or the client (`"client"`).
 #'   If rendered on the server, the section content will only be sent to the client (i.e., the browser)
 #'   when the section is displayed. This ensures users do not see the section content before navigating to the section.
-#' @param order should be section order be fixed (`"fixed"`) or randomized (`"random"`) for each user.
+#' @param progressive are sections displayed one after another or all at once? If all sections are displayed at
+#'   once, only the last section button is shown.
+#' @param order if `progressive=TRUE`, should be section order be fixed (`"fixed"`) or randomized (`"random"`)
+#'   for each user.
 #' @param fixed if `order="random"`, a character vector of sections (their names) which will be fixed the order.
 #' @param next_button_label the label for the button at the end of a section. If `NA`, no button will be displayed.
 #'   Default button label is _Next section_.
+#' @param next_button_context bootstrap 3 contextual class applied to the button. See
+#'   <https://getbootstrap.com/docs/3.3/css/#buttons-options> for a list of available classes.
 #' @param .force force the given options over already specified options. Default to `TRUE`.
 #' @export
 #'
 #' @importFrom rlang is_missing
-sections_options <- function (render, order, fixed, next_button_label, .force = TRUE) {
-  .sections_data$set(render = pmatch_null(choose_one(render, .sections_data$get('render'), .force),
-                                          c('server', 'client')),
-                     order = pmatch_null(choose_one(order, .sections_data$get('order'), .force), c('random', 'fixed')),
-                     next_button_label = enc2utf8(choose_one(next_button_label, .sections_data$get('next_button_label'),
-                                                             .force) %||% 'Next section'))
-
+sections_options <- function (render, order, progressive, fixed, next_button_label, next_button_context,
+                              .force = TRUE) {
+  opts <- .sections_data$get('options')
+  opts$render <- pmatch_null(choose_one(render, opts$render, .force), c('server', 'client'))
+  opts$progressive <- isTRUE(choose_one(progressive, opts$progressive, .force))
+  opts$order <- pmatch_null(choose_one(order, opts$order, .force), c('random', 'fixed'))
+  opts$next_button_label <- enc2utf8(choose_one(next_button_label, opts$next_button_label, .force))
+  opts$next_button_context <- enc2utf8(choose_one(next_button_context, opts$next_button_context, .force))
 
   if (!is_missing(fixed)) {
-    section_specifics <- .sections_data$get('specific')
-
     for (fixed_section in normalize_section_name(fixed)) {
-      if (is.null(section_specifics[[fixed_section]])) {
-        section_specifics[[fixed_section]] <- list()
+      if (is.null(opts$specific[[fixed_section]])) {
+        opts$specific[[fixed_section]] <- list()
       }
-      section_specifics[[fixed_section]]$fixed <- choose_one(TRUE, section_specifics[[fixed_section]]$fixed, .force)
+      opts$specific[[fixed_section]]$fixed <- choose_one(TRUE, opts$specific[[fixed_section]]$fixed, .force)
     }
-    .sections_data$set(specific = section_specifics)
   }
+  .sections_data$set(options = opts)
 }
 
 #' @rdname sections_options
@@ -334,38 +341,35 @@ sections_options <- function (render, order, fixed, next_button_label, .force = 
 #'
 #' @param section name of the section for which to set specific options.
 #' @param fix_order logical if the section should remain fixed in order.
-#' @param next_button_context bootstrap 3 contextual class applied to the button. Takes precedence over the global
-#'   specification in the [exam_document()] output format. See
+#' @param next_button_context bootstrap 3 contextual class applied to the button. See
 #'   <https://getbootstrap.com/docs/3.3/css/#buttons-options> for a list of available classes.
 #' @export
 section_specific_options <- function (section, next_button_label, next_button_context, fix_order) {
   section <- normalize_section_name(section)
-  section_specifics <- .sections_data$get('specific')
+  opts <- .sections_data$get('options')
 
-  if (is.null(section_specifics[[section]])) {
-    new_specs <- list(list(fixed = fix_order %||% NULL, next_button_label = next_button_label %||% NULL,
-                           next_button_context = next_button_context %||% NULL))
-    names(new_specs) <- section
-    .sections_data$append(specific = new_specs)
+  if (is.null(opts$specific[[section]])) {
+    new_specs <- list(fixed = fix_order %||% NULL, next_button_label = next_button_label %||% NULL,
+                      next_button_context = next_button_context %||% NULL)
+    opts$specific[[section]] <- new_specs
   } else {
-    section_specifics[[section]]$next_button_label <- next_button_label %||%
-      section_specifics[[section]]$next_button_label
-    section_specifics[[section]]$fixed <- fix_order %||% section_specifics[[section]]$fixed
-    section_specifics[[section]]$next_button_context <- next_button_context %||%
-      section_specifics[[section]]$next_button_context
-
-    .sections_data$set(specific = section_specifics)
+    opts$specific[[section]]$next_button_label <- next_button_label %||% opts$specific[[section]]$next_button_label
+    opts$specific[[section]]$fixed <- fix_order %||% opts$specific[[section]]$fixed
+    opts$specific[[section]]$next_button_context <- next_button_context %||%
+      opts$specific[[section]]$next_button_context
   }
+  .sections_data$set(options = opts)
 }
 
 ## Merge options from the document's metadata into the sections options.
 ## The current sections options takes precedence over the metadata
 sections_options_from_metadata <- function (metadata) {
   sections_options(render = null_as_missing(metadata$render),
+                   progressive = null_as_missing(metadata$progressive),
                    order = null_as_missing(metadata$order),
                    next_button_label = null_as_missing(metadata$next_button_label),
-                   fixed = null_as_missing(metadata$fixed),
-                   .force = FALSE)
+                   next_button_context = null_as_missing(metadata$next_button_context),
+                   fixed = null_as_missing(metadata$fixed))
 }
 
 #' @importFrom stringi stri_trim_both

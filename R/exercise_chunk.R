@@ -21,7 +21,6 @@ opts_hook_possible_exercise <- function (options, ...) {
     if (isTRUE(options$exercise.autocomplete %||% TRUE)) {
       shiny_prerendered_chunk(context = 'server', 'examinr:::bind_exercise_autocomplete()', singleton = TRUE)
     }
-
     # Collect the support chunks
     support_code <- list(setup = get_support_code(options$exercise.setup),
                          solution = get_support_code(options$exercise.solution))
@@ -76,11 +75,10 @@ extract_relevant_chunk_options <- function (options) {
 }
 
 #' @importFrom rlang abort
-#' @importFrom jsonlite toJSON
 #' @importFrom stringr str_detect str_remove
 #' @importFrom shiny NS
 #' @importFrom rmarkdown shiny_prerendered_chunk
-knit_hook_possible_exercise <- function (before, options, envir, ...) {
+knit_hook_exercise <- function (before, options, envir, ...) {
   if (!isTRUE(options[['exercise']])) {
     return(NULL)
   }
@@ -88,8 +86,8 @@ knit_hook_possible_exercise <- function (before, options, envir, ...) {
   if (before) {
     label <- get_chunk_label(options)
 
-    section_ns <- NS(opts_chunk$get('examinr.section_ns') %||% opts_chunk$get('examinr.section_id') %||%
-                       random_ui_id('unknown_section'))
+    section_ns <- NS(opts_chunk$get('examinr.section_ui_id') %||% opts_chunk$get('examinr.section_id') %||%
+                          random_ui_id('unknown_section'))
 
     points_str <- if (!is.null(options$exercise.points)) {
       if (options$exercise.points[[1L]] < 0) {
@@ -104,7 +102,7 @@ knit_hook_possible_exercise <- function (before, options, envir, ...) {
     names(status_messages) <- str_remove(names(status_messages), fixed('exercise.status_'))
 
     exercise_data <- list(label = label,
-                          section_ns = section_ns(NULL),
+                          section_ui_id = section_ns(NULL),
                           input_id = section_ns(label),
                           output_id = section_ns(paste(label, 'out', sep = '-')),
                           points = points_str,
@@ -119,7 +117,7 @@ knit_hook_possible_exercise <- function (before, options, envir, ...) {
                           autocomplete = options$exercise.autocomplete %||% TRUE)
 
     exercise_div <- sprintf('<div class="examinr-exercise"><script type="application/json">%s</script>',
-                            toJSON(exercise_data, force = TRUE, auto_unbox = TRUE, digits = NA, null = 'null'))
+                            to_json(exercise_data))
 
     shiny_prerendered_chunk('server', sprintf('examinr:::exercise_chunk_server("%s")', serialize_object(exercise_data)))
 
@@ -296,8 +294,7 @@ check_exercise_code <- function (input, exercise_data) {
 #' @importFrom shiny observeEvent observe invalidateLater isolate
 exercise_chunk_server <- function (exercise_data) {
   exercise_data <- unserialize_object(exercise_data)
-
-  moduleServer(exercise_data$section_ns, function (input, output, session) {
+  moduleServer(exercise_data$section_ui_id, function (input, output, session) {
     observeEvent(input[[exercise_data$label]], {
       input_data <- isolate(input[[exercise_data$label]])
       output_id <- paste(exercise_data$label, 'out', sep = '-')
@@ -350,7 +347,6 @@ prepare_exercise_runner <- function (input_data, exercise_data, session, timelim
 
   # Construct the expression which will turn the user code into a html result.
   expr <- quote(examinr::evaluate_exercise(code, support_code, options, rendering_env, label))
-
   .exam_data$get('exercise_evaluator')(expr = expr, envir = eval_exercise_env, timelimit = timelimit,
                                        label = exercise_data$label)
 }

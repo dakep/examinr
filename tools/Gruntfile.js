@@ -3,10 +3,43 @@ module.exports = function (grunt) {
   const fs = require('fs')
   const outputDir = '../inst/www'
   const inputDir = '../srcwww'
+  const concatDir = './tmp_concat'
   grunt.util.linefeed = '\n'
 
   const gruntConfig = {
     pkg: readPackageFile(),
+
+    clean: {
+      options: {
+        force: true
+      },
+      src: [
+        path.join(concatDir, 'exam.js'),
+        path.join(outputDir, 'exam.min.css'),
+        path.join(outputDir, 'exam.js'),
+        path.join(outputDir, 'exam.js.map'),
+        path.join(outputDir, 'exam.min.js'),
+        path.join(outputDir, 'exam.min.js.map')
+      ]
+    },
+
+    concat: {
+      options: {
+        sourceMap: true
+      },
+      examinr: {
+        src: [
+          path.join(inputDir, '_header.js'),
+          path.join(inputDir, 'shim.js'),
+          path.join(inputDir, 'exercises.js'),
+          path.join(inputDir, 'autocomplete.js'),
+          path.join(inputDir, 'sections.js'),
+          path.join(inputDir, '_footer.js')
+        ],
+        dest: path.join(concatDir, 'exam.js'),
+        nonull: true
+      }
+    },
 
     babel: {
       options: {
@@ -15,7 +48,7 @@ module.exports = function (grunt) {
         presets: ['@babel/preset-env']
       },
       examinr: {
-        src: path.join(inputDir, 'exam.js'),
+        src: path.join(concatDir, 'exam.js'),
         dest: path.join(outputDir, 'exam.js')
       }
     },
@@ -39,9 +72,7 @@ module.exports = function (grunt) {
             ' *! Original work (c) 2019 RStudio | License: Apache 2.0\n' +
             ' *! Modified work (c) 2020-<%= grunt.template.today("yyyy") %> David Kepplinger | ' +
             'License: <%= pkg.license %> */\n',
-          sourceMap: {
-            includeSources: true
-          }
+          sourceMap: { includeSources: true }
         },
         src: path.join(outputDir, 'exam.js'),
         dest: path.join(outputDir, 'exam.min.js')
@@ -50,11 +81,19 @@ module.exports = function (grunt) {
   }
 
   grunt.loadNpmTasks('grunt-babel')
+  grunt.loadNpmTasks('grunt-contrib-clean')
+  grunt.loadNpmTasks('grunt-contrib-concat')
   grunt.loadNpmTasks('grunt-contrib-uglify')
   grunt.loadNpmTasks('grunt-contrib-cssmin')
+
+  // Configure babel only *after* grunt-concat is done
+  grunt.task.registerTask('configureBabel', 'Configures babel options', function () {
+    gruntConfig.babel.options.inputSourceMap = grunt.file.readJSON(path.join(concatDir, 'exam.js.map'))
+  })
+
   grunt.initConfig(gruntConfig)
 
-  grunt.registerTask('default', ['babel', 'cssmin', 'uglify'])
+  grunt.registerTask('default', ['clean', 'concat', 'babel', 'cssmin', 'uglify'])
 
   function readPackageFile () {
     var pkg = grunt.file.readJSON('package.json')

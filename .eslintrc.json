@@ -14,7 +14,7 @@
       "Shiny": "readonly",
       "ace": "readonly"
     },
-    "ignorePatterns": ["inst/www/*.js"],
+    "ignorePatterns": ["inst/www/*.js", "**/_*.js"],
     "rules": {
       "no-global-assign": ["error"],
       "standard/no-callback-literal": "warn"

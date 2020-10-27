@@ -197,9 +197,8 @@ answer <- function (label, correct = FALSE, always_show = FALSE) {
 #' @importFrom htmltools div HTML tags
 #' @importFrom rlang abort
 knit_print.examinr_question <- function (x, ...) {
-  section_ns <- NS(opts_chunk$get('examinr.section_ns') %||% opts_chunk$get('examinr.section_id') %||%
-                     random_ui_id('unknown_section'))
-
+  x$section_id <- opts_chunk$get('examinr.section_id') %||% random_ui_id('unknown_section')
+  section_ns <- NS(opts_chunk$get('examinr.section_ui_id') %||% x$section_id)
   private_ns <- NS(section_ns(x$label))
 
   .exam_data$append(implied_static_chunks = x$label)
@@ -214,8 +213,8 @@ knit_print.examinr_question <- function (x, ...) {
     x$title_container(x$title, tags$span(class = paste('label', x$label_class), x$points_str), trigger_mathjax(),
                       class = 'panel-title')
   } else {
-    shiny_prerendered_chunk('server', code = sprintf(
-      'examinr:::render_question_title("%s", ns_str = "%s")', serialize_object(x), private_ns(NULL)))
+    shiny_prerendered_chunk('server', code = sprintf('examinr:::render_question_title("%s", "%s")',
+                                                     serialize_object(x), private_ns(NULL)))
 
     htmlOutput(private_ns('title'), container = x$title_container, class = 'panel-title')
   }
@@ -229,20 +228,18 @@ knit_print.examinr_question <- function (x, ...) {
 
 #' @importFrom shiny moduleServer renderUI
 #' @importFrom htmltools tagList tags
-render_question_title <- function (question, ns_str) {
+#' @importFrom withr with_options
+render_question_title <- function (question, ns_str, section_id) {
   question <- unserialize_object(question)
   moduleServer(ns_str, function (input, output, session) {
-    data_env <- get_rendering_env(session)
+    observe_section_change(question$section_id, {
+      output$title <- renderUI({
+        rendering_env <- get_rendering_env(session)
+        title_html <- with_options(list(digits = question$digits),
+                                   render_markdown_as_html(question$title, use_rmarkdown = FALSE, env = rendering_env))
 
-    output$title <- renderUI({
-      opts <- options(digits = question$digits)
-      ui <- trigger_mathjax(
-        render_markdown_as_html(question$title, use_rmarkdown = FALSE, env = data_env),
-        tags$span(class = paste('label', question$label_class), question$points_str))
-
-      options(opts)
-
-      ui
+        trigger_mathjax(title_html, tags$span(class = paste('label', question$label_class), question$points_str))
+      })
     })
   })
 }
@@ -292,6 +289,12 @@ render_question_body.mcquestion <- function (question, ns, ...) {
     radioButtons(ns(question$label), label = question$input_label, choices = c('N/A' = 'N/A'), selected = '')
   }
 
+  # Split the answer options into 'sample' (those to sample from) and 'always' (those to always show)
+  question$answers <- lapply(question$answers, function (ans) {
+    split(ans, factor(vapply(ans, `[[`, 'always_show', FUN.VALUE = logical(1L), USE.NAMES = FALSE),
+                      levels = c(FALSE, TRUE), labels = c('sample', 'always')))
+  })
+
   shiny_prerendered_chunk('server', sprintf('examinr:::render_mcquestion_server("%s", "%s")',
                                             serialize_object(question), ns(NULL)))
 
@@ -299,71 +302,75 @@ render_question_body.mcquestion <- function (question, ns, ...) {
 }
 
 #' @importFrom shiny moduleServer updateCheckboxGroupInput updateRadioButtons
+#' @importFrom withr with_seed
 render_mcquestion_server <- function (question, ns) {
   question <- unserialize_object(question)
   moduleServer(ns, function (input, output, session) {
-    opts <- options(digits = question$digits)
+    with_seed(get_current_user()$seed, {
+      # How many "correct" answer options to display
+      nr_sample_correct <- if (isTRUE(question$mc) && length(question$nr_answers) == 1L) {
+        max_sample <- min(length(question$answers$correct$sample), question$nr_answers - sum(question$nr_always_show))
+        if (max_sample > 0L) {
+          sample.int(max_sample, 1L)
+        } else {
+          0L
+        }
+      } else if (!isTRUE(question$mc)) {
+        1L
+      } else {
+        question$nr_answers[['correct']] - question$nr_always_show[['correct']]
+      }
 
-    answers <- lapply(question$answers, function (ans) {
-      split(ans, factor(vapply(ans, `[[`, 'always_show', FUN.VALUE = logical(1L), USE.NAMES = FALSE),
-                        levels = c(FALSE, TRUE), labels = c('sample', 'always')))
+      # How many "incorrect" answer options to display
+      nr_sample_incorrect <- if (length(question$nr_answers) == 1L) {
+        max_sample <- min(length(question$answers$incorrect$sample),
+                          question$nr_answers - nr_sample_correct - sum(question$nr_always_show))
+        if (max_sample > 0L) {
+          sample.int(max_sample, 1L)
+        } else {
+          0L
+        }
+      } else {
+        question$nr_answers[['incorrect']] - question$nr_always_show[['incorrect']]
+      }
+
+      # Randomly select the answers to display
+      shown_answers <- with(question$answers,
+                            c(sample(correct$sample, nr_sample_correct),
+                              sample(incorrect$sample, nr_sample_incorrect),
+                              correct$always, incorrect$always))
+
+      # Extract the values and render the labels for the displayed answer options.
+      rendering_env <- get_rendering_env()
+      values <- vapply(shown_answers, `[[`, 'value', FUN.VALUE = character(1L), USE.NAMES = FALSE)
+      labels <- with_options(list(digits = question$digits), {
+        lapply(shown_answers, function (answer) {
+          trigger_mathjax(render_markdown_as_html(answer$label, use_rmarkdown = FALSE, env = rendering_env))
+        })
+      })
+
+      # Determine the order of the shown answer options
+      answer_order <- if (question$random_answer_order) {
+        sample.int(length(shown_answers))
+      } else {
+        order(values)
+      }
+
+      values <- values[answer_order]
+      labels <- labels[answer_order]
     })
 
-    nr_sample_correct <- if (isTRUE(question$mc) && length(question$nr_answers) == 1L) {
-      max_sample <- min(length(answers$correct$sample), question$nr_answers - sum(question$nr_always_show))
-      if (max_sample > 0L) {
-        sample.int(max_sample, 1L)
-      } else {
-        0L
-      }
-    } else if (!isTRUE(question$mc)) {
-      1L
-    } else {
-      question$nr_answers[['correct']] - question$nr_always_show[['correct']]
-    }
-
-    nr_sample_incorrect <- if (length(question$nr_answers) == 1L) {
-      max_sample <- min(length(answers$incorrect$sample),
-                        question$nr_answers - nr_sample_correct - sum(question$nr_always_show))
-      if (max_sample > 0L) {
-        sample.int(max_sample, 1L)
-      } else {
-        0L
-      }
-    } else {
-      question$nr_answers[['incorrect']] - question$nr_always_show[['incorrect']]
-    }
-
-
-    rendering_env <- get_rendering_env()
-    set.seed(get_current_user()$seed)
-    shown_answers <- c(sample(answers$correct$sample, nr_sample_correct),
-                       sample(answers$incorrect$sample, nr_sample_incorrect),
-                       answers$correct$always, answers$incorrect$always)
-
-    values <- vapply(shown_answers, `[[`, 'value', FUN.VALUE = character(1L), USE.NAMES = FALSE)
-    labels <- lapply(shown_answers, function (answer) {
-      trigger_mathjax(render_markdown_as_html(answer$label, use_rmarkdown = FALSE, env = rendering_env))
-    })
-
-    ans_order <- if (question$random_answer_order) {
-      sample.int(length(values))
-    } else {
-      order(values)
-    }
-    values <- values[ans_order]
-    labels <- labels[ans_order]
-
+    # Send the answer options to the client
     latest_valid_input <- 'N/A'
 
     if (isTRUE(question$mc)) {
-      updateCheckboxGroupInput(session, inputId = question$label, selected = latest_valid_input,
-                               choiceValues = values, choiceNames = labels)
+      observe_section_change(question$section_id,
+                             updateCheckboxGroupInput(session, inputId = question$label, selected = latest_valid_input,
+                                 choiceValues = values, choiceNames = labels))
     } else {
-      updateRadioButtons(session, inputId = question$label, selected = latest_valid_input,
-                         choiceValues = values, choiceNames = labels)
+      observe_section_change(question$section_id,
+                             updateRadioButtons(session, inputId = question$label, selected = latest_valid_input,
+                                                choiceValues = values, choiceNames = labels))
     }
-
-    options(opts)
   })
 }

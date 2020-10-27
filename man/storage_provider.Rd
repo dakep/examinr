@@ -4,12 +4,12 @@
 \alias{storage_provider}
 \title{Storage Providers}
 \value{
-a list of callback functions:
+a list of callback functions (with additional arguments):
 \itemize{
-\item \code{save_section_data(section_data, ...)}: Save the given section data.
+\item \code{save_section_data(section_data)}: Save the given section data.
 The section data is an R list with with arbitrary elements. Should return \code{TRUE} if the data is saved
 successfully or \code{FALSE} in case of an error.
-\item \code{get_section_data(...)}: Return the most recent section data for the given user.
+\item \code{get_section_data()}: Return the most recent section data for the given user.
 The returned object must be in the same format as the section data provided to \code{save_section_data()}.
 In case of an error, should return \code{NULL}.
 }
@@ -28,6 +28,7 @@ All callback functions must accept the following arguments:
 \item \code{user} the user object (as returned from the configured \link[=authentication_provider]{authentication provider}).
 \item \code{exam_id} the exam id as given in the Rmd file.
 \item \code{exam_version} the exam version string as given in the Rmd file.
+\item \code{section} the section identifier string.
 \item \code{...} for future extensions.
 }
 

@@ -5,20 +5,28 @@
 \title{Exam Output Format}
 \usage{
 exam_document(
+  id = "exam",
+  version = "0.1",
   use_cdn = FALSE,
+  sections = list(),
   question_context = "default",
   points_context = "info",
   exercise_button_context = points_context,
-  next_button_context = "primary",
   ...
 )
 }
 \arguments{
+\item{id}{the exam id string}
+
+\item{version}{the exam version string}
+
 \item{use_cdn}{load javascript libraries from external content delivery networks (CDNs).
 Use this if the shiny server is slow at serving static resources, but beware of the downsides of
 relying on content from a third-party!}
 
-\item{question_context, points_context, exercise_button_context, next_button_context}{contextual style classes for
+\item{sections}{section configuration, see \code{\link[=sections_options]{sections_options()}} for details.}
+
+\item{question_context, points_context, exercise_button_context}{contextual style classes for
 question panels, points labels, exercise buttons, and section navigation buttons.
 Can be \code{default} or any of the bootstrap 3 contextual classes listed at
 \url{https://getbootstrap.com/docs/3.3/css/#helper-classes-colors}.

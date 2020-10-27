@@ -196,6 +196,11 @@ get_session_env <- function (session) {
   get('__.examinr_session_env.__', envir = session$userData, mode = 'environment', inherits = FALSE)
 }
 
+#' @importFrom jsonlite toJSON
+to_json <- function (object) {
+  toJSON(object, force = TRUE, auto_unbox = TRUE, digits = NA, null = 'null')
+}
+
 ## Add a prefix (if it is not yet present)
 #' @importFrom stringr str_detect fixed
 add_prefix <- function (prefix, text) {
@@ -204,4 +209,13 @@ add_prefix <- function (prefix, text) {
     text[need_prefix] <- paste(prefix, text[need_prefix], sep = '')
   }
   return(text)
+}
+
+#' @importFrom shiny getDefaultReactiveDomain
+global_shiny_session <- function (session = getDefaultReactiveDomain()) {
+  if (inherits(session, 'session_proxy')) {
+    session <- .subset2(session, 'parent')
+    global_shiny_session(session)
+  }
+  return(session)
 }
