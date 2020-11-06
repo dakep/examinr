@@ -160,12 +160,8 @@ get_chunk_label <- function (options, required = TRUE) {
     options$label
   }
 
-  if (is.null(label) || str_starts(label, fixed(default_label))) {
-    if (required) {
-      abort("Exercise and question chunks must have a label.")
-    } else {
-      warn("Exercise and question chunks must have a label.")
-    }
+  if (required && (is.null(label) || str_starts(label, fixed(default_label)))) {
+    abort("Exercise and question chunks must have a label.")
   }
   return(label)
 }
@@ -218,4 +214,34 @@ global_shiny_session <- function (session = getDefaultReactiveDomain()) {
     global_shiny_session(session)
   }
   return(session)
+}
+
+#' @importFrom shiny getDefaultReactiveDomain
+send_message <- function(type, message, session) {
+  if (is_missing(session)) {
+    session <- getDefaultReactiveDomain()
+  }
+  session$sendCustomMessage(paste('__.examinr.__', type, sep = '-'), message)
+}
+
+#' @importFrom shiny observe
+send_status_message <- function (msg_id, type = c('error', 'locked', 'warning', 'info'),
+                                 action = c('close', 'trigger', 'reload', 'none'), session, message,
+                                 trigger_id = NULL, trigger_event = NULL, trigger_delay = NULL) {
+  msg_obj <- list(
+    type = match.arg(type),
+    content = message %||% get_status_message(msg_id),
+    action = match.arg(action),
+    triggerId = trigger_id,
+    triggerDelay = trigger_delay * 1000,
+    triggerEvent = trigger_event
+  )
+  observe(send_message('statusMessage', msg_obj, session))
+}
+
+## Check if the current chunk is in the given context.
+## If knitr is not in progress, always returns `TRUE`.
+is_knitr_context <- function (context) {
+  return (!isTRUE(getOption('knitr.in.progress')) || isTRUE(opts_current$get('context') == context) ||
+            isTRUE(opts_current$get('label') == context))
 }

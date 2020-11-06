@@ -1,6 +1,8 @@
 module.exports = function (grunt) {
   const path = require('path')
   const fs = require('fs')
+  const sass = require('sass')
+
   const outputDir = '../inst/www'
   const inputDir = '../srcwww'
   const concatDir = './tmp_concat'
@@ -31,6 +33,8 @@ module.exports = function (grunt) {
         src: [
           path.join(inputDir, '_header.js'),
           path.join(inputDir, 'shim.js'),
+          path.join(inputDir, 'status.js'),
+          path.join(inputDir, 'questions.js'),
           path.join(inputDir, 'exercises.js'),
           path.join(inputDir, 'autocomplete.js'),
           path.join(inputDir, 'sections.js'),
@@ -53,13 +57,14 @@ module.exports = function (grunt) {
       }
     },
 
-    cssmin: {
+    sass: {
       options: {
-        mergeIntoShorthands: false,
-        roundingPrecision: -1
+        implementation: sass,
+        outputStyle: 'compressed',
+        sourceMap: false
       },
       examinr: {
-        src: path.join(inputDir, 'exam.css'),
+        src: path.join(inputDir, 'exam.scss'),
         dest: path.join(outputDir, 'exam.min.css')
       }
     },
@@ -84,7 +89,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean')
   grunt.loadNpmTasks('grunt-contrib-concat')
   grunt.loadNpmTasks('grunt-contrib-uglify')
-  grunt.loadNpmTasks('grunt-contrib-cssmin')
+  grunt.loadNpmTasks('grunt-sass')
 
   // Configure babel only *after* grunt-concat is done
   grunt.task.registerTask('configureBabel', 'Configures babel options', function () {
@@ -93,7 +98,7 @@ module.exports = function (grunt) {
 
   grunt.initConfig(gruntConfig)
 
-  grunt.registerTask('default', ['clean', 'concat', 'babel', 'cssmin', 'uglify'])
+  grunt.registerTask('default', ['clean', 'concat', 'babel', 'sass', 'uglify'])
 
   function readPackageFile () {
     var pkg = grunt.file.readJSON('package.json')

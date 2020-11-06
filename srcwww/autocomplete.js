@@ -47,7 +47,7 @@ exports.autocomplete = (function () {
   // this message handler is called when new autocomplete results are available.
   Shiny.addCustomMessageHandler('__.examinr.__-autocomplete', function (suggestions) {
     const completions = suggestions.map(function (item) {
-      // Items are an array of the form [namespace (str), symbol (str), is_function (bool)]
+      // Items are an array of the form [namespace (str), symbol (str), isFunction (bool)]
       if (!item || !item[1]) {
         return null
       }
@@ -166,12 +166,8 @@ exports.autocomplete = (function () {
     }
   }
 
-  function initializeAutocomplete () {
+  $(function () {
     $('.examinr-exercise').each(initializeExerciseAutocomplete)
-  }
-
-  $(document).ready(function () {
-    initializeAutocomplete()
   })
 
   return {}

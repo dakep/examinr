@@ -38,10 +38,14 @@ exports.sections = (function () {
       } else {
         finishedRecalculating()
       }
+      exports.status.resetMessages()
+      if (section.current.order) {
+        exports.status.updateProgress(section.current.order)
+      }
     }
   })
 
-  function initializeSectionedExam () {
+  $(function () {
     const sectionsOptionsEl = $('#examinr-sections-options')
     if (sectionsOptionsEl.length > 0) {
       sectionsOptions = JSON.parse(sectionsOptionsEl.text())
@@ -54,14 +58,11 @@ exports.sections = (function () {
     } else {
       // progressive exams
       $('section.level1').hide()
-      exports.shim.toggle($('body'), true)
       $('.examinr-section-next').click(function () {
         exports.shim.toggle($('body'), true)
       })
     }
-  }
-
-  $(document).ready(function () {
-    initializeSectionedExam()
   })
+
+  return {}
 }())

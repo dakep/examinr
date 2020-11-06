@@ -54,14 +54,18 @@ exports.exercises = (function () {
         code += '\n'.repeat(lines - codeLines)
       }
 
-      const editorId = exerciseOptions.input_id + '-editor'
-      const pointsLabel = exerciseOptions.points ? '<span class="label ' + (exerciseOptions.label_class || '') + '">' +
+      const editorId = exerciseOptions.inputId + '-editor'
+      const pointsLabel = exerciseOptions.points ? '<span class="label ' + (exerciseOptions.labelClass || '') + '">' +
         exerciseOptions.points + '</span>' : ''
 
+      const messageStrings = exports.status.getMessage('exercise') || {}
+
       exercise.append(
-        '<div class="panel ' + (exerciseOptions.panel_class || '') + '">' +
+        '<div class="panel ' + (exerciseOptions.panelClass || '') + '">' +
           '<div class="panel-heading">' +
-            '<button type="button" class="btn ' + (exerciseOptions.button_class || '') + ' btn-xs examinr-run-button pull-right"><span class="glyphicon glyphicon-play"></span>' + (exerciseOptions.button || '') + '</button>' +
+            '<button type="button" class="btn ' + (exerciseOptions.buttonClass || '') + ' btn-xs examinr-run-button pull-right">' +
+              '<span class="glyphicon glyphicon-play"></span>' + exerciseOptions.buttonLabel +
+            '</button>' +
             '<h5 class="panel-title">' + (exerciseOptions.title || '') + pointsLabel + '</h5>' +
           '</div>' +
           '<div class="panel-body">' +
@@ -69,12 +73,12 @@ exports.exercises = (function () {
           '</div>' +
           '<div class="panel-footer">' +
             '<div class="small alert alert-warning examinr-exercise-status">' +
-              (exerciseOptions.status_messages.notrun || '') +
+              messageStrings.notYetRun +
             '</div>' +
           '</div>' +
         '</div><div class="examinr-exercise-output well"></div>')
 
-      if (!exerciseOptions.status_messages.notrun) {
+      if (!messageStrings.notYetRun) {
         exercise.find('.examinr-exercise-status').hide()
       }
       exercise.find('.examinr-exercise-output').hide()
@@ -130,7 +134,7 @@ exports.exercises = (function () {
         return $(scope).find('.examinr-exercise')
       },
       getId: function (exercise) {
-        return $(exercise).data('options').input_id
+        return $(exercise).data('options').inputId
       },
       subscribe: function (exercise, callback) {
         exercise = $(exercise)
@@ -153,7 +157,6 @@ exports.exercises = (function () {
         exercise.data('sendData', false)
         return {
           label: exercise.data('options').label,
-          output_id: exercise.data('options').output_id,
           code: exercise.data('editor').getSession().getValue(),
           timestamp: new Date().getTime()
         }
@@ -170,7 +173,7 @@ exports.exercises = (function () {
         return $(scope).find('.examinr-exercise')
       },
       getId: function (exercise) {
-        return $(exercise).data('options').output_id
+        return $(exercise).data('options').outputId
       },
       renderValue: function (exercise, data) {
         exercise = $(exercise)
@@ -208,7 +211,7 @@ exports.exercises = (function () {
     Shiny.outputBindings.register(outputBindings, 'examinr.exerciseOutputBinding')
   }
 
-  $(document).ready(function () {
+  $(function () {
     initializeExerciseEditors()
     initializeEditorBindings()
   })

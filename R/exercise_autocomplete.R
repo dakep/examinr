@@ -4,8 +4,9 @@
 #' @importFrom withr local_dir local_tempdir
 prepare_exercise_autocomplete <- function (exercise_label, support_code) {
   # Reproduce all code before the user code
+  support_code <- unserialize_object(support_code)
   # 1. Generate the exercise data
-  exercise_env <- get_exercise_user_env(exercise_label, user = autocompletion_user())
+  exercise_env <- get_exercise_user_env(exercise_label, attempt = NULL)
   parent.env(exercise_env) <- globalenv()
 
   # 2. Run the setup code (if necessary)
@@ -93,7 +94,7 @@ bind_exercise_autocomplete <- function () {
       }
 
       if (length(completions) > 0L) {
-        session$sendCustomMessage('__.examinr.__-autocomplete', completions)
+        send_message('autocomplete', completions, session)
       }
     })
   })

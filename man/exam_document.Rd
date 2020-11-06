@@ -8,37 +8,69 @@ exam_document(
   id = "exam",
   version = "0.1",
   use_cdn = FALSE,
-  sections = list(),
+  render = c("server", "static"),
+  progressive = FALSE,
+  order = c("random", "fixed"),
+  max_attempts = Inf,
+  timelimit = Inf,
+  opens = NA,
+  closes = NA,
+  grace_period = 120,
+  next_button_context = "primary",
   question_context = "default",
   points_context = "info",
-  exercise_button_context = points_context,
+  exercise_button_context = "primary",
   ...
 )
 }
 \arguments{
-\item{id}{the exam id string}
+\item{id}{the exam id string. To ensure compatibility with most \link[=storage_provider]{storage providers},
+should be a short yet unique identifier with only alphanumeric characters and \verb{-_.}.}
 
-\item{version}{the exam version string}
+\item{version}{the exam version string. Must only contain numbers and the \code{.} character, e.g., \code{1}, \code{0.5}, \verb{2.3.4},
+etc.}
 
 \item{use_cdn}{load javascript libraries from external content delivery networks (CDNs).
 Use this if the shiny server is slow at serving static resources, but beware of the downsides of
 relying on content from a third-party!}
 
-\item{sections}{section configuration, see \code{\link[=sections_options]{sections_options()}} for details.}
+\item{render}{render section content on the server (\code{"server"}) or statically when rendering the document
+(\code{"static"}). If rendered on the server, the section content will only be sent to the user's browser
+when the section is displayed. This ensures users do not see the section content before they are supposed to.}
 
-\item{question_context, points_context, exercise_button_context}{contextual style classes for
+\item{progressive}{are sections displayed one after another or all at once? If all sections are displayed at
+once, only the last section button is shown.}
+
+\item{order}{if \code{progressive=TRUE}, the order in which sections will be shown. Can be either \emph{random}, in which
+case the order is randomized using the seed from the attempt, or \emph{fixed}, in which case the order in the exam
+document is kept.}
+
+\item{max_attempts}{maximum number of attempts allowed. This can be overridden for individual users by
+\code{\link[=configure_attemptss]{configure_attemptss()}}. Can also be \code{Inf} to allow for unlimited number of attempts (the default).}
+
+\item{timelimit}{the time limit for a single attempt either as a single number in minutes or as \emph{HH:MM}.
+This can be overridden for individual users with \code{\link[=configure_attempts]{configure_attempts()}}.
+Can also be \code{Inf} to give users unlimited time (the default).}
+
+\item{opens, closes}{the opening and closing time for the exam, in the format \emph{YYYY-MM-DD HH:MM Timezone}
+(e.g., \verb{2020-10-15 19:15 Europe/Vienna} for October 15th, 2020 at 19:15 in Vienna, Austria).
+The exam is only accessible within this time frame.
+This can be overridden for individual users with \code{\link[=configure_attempts]{configure_attempts()}}.
+Can also be \code{NA} to either make the exam available immediately, indefinitely, or both (the default).}
+
+\item{grace_period}{number of seconds of "grace" period given to users before an active attempt is disabled.
+This can be overridden for individual users with \code{\link[=configure_attempts]{configure_attempts()}}.}
+
+\item{question_context, points_context, exercise_button_context, next_button_context}{contextual style classes for
 question panels, points labels, exercise buttons, and section navigation buttons.
 Can be \code{default} or any of the bootstrap 3 contextual classes listed at
 \url{https://getbootstrap.com/docs/3.3/css/#helper-classes-colors}.
 These can also be set on a per-question or per-exercise level by specifying code chunk options
 \code{exam.question_context}, \code{exam.points_context} and \code{exercise.button_context}.
-A section-specific button context can be set via \code{\link[=section_specific_options]{section_specific_options()}}.}
+A section-specific button context can be set via \code{\link[=section_config]{section_config()}}.}
 
 \item{...}{passed on to \link[rmarkdown:html_document]{html_document()}. Parameters \code{section_divs} and \code{toc} are not
-supported.
-
-These status messages can also be overwritten by setting the exercise chunk options \code{exercise.status_xyz}, where
-\code{xyz} is one of the status message types listed above.}
+supported.}
 }
 \description{
 Exam Output Format

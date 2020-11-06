@@ -1,0 +1,87 @@
+progress:
+  # The progress is displayed at the top of the exam page (unless disabled).
+  # The {sections} part is only displayed for exams with progressive sections.
+  # The {timer} part is only displayed for exams with a time limit.
+  # If the exam has both progressive sections and a time limit, the two parts are combined according to `combined`.
+  section: "Section {section_nr} of {total_sections}"
+  timer: "{time_left} remaining"
+  combined: "{section} ({timer})"
+
+sections:
+  # The default label for submitting the exam (or individual sections if the exam is progressive)
+  nextButtonLabel: "Submit answers"
+
+attemptTimeout:
+  # This error is displayed once the attempt time limit has been reached.
+  # The user will not be able to interact with the exam anymore.
+  title: "Time is up"
+  body: >
+    The alloted time for the exam is over.
+    <strong>Your answers up to now have been recorded.</strong>
+
+examClosed:
+  # This error is displayed when the exam is not yet open.
+  # The user cannot interact with the exam in any way.
+  # The placeholder {opens} will be replaced with the date & time the exam opens (in the user's preferred locale).
+  title: "Exam unavailable"
+  body: >
+    The exam is not yet open. It will open on <strong>{opens}</strong>.
+
+examExpired:
+  # This error is displayed when the exam is already closed.
+  # The user cannot interact with the exam in any way.
+  title: "Exam unavailable"
+  body: >
+    The exam is not available anymore.
+
+noMoreAttempts:
+  # This error is displayed when the user has no attempts left.
+  # The user cannot interact with the exam in any way.
+  title: "No attempts left"
+  body: >
+    You have used all attempts for this exam.
+
+startError:
+  # This error is displayed if the attempt cannot be started due to technical problems.
+  # The user can reload the page by clicking on the button with the configured label.
+  title: "Cannot start attempt"
+  body: >
+    Your attempt cannot be started due to technical difficulties.
+    <strong>Reload the page by clicking the button below.</strong><br />
+    If the problem persists contact the instructor.
+  button: "Reload"
+
+storageError:
+  # This error is displayed if the user's data cannot be stored due to a technical problem.
+  # The user can retry by clicking on the button with the configured label.
+  title: "Cannot save data"
+  body: >
+    The exam data cannot be saved due to technical difficulties.
+    <strong>Retry by clicking the button below.</strong><br />
+    If the problem persists contact the instructor.
+  button: "Retry"
+
+authenticationError:
+  # This error is displayed if the user cannot be authenticated due to a technical problem (NOT because the user is
+  # unknown).
+  # The user can reload the page by clicking on the button with the configured label.
+  title: "Authentication error"
+  body: >
+    You cannot be authenticated due to technical difficulties.
+    <strong>Reload the page by clicking the button below.</strong><br />
+    If the problem persists contact the instructor.
+  button: "Reload"
+
+exercise:
+  # The button label determines the default label for the "Run code" button. This can also be overridden for each
+  # exercise by specifying the `exercise.button` chunk option
+  buttonLabel: "Run code"
+  panelTitle: "Coding question"
+  # The following messages pertain to individual exercise chunks.
+  # If a message should be disabled, it can be left blank
+  notYetRun: "Run the code by clicking the button in the top right corner of the exercise."
+  syntaxError: "Code is invalid: <pre><code>{diagnostics}</code></pre>"
+  unknownError: "Code cannot be run."
+  emptyResult: "Code executed successfully, but no output generated."
+  timeout: "Code takes too long to execute."
+  success: "Code executed successfully."

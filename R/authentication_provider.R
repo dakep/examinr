@@ -1,39 +1,31 @@
 #' Authentication Providers
 #'
-#' Exams are tied to a single _user_.
-#' Each user can get a unique randomization of the exam and all answers are tied to the user.
-#' The exam format does not determine the user, but invokes the authentication provider configured with `setup_exam()`
-#' to determine the user's identification.
+#' Every exam attempt is tied to a single _user_.
+#' Each attempt can get a different randomization of the exam and all attempts are tied to a user.
+#' The exam document format does not determine the user, but invokes the authentication provider configured with
+#' [exam_config()] to determine the user's identification.
 #'
 #' @param shiny_session the shiny session object.
-#' @return a list with user information. The list must contain the following elements:
+#' @return a list with user information. The list **must** contain an element `user_id` with the user's unique
+#' identifier as character (it will be forcefully cast to `character`).
+#' The user information list can optionally include any number of additional objects, which will be stored alongside
+#' the exam data.
+#' **Warning:** this could pose serious privacy issues. Either not add additional information or ensure the data is
+#' stored encrypted and secure.
 #'
-#'   - `user_id` ... the user's id.
-#'   - `seed` ... the seed for the random number generator.
+#' Any additional information will be proxied to all callback functions receiving a `user` object.
 #'
-#'   Any additional information will be proxied to all callback functions receiving a `user` object.
 #'
 #' @name authentication_provider
 NULL
 
-#' @describeIn authentication_provider use the rstudio-connect user.
-#' @importFrom digest digest2int
-#' @importFrom rlang warn
+#' @describeIn authentication_provider use the name of the user authenticated with RStudio Connect as user id.
+#' @importFrom rlang abort
 #' @export
 rsconnect_authentication_provider <- function (shiny_session) {
   user_id <- shiny_session$user
   if (is.null(user_id)) {
-    abort("Cannot detect rstudio-connect user. Falling back to dummy authentication provider.")
+    abort("Cannot detect rstudio-connect user.")
   }
-  return(list(user_id = user_id, seed = digest2int(user_id)))
-}
-
-#' @describeIn authentication_provider check if the given user is the dummy _auto-completion_ user.
-#' @export
-is_autocompletion_user <- function (user) {
-  return(isTRUE(attr(user, 'autocompletion', exact = TRUE)))
-}
-
-autocompletion_user <- function () {
-  return(structure(list(user_id = 'Auto-completion User', seed = 0L), autocompletion = TRUE))
+  return(list(user_id = user_id))
 }

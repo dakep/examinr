@@ -3,35 +3,31 @@
 \name{authentication_provider}
 \alias{authentication_provider}
 \alias{rsconnect_authentication_provider}
-\alias{is_autocompletion_user}
 \title{Authentication Providers}
 \usage{
 rsconnect_authentication_provider(shiny_session)
-
-is_autocompletion_user(user)
 }
 \arguments{
 \item{shiny_session}{the shiny session object.}
 }
 \value{
-a list with user information. The list must contain the following elements:
-\itemize{
-\item \code{user_id} ... the user's id.
-\item \code{seed} ... the seed for the random number generator.
-}
+a list with user information. The list \strong{must} contain an element \code{user_id} with the user's unique
+identifier as character (it will be forcefully cast to \code{character}).
+The user information list can optionally include any number of additional objects, which will be stored alongside
+the exam data.
+\strong{Warning:} this could pose serious privacy issues. Either not add additional information or ensure the data is
+stored encrypted and secure.
 
 Any additional information will be proxied to all callback functions receiving a \code{user} object.
 }
 \description{
-Exams are tied to a single \emph{user}.
-Each user can get a unique randomization of the exam and all answers are tied to the user.
-The exam format does not determine the user, but invokes the authentication provider configured with \code{setup_exam()}
-to determine the user's identification.
+Every exam attempt is tied to a single \emph{user}.
+Each attempt can get a different randomization of the exam and all attempts are tied to a user.
+The exam document format does not determine the user, but invokes the authentication provider configured with
+\code{\link[=exam_config]{exam_config()}} to determine the user's identification.
 }
 \section{Functions}{
 \itemize{
-\item \code{rsconnect_authentication_provider}: use the rstudio-connect user.
-
-\item \code{is_autocompletion_user}: check if the given user is the dummy \emph{auto-completion} user.
+\item \code{rsconnect_authentication_provider}: use the name of the user authenticated with RStudio Connect as user id.
 }}
 

@@ -25,9 +25,8 @@ Easily create exams in R by writing Rmarkdown files as interactive shiny documen
 
 ## TODO
 
-- save and restore section data
-- timer / progress
-  * show timer and progress on top
+- add "retry" button if the section data cannot be saved
+- add aria- attributes to questions and exercises.
 - "visual" authentication provider, i.e., one with a login UI
 - grading
   * _live_ grading of answers at the end of the exam
@@ -39,4 +38,4 @@ Easily create exams in R by writing Rmarkdown files as interactive shiny documen
 - Every R code chunk which should **not** be evaluated in the user's session, must have option `exam.static = TRUE` set.
   This option cannot be set globally for all code chunks.
 - Exercise code chunks are defined via chunk option `exercise=TRUE` and support all options listed in [exercise_options()].
-
+- Clicking on the *last visible* "next section button" will mark an attempt as finished.

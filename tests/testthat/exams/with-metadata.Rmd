@@ -4,11 +4,7 @@ output: examinr::exam_document
 exam:
   id: myexam
   version: 0.1.0
-  sections:
-    render: client
-    order: fixed
-    fixed:
-     - "Introduction"
-     - "Final comments"
+  render: server
+  order: fixed
 runtime: shiny_prerendered
 ---

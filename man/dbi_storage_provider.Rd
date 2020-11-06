@@ -4,18 +4,26 @@
 \alias{dbi_storage_provider}
 \title{DBI-Backed Exam Storage}
 \usage{
-dbi_storage_provider(conn, table_name, hash_user = FALSE, hash_key = TRUE)
+dbi_storage_provider(
+  conn,
+  attempts_table,
+  section_data_table,
+  hash_user = FALSE,
+  hash_key = TRUE
+)
 }
 \arguments{
 \item{conn}{a \link[DBI:DBIConnection-class]{DBIConnection} object, as returned by \link[DBI:dbConnect]{dbConnect()}}
 
-\item{table_name}{the name of the table to store the exam data in.}
+\item{attempts_table}{the name of the table to store the attempts data in.}
+
+\item{section_data_table}{the name of the table to store the section data in.}
 
 \item{hash_user}{store the user id as a SHA256 HMAC to protect the identity.}
 
 \item{hash_key}{if \code{hash_user=TRUE}, the pre-shared secret key. If \code{TRUE} (the default), uses the concatenated
 \emph{exam_id} and \emph{exam_version}. If \code{NULL}, uses no HMAC but a plain SHA256 hash of the user id
-(\strong{strongly discouraged}). Anything else is cast to \link[base:character]{character} string
+(\strong{strongly discouraged}). Anything else is cast to \link[base:character]{character}
 (or kept as \link[base:raw]{raw} vector) and used as key.}
 }
 \description{
@@ -25,25 +33,53 @@ To avoid potential privacy issues, the DBI storage provider supports hashing the
 external identification of users for grading.
 }
 \details{
-Exam data is stored in a table which requires the following columns:
-\itemize{
-\item \code{user_id} stored as character data. The required length depends on the authentication provider and if hashing is
-used.
-\item \code{exam_id} stored as character data. Ensure it can hold enough characters for the exam ids used in your exams.
-\item \code{exam_version} stored as character data. Ensure it can hold enough characters for the exam version strings
-used in your exams.
-\item \code{timestamp} the UTC time at which the section data was last saved (of type \emph{TIMESTAMP})
-\item \code{section_data} stored as text of arbitrary length.
+Attempts are stored in a table which requires the following columns:
+\describe{
+\item{\code{attempt_id}}{a unique identifier (a UUID) for the attempt, stored as character data.}
+\item{\code{user_id}}{stored as character data. The required length depends on the authentication provider and if
+hashing is used.}
+\item{\code{exam_id}}{stored as character data. Ensure it can hold enough characters for the exam ids used in your exams.}
+\item{\code{exam_version}}{stored as character data. Ensure it can hold enough characters for the exam version strings
+used in your exams.}
+\item{\code{started_at}}{the UTC time at which the attempt was started.}
+\item{\code{finished_at}}{the UTC time at which the attempt was finished.}
+\item{\code{user_obj}}{the user object (\emph{less the identifier}) as returned by the authentication provider stored as character
+data of arbitrary length.}
+\item{\code{points}}{the points awarded for the attempt, as character data of arbitrary length.}
 }
 
-A sample definition of the table for PostgreSQL is as follows:\preformatted{CREATE TABLE section_data (
-  id serial PRIMARY KEY,
-  user_id character varying(64) NOT NULL,
-  exam_id character varying(255) NOT NULL,
+Exam data is stored in a table which requires the following columns:
+
+\describe{
+\item{\code{attempt}}{the attempt identifier of type \emph{UUID}.}
+\item{\code{section}}{the section identifier, as character data.}
+\item{\code{saved_at}}{the UTC time at which the section data was last saved (of type \emph{TIMESTAMP}).}
+\item{\code{section_data}}{stored as character data of arbitrary length.}
+}
+
+A sample definition of the tables for PostgreSQL is as follows:\preformatted{CREATE TABLE attempts (
+  attempt_id UUID PRIMARY KEY,
+  user_id character varying(256) NOT NULL,
+  exam_id character varying(64) NOT NULL,
   exam_version character varying(64) NOT NULL,
-  section character varying (255) NOT NULL,
-  timestamp timestamp NOT NULL DEFAULT current_timestamp,
+  started_at timestamp NOT NULL DEFAULT current_timestamp,
+  seed integer NOT NULL,
+  user_obj text NOT NULL,
+  finished_at timestamp,
+  points text);
+
+CREATE INDEX attempts_index ON attempts
+  (user_id, exam_id, exam_version);
+
+CREATE TABLE section_data (
+  id serial PRIMARY KEY,
+  attempt_id UUID NOT NULL REFERENCES attempts (attempt)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  section character varying (256) NOT NULL,
+  saved_at timestamp NOT NULL DEFAULT current_timestamp,
   section_data text);
-CREATE INDEX section_data_index on section_data (user_id, exam_id, exam_version, section);
+
+CREATE INDEX section_data_index ON section_data
+  (attempt_d, section);
 }
 }

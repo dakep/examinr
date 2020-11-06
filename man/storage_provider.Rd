@@ -3,38 +3,113 @@
 \name{storage_provider}
 \alias{storage_provider}
 \title{Storage Providers}
-\value{
-a list of callback functions (with additional arguments):
-\itemize{
-\item \code{save_section_data(section_data)}: Save the given section data.
-The section data is an R list with with arbitrary elements. Should return \code{TRUE} if the data is saved
-successfully or \code{FALSE} in case of an error.
-\item \code{get_section_data()}: Return the most recent section data for the given user.
-The returned object must be in the same format as the section data provided to \code{save_section_data()}.
-In case of an error, should return \code{NULL}.
-}
-
-See the section \emph{Callback functions} for more details on the additional arguments \code{...}.
-}
 \description{
-Exam data is stored via \emph{storage providers}.
-Each user action will trigger a storage event for which a callback function is called.
-See \code{\link[=dbi_storage_provider]{dbi_storage_provider()}} for an implementation storing/retrieving section data from a DBI backend.
+Exam data is stored via a \emph{storage provider}, which is a list of functions.
+Each user action will trigger a storage event for which one of the functions provided by the storage provider
+is called.
+See \code{\link[=dbi_storage_provider]{dbi_storage_provider()}} for an implementation based on a DBI backend.
 }
-\section{Callback functions}{
+\details{
+Storage providers must implement all of the functions listed under \emph{Storage functions}.
+}
+\section{Arguments}{
 
-All callback functions must accept the following arguments:
-\itemize{
-\item \code{user} the user object (as returned from the configured \link[=authentication_provider]{authentication provider}).
-\item \code{exam_id} the exam id as given in the Rmd file.
-\item \code{exam_version} the exam version string as given in the Rmd file.
-\item \code{section} the section identifier string.
-\item \code{...} for future extensions.
+The arguments to the storage functions are:
+
+\describe{
+\item{\code{user}}{the user object (as returned from the configured \link[=authentication_provider]{authentication provider}).
+May be \code{NULL} for \code{get_section_data()}, in which case data for \emph{all} users is requested.}
+\item{\code{exam_id}}{the exam id as given in the Rmd file.}
+\item{\code{exam_version}}{the exam version string as given in the Rmd file.}
+\item{\code{seed}}{an integer representing the random seed associated with the attempt.}
+\item{\code{started_at}}{the timestamp when the attempt was started (as \link[base:DateTimeClasses]{POSIXct} object
+in the system's timezone).}
+\item{\code{finished_at}}{the timestamp when the attempt was finished (as \link[base:DateTimeClasses]{POSIXct} object
+in the system's timezone).}
+\item{\code{attempt_id}}{the attempt identifier as returned by \code{start_attempt()} or \code{get_attempts()}.}
+\item{\code{section}}{the section identifier string. May be \code{NULL} for \code{get_section_data()}, in which case data for
+\emph{all} sections is requested.}
+\item{\code{section_data}}{an R list object with arbitrary elements. The storage function should not
+make any assumptions on the make-up of this list.}
+\item{\code{points}}{an R list object with arbitrary elements. The storage function should not make any assumptions
+on the make-up of this list.}
+\item{\code{...}}{additional arguments for future extensions.}
+}
 }
 
-Furthermore, each callback function is called with the following optional arguments:
-\itemize{
-\item \code{shiny_session} the shiny session object.
+\section{Storage functions}{
+
+\subsection{\code{create_attempt(user, exam_id, exam_version, seed, started_at, ...)}}{
+
+Create a new attempt with the given seed and start time.
+The function should return a unique identifier for the attempt.
+In case of an error, the function should return \code{NULL}.
+}
+
+\subsection{\code{finish_attempt(attempt_id, finished_at, ...)}}{
+
+Mark the attempt as finished.
+The function should return \code{TRUE} if the data is saved successfully and \code{FALSE} in case of an error.
+}
+
+\subsection{\code{grade_attempt(attempt_id, points, ...)}}{
+
+Grade the given attempt, i.e., assign the given points to the attempt.
+The function should return \code{TRUE} if the points are saved successfully and \code{FALSE} in case of an error.
+}
+
+\subsection{\code{get_attempts(user, exam_id, exam_version, ...)}}{
+
+Return a list of all previous attempts for the given filter.
+The argument \code{user} can be \code{NULL}, in which case the function should return the attempts for \emph{all} users.
+The function must return a list of attempts. Each list object must contain the following:
+
+\describe{
+\item{\code{id}}{the identifier associated with this attempt.}
+\item{\code{user}}{the user object associated with this attempt.}
+\item{\code{started}}{the time (as \link[base:DateTimeClasses]{POSIXct} object in the system's timezone) the attempt
+was started.}
+\item{\code{finished}}{the time (as \link[base:DateTimeClasses]{POSIXct} object in the system's timezone) the attempt
+was finished, or \code{NULL} if it has not been finished.}
+\item{\code{points}}{the R list object as given to \code{grade_attempt()}, or \code{NULL} if the attempt is not yet graded.}
+}
+
+In case there are no attempts associated with this user and exam, or in the case of an error,
+the function should return an empty list.
+}
+
+\subsection{\code{save_section_data(attempt_id, section, section_data, ...)}}{
+
+Save the given section data.
+The function should return \code{TRUE} if the data is saved successfully and \code{FALSE} in case of an error.
+}
+
+\subsection{\code{get_section_data(attempt_id, section, ...)}}{
+
+Query the most recent section data for the given attempt.
+If \code{user} or \code{section} are \code{NULL}, the function should not filter data for this criterion.
+In this case the function should return only the most recent section data available for each unique combination of
+user and section.
+The function must return a list of section data objects matching the given filter. Each object must contain the
+following:
+
+\describe{
+\item{\code{section}}{the section identifier string as given in the call to \code{save_section_data()}.}
+\item{\code{timestamp}}{the time (as \link[base:DateTimeClasses]{POSIXct} object in the system's timezone) the section data
+was saved.}
+\item{\code{section_data}}{the section data object as given in the call to \code{save_section_data()}.}
+}
+
+In case of an error, or if there is no data available for the given filter, the function should return an empty
+list.
+}
+
+\subsection{\code{get_last_section(attempt_id, ...)}}{
+
+Get the identifier of the section for which the most recent data is available.
+The function should return a character with the section identifier of the section for which data was saved
+most recently.
+In case of an error, or if there is no data available for the given filter, the function should return \code{NULL}.
 }
 }
 

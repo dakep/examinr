@@ -11,6 +11,7 @@ License: MIT + file LICENSE
 Imports:
   rmarkdown (>= 2.0),
   shiny (>= 1.1),
+  uuid,
   withr,
   digest,
   rlang,
@@ -31,16 +32,24 @@ Suggests:
 Collate:
     'ace.R'
     'authentication_provider.R'
-    'exam_format.R'
-    'exercise_evaluators.R'
+    'create_exam_rmd.R'
     'state_frame.R'
-    'exam_options.R'
-    'exam_sections_server.R'
-    'exam_sections_ui.R'
-    'exercise_autocomplete.R'
-    'exercise_chunk.R'
-    'question_types.R'
+    'exam_attempts.R'
     'storage_provider.R'
+    'exercise_evaluators.R'
+    'exam_config.R'
+    'exam_format.R'
+    'exam_status_ui.R'
+    'exercise_autocomplete.R'
+    'exercise_options.R'
+    'exercise_server.R'
+    'exercise_ui.R'
+    'question_types_server.R'
+    'question_types_ui.R'
+    'section_config.R'
+    'section_server.R'
+    'section_ui.R'
+    'status_messages.R'
     'utilities.R'
 Encoding: UTF-8
 LazyData: true

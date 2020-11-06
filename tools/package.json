@@ -16,9 +16,9 @@
     "grunt-babel": "^8.0.0",
     "grunt-contrib-clean": "^2.0.0",
     "grunt-contrib-concat": "^1.0.1",
-    "grunt-contrib-cssmin": "^3.0.0",
     "grunt-contrib-jshint": "~0.10.0",
-    "grunt-contrib-uglify": "^0.5.1"
+    "grunt-contrib-uglify": "^0.5.1",
+    "grunt-sass": "^3.1.0"
   },
   "scripts": {
     "build": "grunt",

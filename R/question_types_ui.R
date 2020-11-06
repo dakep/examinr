@@ -5,7 +5,7 @@
 #' @param title question title. Markdown is supported and by default the title will be rendered dynamically if it
 #'   contains inline R code.
 #' @param points total number of points for the question. Set to `NULL` to not give any points for the question.
-#'   Will be shown next to the question text, formatted using the `points_format` given in [exam_options()].
+#'   Will be shown next to the question text, formatted using the `points_format` given in [exam_config()].
 #' @param type can be one of `textarea` (default), `text` or `numeric`.
 #' @param width the width of the input, e.g., '300px' or '100%'; see [shiny::validateCssUnit()].
 #' @param height the height of the input, e.g., '300px' or '100%'; see [shiny::validateCssUnit()]. Only relevant for
@@ -28,14 +28,7 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
                            placeholder = NULL, title_container = h5, static_title = NULL, min = NA, max = NA, step = NA,
                            accuracy = step, label = NULL) {
 
-  points_str <- if (!is.null(points)) {
-    if (points[[1L]] < 0) {
-      abort("`points` must be non-negative.")
-    }
-    .exam_data$get('points_format')(points[[1L]])
-  } else {
-    ''
-  }
+  points_str <- format_points(points)
 
   return(structure(list(label = get_chunk_label(),
                         input_label = label,
@@ -136,14 +129,7 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
     abort("Number of shown answers is less than the number of answers with `always_show=TRUE`.")
   }
 
-  points_str <- if (!is.null(points)) {
-    if (points[[1L]] < 0) {
-      abort("`points` must be non-negative.")
-    }
-    .exam_data$get('points_format')(points[[1L]])
-  } else {
-    ''
-  }
+  points_str <- format_points(points)
 
   return(structure(list(label = get_chunk_label(),
                         input_label = label,
@@ -197,11 +183,19 @@ answer <- function (label, correct = FALSE, always_show = FALSE) {
 #' @importFrom htmltools div HTML tags
 #' @importFrom rlang abort
 knit_print.examinr_question <- function (x, ...) {
+  mark_chunk_static(x$label)
+
+  # Don't print during the first pass
+  if (isTRUE(opts_knit$get('examinr.initial_pass'))) {
+    return(NULL)
+  }
+
   x$section_id <- opts_chunk$get('examinr.section_id') %||% random_ui_id('unknown_section')
+  # add a upper-case "Q" in front of the label to distinguish question inputs from other inputs
+  x$input_id <- paste('Q', x$label, sep = '-')
   section_ns <- NS(opts_chunk$get('examinr.section_ui_id') %||% x$section_id)
   private_ns <- NS(section_ns(x$label))
 
-  .exam_data$append(implied_static_chunks = x$label)
 
   x$digits <- getOption('digits') %||% 6
   x$panel_class <- add_prefix('panel-', opts_current$get('exam.question_context') %||% 'default')
@@ -255,7 +249,7 @@ render_question_body <- function (question, ns, ...) {
 #' @importFrom rlang exec
 #' @importFrom htmltools tagAppendAttributes
 render_question_body.textquestion <- function (question, ns, ...) {
-  args <- with(question, list(inputId = ns(label), label = input_label, value = '', width = width,
+  args <- with(question, list(inputId = ns(input_id), label = input_label, value = '', width = width,
                               placeholder = placeholder))
 
   if (question$type == 'textarea') {
@@ -284,9 +278,9 @@ render_question_body.textquestion <- function (question, ns, ...) {
 render_question_body.mcquestion <- function (question, ns, ...) {
   # The input groups are empty at first.
   input_group <- if (question$mc) {
-    checkboxGroupInput(ns(question$label), label = question$input_label, choices = c('N/A' = 'N/A'), selected = '')
+    checkboxGroupInput(ns(question$input_id), label = question$input_label, choices = c('N/A' = 'N/A'), selected = '')
   } else {
-    radioButtons(ns(question$label), label = question$input_label, choices = c('N/A' = 'N/A'), selected = '')
+    radioButtons(ns(question$input_id), label = question$input_label, choices = c('N/A' = 'N/A'), selected = '')
   }
 
   # Split the answer options into 'sample' (those to sample from) and 'always' (those to always show)
@@ -299,78 +293,4 @@ render_question_body.mcquestion <- function (question, ns, ...) {
                                             serialize_object(question), ns(NULL)))
 
   return(input_group)
-}
-
-#' @importFrom shiny moduleServer updateCheckboxGroupInput updateRadioButtons
-#' @importFrom withr with_seed
-render_mcquestion_server <- function (question, ns) {
-  question <- unserialize_object(question)
-  moduleServer(ns, function (input, output, session) {
-    with_seed(get_current_user()$seed, {
-      # How many "correct" answer options to display
-      nr_sample_correct <- if (isTRUE(question$mc) && length(question$nr_answers) == 1L) {
-        max_sample <- min(length(question$answers$correct$sample), question$nr_answers - sum(question$nr_always_show))
-        if (max_sample > 0L) {
-          sample.int(max_sample, 1L)
-        } else {
-          0L
-        }
-      } else if (!isTRUE(question$mc)) {
-        1L
-      } else {
-        question$nr_answers[['correct']] - question$nr_always_show[['correct']]
-      }
-
-      # How many "incorrect" answer options to display
-      nr_sample_incorrect <- if (length(question$nr_answers) == 1L) {
-        max_sample <- min(length(question$answers$incorrect$sample),
-                          question$nr_answers - nr_sample_correct - sum(question$nr_always_show))
-        if (max_sample > 0L) {
-          sample.int(max_sample, 1L)
-        } else {
-          0L
-        }
-      } else {
-        question$nr_answers[['incorrect']] - question$nr_always_show[['incorrect']]
-      }
-
-      # Randomly select the answers to display
-      shown_answers <- with(question$answers,
-                            c(sample(correct$sample, nr_sample_correct),
-                              sample(incorrect$sample, nr_sample_incorrect),
-                              correct$always, incorrect$always))
-
-      # Extract the values and render the labels for the displayed answer options.
-      rendering_env <- get_rendering_env()
-      values <- vapply(shown_answers, `[[`, 'value', FUN.VALUE = character(1L), USE.NAMES = FALSE)
-      labels <- with_options(list(digits = question$digits), {
-        lapply(shown_answers, function (answer) {
-          trigger_mathjax(render_markdown_as_html(answer$label, use_rmarkdown = FALSE, env = rendering_env))
-        })
-      })
-
-      # Determine the order of the shown answer options
-      answer_order <- if (question$random_answer_order) {
-        sample.int(length(shown_answers))
-      } else {
-        order(values)
-      }
-
-      values <- values[answer_order]
-      labels <- labels[answer_order]
-    })
-
-    # Send the answer options to the client
-    latest_valid_input <- 'N/A'
-
-    if (isTRUE(question$mc)) {
-      observe_section_change(question$section_id,
-                             updateCheckboxGroupInput(session, inputId = question$label, selected = latest_valid_input,
-                                 choiceValues = values, choiceNames = labels))
-    } else {
-      observe_section_change(question$section_id,
-                             updateRadioButtons(session, inputId = question$label, selected = latest_valid_input,
-                                                choiceValues = values, choiceNames = labels))
-    }
-  })
 }

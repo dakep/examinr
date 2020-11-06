@@ -31,7 +31,7 @@ local_evaluator <- function (expr, envir, label, timelimit, ...) {
          result <<- tryCatch(eval(expr, envir = envir),
                              error = function (e) {
                                if (str_detect(as.character(e), fixed('reached elapsed time limit'))) {
-                                 return(exercise_result_timeout(label))
+                                 return(exercise_result_timeout())
                                }
                                return(e)
                              })
@@ -69,7 +69,7 @@ psock_evaluator <- function (expr, envir, label, timelimit, ...) {
            })[[1L]]
          }, error = function (e) {
            if (str_detect(as.character(e), fixed('reached elapsed time limit'))) {
-             return(exercise_result_timeout(label))
+             return(exercise_result_timeout())
            }
            return(e)
          })
