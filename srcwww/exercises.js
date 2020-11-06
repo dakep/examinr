@@ -60,26 +60,39 @@ exports.exercises = (function () {
 
       const messageStrings = exports.status.getMessage('exercise') || {}
 
-      exercise.append(
-        '<div class="panel ' + (exerciseOptions.panelClass || '') + '">' +
-          '<div class="panel-heading">' +
-            '<button type="button" class="btn ' + (exerciseOptions.buttonClass || '') + ' btn-xs examinr-run-button pull-right">' +
-              '<span class="glyphicon glyphicon-play"></span>' + exerciseOptions.buttonLabel +
-            '</button>' +
-            '<h5 class="panel-title">' + (exerciseOptions.title || '') + pointsLabel + '</h5>' +
+      const exercisePanel = $('<div class="panel ' + (exerciseOptions.panelClass || '') + '">' +
+        '<div class="panel-heading">' +
+          '<button type="button" class="btn ' + (exerciseOptions.buttonClass || '') + ' btn-xs examinr-run-button pull-right">' +
+            '<span class="glyphicon glyphicon-play" aria-hidden="true"></span>' + exerciseOptions.buttonLabel +
+          '</button>' +
+          '<h5 class="panel-title">' + (exerciseOptions.title || '') + pointsLabel + '</h5>' +
+        '</div>' +
+        '<div class="panel-body">' +
+          '<div id="' + editorId + '" class="examinr-exercise-editor" role="textbox" contenteditable="true" ' +
+              'aria-multiline="true" tabindex=0 ></div>' +
+        '</div>' +
+        '<div class="panel-footer">' +
+          '<div class="small alert alert-warning examinr-exercise-status" role="log">' +
+            messageStrings.notYetRun +
           '</div>' +
-          '<div class="panel-body">' +
-            '<div id="' + editorId + '" class="examinr-exercise-editor"></div>' +
-          '</div>' +
-          '<div class="panel-footer">' +
-            '<div class="small alert alert-warning examinr-exercise-status">' +
-              messageStrings.notYetRun +
-            '</div>' +
-          '</div>' +
-        '</div><div class="examinr-exercise-output well"></div>')
+        '</div>' +
+      '</div>')
+
+      const outputContainer = $('<div class="examinr-exercise-output well" role="status"></div>')
+      const exerciseEditor = exercise.find('#' + editorId)
+
+      exercise.append(exercisePanel).append(outputContainer)
+
+      // make exercise more accessible
+      exports.aria.labelledBy(exercise, exercisePanel.find('.panel-title'))
+      exports.aria.associate('controls', exercisePanel.find('.examinr-run-button'), outputContainer)
+      exerciseEditor.attr('aria-label', exerciseOptions.inputLabel)
+      exerciseEditor.children().attr('aria-hidden', 'true')
 
       if (!messageStrings.notYetRun) {
         exercise.find('.examinr-exercise-status').hide()
+      } else {
+        exports.aria.describedBy(exercisePanel, exercise.find('.examinr-exercise-status'))
       }
       exercise.find('.examinr-exercise-output').hide()
 

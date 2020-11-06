@@ -18,13 +18,14 @@
 #'  This really only makes sense if set on a per-chunk basis.
 #' @param checker a function (or the name of a function) which checks the R code in the exercise chunk.
 #' @param points the default number of points an exercise is worth. Default: 1.
+#' @param label a label to help screen readers describe the purpose of the input element.
 #'
 #' @importFrom knitr opts_chunk opts_knit
 #' @importFrom rmarkdown shiny_prerendered_chunk
 #' @importFrom rlang abort
 #' @export
 exercise_options <- function (title, button, button_context, timelimit, lines, autocomplete, df_print, points,
-                              setup, solution, checker) {
+                              setup, solution, checker, label) {
   if (!is_missing(checker)) {
     checker <- match.fun(checker)
   }
@@ -45,7 +46,8 @@ exercise_options <- function (title, button, button_context, timelimit, lines, a
       opts_knit$get('rmarkdown.df_print') %||% 'default',
     timelimit = as.numeric(timelimit %||% opts_chunk$get('exercise.timelimit')),
     autocomplete = isTRUE(autocomplete %||% opts_chunk$get('exercise.autocomplete')),
-    points = as.numeric(points %||% opts_chunk$get('exercise.points'))
+    points = as.numeric(points %||% opts_chunk$get('exercise.points')),
+    label = label %||% opts_chunk$get('exercise.label')
   )
 
   names(exercise_options) <- paste('exercise', names(exercise_options), sep = '.')

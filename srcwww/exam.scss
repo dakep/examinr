@@ -16,9 +16,11 @@
   left: 0;
   background-color: #ffffff;
   text-align: center;
+  z-index: 100;
 
   .examinr-progress {
     display: none;
+    margin: 0;
   }
 
   .examinr-timer span {

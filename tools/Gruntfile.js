@@ -33,6 +33,7 @@ module.exports = function (grunt) {
         src: [
           path.join(inputDir, '_header.js'),
           path.join(inputDir, 'shim.js'),
+          path.join(inputDir, 'aria.js'),
           path.join(inputDir, 'status.js'),
           path.join(inputDir, 'questions.js'),
           path.join(inputDir, 'exercises.js'),

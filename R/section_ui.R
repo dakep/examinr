@@ -15,11 +15,6 @@ initialize_sections <- function (options, overrides) {
   # Merge section information with section configuration overrides
   sections <- knit_meta('examinr_section')
 
-  any_has_button <- any(vapply(sections, FUN.VALUE = logical(1L), `[[`, 'has_button'))
-  if (!isTRUE(any_has_button)) {
-    abort("At least one exam section must have a visible button.")
-  }
-
   sections <- lapply(sections, function (section) {
     section$overrides <- overrides[[section$id]] %||% list()
     return(section)

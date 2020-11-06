@@ -22,7 +22,16 @@ exports.questions = (function () {
     })
   }
 
+  function makeQuestionsAccessible () {
+    $('.examinr-question').each(function () {
+      const qel = $(this)
+      qel.find('.hide-label .control-label').addClass('sr-only')
+      exports.aria.labelledBy(qel, qel.find('.panel-title'))
+    })
+  }
+
   $(function () {
+    makeQuestionsAccessible()
     disableScrollOnNumberInput()
   })
 

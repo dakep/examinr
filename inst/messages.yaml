@@ -77,6 +77,7 @@ exercise:
   # exercise by specifying the `exercise.button` chunk option
   buttonLabel: "Run code"
   panelTitle: "Coding question"
+  label: "Type your R code here"
   # The following messages pertain to individual exercise chunks.
   # If a message should be disabled, it can be left blank
   notYetRun: "Run the code by clicking the button in the top right corner of the exercise."

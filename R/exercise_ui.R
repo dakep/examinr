@@ -96,7 +96,7 @@ knit_hook_exercise <- function (before, options, envir, ...) {
     section_ns <- NS(opts_chunk$get('examinr.section_ui_id') %||% opts_chunk$get('examinr.section_id') %||%
                        random_ui_id('unknown_section'))
 
-    points_str <- format_points(options$exercise.points)
+    points_str <- format_points(options$exercise.points %||% 1)
 
     ex_data_srv <- list(label = label,
                         support_code = options$exercise.support_code,
@@ -107,6 +107,7 @@ knit_hook_exercise <- function (before, options, envir, ...) {
                         timelimit = options$exercise.timeout %||% 5)
 
     ex_data_js <- list(label = label,
+                       inputLabel = options$exercise.label %||% get_status_message('exercise')$label,
                        inputId = ex_data_srv$input_id,
                        outputId = ex_data_srv$output_id,
                        points = points_str,

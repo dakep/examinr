@@ -372,6 +372,7 @@ format_points <- function (points) {
   if (!is.character(ptstr) || length(ptstr) != 1L) {
     abort("Wrong points string returned from formatter.")
   }
+  return(ptstr)
 }
 
 #' @importFrom digest digest

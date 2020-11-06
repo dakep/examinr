@@ -15,7 +15,8 @@
 #' @param min,max,step if `type="numeric"`, gives the minimum and maximum allowed value as well as the interval
 #'   for stepping between min and max.
 #' @param accuracy numeric accuracy for grading inputs with `type="numeric"`.
-#' @param label an optional label displayed above the input element.
+#' @param label a label to help screen readers describe the purpose of the input element.
+#' @param hide_label hide the label from non-screen readers.
 #' @param title_container a function to generate an HTML element to contain the question title.
 #' @param static_title if `NULL`, the title will be rendered statically if it doesn't contain inline R code, otherwise
 #'   it will be rendered dynamically. If `TRUE`, always render the title statically. If `FALSE`, always render the
@@ -26,12 +27,17 @@
 #' @importFrom rlang abort
 text_question <- function (title, points = 1, type = c('textarea', 'text', 'numeric'), width = '100%', height = NULL,
                            placeholder = NULL, title_container = h5, static_title = NULL, min = NA, max = NA, step = NA,
-                           accuracy = step, label = NULL) {
+                           accuracy = step, label = "Type your answer below.", hide_label = FALSE) {
 
   points_str <- format_points(points)
 
+  if (is.null(label)) {
+    abort("Every question must have a meaningful label")
+  }
+
   return(structure(list(label = get_chunk_label(),
                         input_label = label,
+                        hide_label = isTRUE(hide_label),
                         type = match.arg(type),
                         title = prepare_title(title, static_title),
                         placeholder = placeholder,
@@ -55,6 +61,8 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
 #'   If `NULL`, all answer options are shown. If a vector of length two, the first number specifies the number of
 #'   *correct* answers to be shown and the second number specifies the number of *incorrect* answers to be shown.
 #' @param mc show as multiple choice, i.e., allow the user to select more than one answer.
+#' @param label a label to help screen readers describe the purpose of the input element.
+#' @param hide_label hide the label from non-screen readers.
 #' @param random_answer_order should the order of answers be randomized? Randomization is unique for every user.
 #'
 #' @importFrom ellipsis check_dots_unnamed
@@ -66,7 +74,12 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
 #'
 #' @export
 mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_order = TRUE, mc = TRUE,
-                        title_container = h5, static_title = NULL, label = NULL) {
+                        title_container = h5, static_title = NULL, label = "Select the correct answer(s).",
+                        hide_label = FALSE) {
+  if (is.null(label)) {
+    abort("Every question must have a meaningful label")
+  }
+
   # Capture and validate answers.
   check_dots_unnamed()
   answers <- list(...)
@@ -133,6 +146,7 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
 
   return(structure(list(label = get_chunk_label(),
                         input_label = label,
+                        hide_label = isTRUE(hide_label),
                         title = prepare_title(title, static_title),
                         answers = answers,
                         nr_answers = nr_answers,
@@ -196,7 +210,6 @@ knit_print.examinr_question <- function (x, ...) {
   section_ns <- NS(opts_chunk$get('examinr.section_ui_id') %||% x$section_id)
   private_ns <- NS(section_ns(x$label))
 
-
   x$digits <- getOption('digits') %||% 6
   x$panel_class <- add_prefix('panel-', opts_current$get('exam.question_context') %||% 'default')
   x$label_class <- add_prefix('label-', opts_current$get('exam.points_context') %||% 'info')
@@ -213,9 +226,14 @@ knit_print.examinr_question <- function (x, ...) {
     htmlOutput(private_ns('title'), container = x$title_container, class = 'panel-title')
   }
 
-  ui <- div(class = paste('panel', x$panel_class, sep = ' '),
+  more_body_classes <- ''
+  if (x$hide_label) {
+    more_body_classes <- 'hide-label'
+  }
+
+  ui <- div(class = paste('panel examinr-question', x$panel_class, sep = ' '), role = 'group',
             div(class = 'panel-heading', question_title),
-            div(class = 'panel-body', question_body_html))
+            div(class = paste('panel-body', more_body_classes), question_body_html))
 
   knit_print(ui, ...)
 }

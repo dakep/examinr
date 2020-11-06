@@ -15,7 +15,8 @@ exercise_options(
   points,
   setup,
   solution,
-  checker
+  checker,
+  label
 )
 }
 \arguments{
@@ -44,6 +45,8 @@ as the R-markdown document, but can be changed if needed. See argument \code{df_
 This really only makes sense if set on a per-chunk basis.}
 
 \item{checker}{a function (or the name of a function) which checks the R code in the exercise chunk.}
+
+\item{label}{a label to help screen readers describe the purpose of the input element.}
 }
 \description{
 Global options for exercise chunks. Each of these options can be overwritten in the individual exercise chunks by

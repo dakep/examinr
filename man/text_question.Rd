@@ -17,7 +17,8 @@ text_question(
   max = NA,
   step = NA,
   accuracy = step,
-  label = NULL
+  label = "Type your answer below.",
+  hide_label = FALSE
 )
 }
 \arguments{
@@ -48,7 +49,9 @@ for stepping between min and max.}
 
 \item{accuracy}{numeric accuracy for grading inputs with \code{type="numeric"}.}
 
-\item{label}{an optional label displayed above the input element.}
+\item{label}{a label to help screen readers describe the purpose of the input element.}
+
+\item{hide_label}{hide the label from non-screen readers.}
 }
 \description{
 Text questions are not auto-graded.

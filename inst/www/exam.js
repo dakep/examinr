@@ -46,6 +46,44 @@ window.Exam = function () {
     };
   }();
 
+  exports.aria = function () {
+    'use strict';
+
+    function generateRandomId(prefix) {
+      if (!prefix) {
+        prefix = 'aria-el-';
+      }
+
+      return prefix + Math.random().toString(36).slice(2);
+    }
+
+    function getOrMakeId(el) {
+      if (el.attr('id')) {
+        return el.attr('id');
+      }
+
+      var newId = generateRandomId();
+      el.attr('id', newId);
+      return newId;
+    }
+
+    function associate(ariaAttribute, target, ref) {
+      var refId = getOrMakeId(ref);
+      target.attr('aria-' + ariaAttribute, refId);
+    }
+
+    return {
+      randomId: generateRandomId,
+      associate: associate,
+      labelledBy: function labelledBy(el, labelEl) {
+        associate('labelledby', el, labelEl);
+      },
+      describedBy: function describedBy(el, labelEl) {
+        associate('describedby', el, labelEl);
+      }
+    };
+  }();
+
   exports.status = function () {
     'use strict';
 
@@ -54,8 +92,8 @@ window.Exam = function () {
     var timelimitTimer;
     var timelimit = Number.POSITIVE_INFINITY;
     var statusContainer;
-    var dialogContainerTitle = $('<h4 class="modal-title" id="examinr-status-dialog-title-' + Math.random().toString(36).slice(2) + '">');
-    var dialogContainerContent = $('<div class="modal-body" id="examinr-status-dialog-body-' + Math.random().toString(36).slice(2) + '">');
+    var dialogContainerTitle = $('<h4 class="modal-title" id="' + exports.aria.randomId('examinr-status-dialog-title-') + '">');
+    var dialogContainerContent = $('<div class="modal-body" id="' + exports.aria.randomId('examinr-status-dialog-body-') + '">');
     var dialogContainerFooter = $('<div class="modal-footer">' + '<button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>' + '</div>');
     var dialogContainer = $('<div class="modal" tabindex="-1" role="alertdialog" ' + 'aria-labelledby="' + dialogContainerTitle.attr('id') + '"' + 'aria-describedby="' + dialogContainerContent.attr('id') + '">' + '<div class="modal-dialog modal-lg" role="document">' + '<div class="modal-content"><div class="modal-header"></div></div>' + '</div>' + '</div>');
     var progressEl = $('<div class="alert alert-info examinr-progress" role="status"></div>');
@@ -280,16 +318,21 @@ window.Exam = function () {
           var sectionProgress = messages.progress.section.replace('{section_nr}', '<span class="examinr-section-nr">1</span>').replace('{total_sections}', '<span class="examinr-total-sections">' + (config.totalSections || 1) + '</span>');
           var timerHtml = messages.progress.timer.replace('{time_left}', '<span class="examinr-timer" role="timer">' + '<span class="hrs">??</span>' + '<span class="min">??</span>' + '<span class="sec"></span>' + '</span>');
 
-          if (config.progressive && config.haveTimelimit) {
-            progressEl.html(messages.progress.combined.replace('{section}', sectionProgress).replace('{timer}', timerHtml));
-          } else if (config.progressive) {
-            progressEl.html(sectionProgress);
-          } else if (config.haveTimelimit) {
-            progressEl.html(timerHtml);
-          }
+          if (!config.progressive && !config.haveTimelimit) {
+            // Neither timer nor section progress --> no need for a progress banner.
+            progressEl.hide();
+          } else {
+            if (config.progressive && config.haveTimelimit) {
+              progressEl.html(messages.progress.combined.replace('{section}', sectionProgress).replace('{timer}', timerHtml));
+            } else if (config.progressive) {
+              progressEl.html(sectionProgress);
+            } else if (config.haveTimelimit) {
+              progressEl.html(timerHtml);
+            }
 
-          statusContainer.append(progressEl);
-          updateTimeLeft();
+            statusContainer.append(progressEl);
+            updateTimeLeft();
+          }
         }
       }
 
@@ -362,7 +405,16 @@ window.Exam = function () {
       });
     }
 
+    function makeQuestionsAccessible() {
+      $('.examinr-question').each(function () {
+        var qel = $(this);
+        qel.find('.hide-label .control-label').addClass('sr-only');
+        exports.aria.labelledBy(qel, qel.find('.panel-title'));
+      });
+    }
+
     $(function () {
+      makeQuestionsAccessible();
       disableScrollOnNumberInput();
     });
     return {};
@@ -424,10 +476,20 @@ window.Exam = function () {
         var editorId = exerciseOptions.inputId + '-editor';
         var pointsLabel = exerciseOptions.points ? '<span class="label ' + (exerciseOptions.labelClass || '') + '">' + exerciseOptions.points + '</span>' : '';
         var messageStrings = exports.status.getMessage('exercise') || {};
-        exercise.append('<div class="panel ' + (exerciseOptions.panelClass || '') + '">' + '<div class="panel-heading">' + '<button type="button" class="btn ' + (exerciseOptions.buttonClass || '') + ' btn-xs examinr-run-button pull-right">' + '<span class="glyphicon glyphicon-play"></span>' + exerciseOptions.buttonLabel + '</button>' + '<h5 class="panel-title">' + (exerciseOptions.title || '') + pointsLabel + '</h5>' + '</div>' + '<div class="panel-body">' + '<div id="' + editorId + '" class="examinr-exercise-editor"></div>' + '</div>' + '<div class="panel-footer">' + '<div class="small alert alert-warning examinr-exercise-status">' + messageStrings.notYetRun + '</div>' + '</div>' + '</div><div class="examinr-exercise-output well"></div>');
+        var exercisePanel = $('<div class="panel ' + (exerciseOptions.panelClass || '') + '">' + '<div class="panel-heading">' + '<button type="button" class="btn ' + (exerciseOptions.buttonClass || '') + ' btn-xs examinr-run-button pull-right">' + '<span class="glyphicon glyphicon-play" aria-hidden="true"></span>' + exerciseOptions.buttonLabel + '</button>' + '<h5 class="panel-title">' + (exerciseOptions.title || '') + pointsLabel + '</h5>' + '</div>' + '<div class="panel-body">' + '<div id="' + editorId + '" class="examinr-exercise-editor" role="textbox" contenteditable="true" ' + 'aria-multiline="true" tabindex=0 ></div>' + '</div>' + '<div class="panel-footer">' + '<div class="small alert alert-warning examinr-exercise-status" role="log">' + messageStrings.notYetRun + '</div>' + '</div>' + '</div>');
+        var outputContainer = $('<div class="examinr-exercise-output well" role="status"></div>');
+        var exerciseEditor = exercise.find('#' + editorId);
+        exercise.append(exercisePanel).append(outputContainer); // make exercise more accessible
+
+        exports.aria.labelledBy(exercise, exercisePanel.find('.panel-title'));
+        exports.aria.associate('controls', exercisePanel.find('.examinr-run-button'), outputContainer);
+        exerciseEditor.attr('aria-label', exerciseOptions.inputLabel);
+        exerciseEditor.children().attr('aria-hidden', 'true');
 
         if (!messageStrings.notYetRun) {
           exercise.find('.examinr-exercise-status').hide();
+        } else {
+          exports.aria.describedBy(exercisePanel, exercise.find('.examinr-exercise-status'));
         }
 
         exercise.find('.examinr-exercise-output').hide();
@@ -766,11 +828,11 @@ window.Exam = function () {
     Shiny.addCustomMessageHandler('__.examinr.__-sectionChange', function (section) {
       if (section.current) {
         if (currentSectionEl) {
-          currentSectionEl.hide();
+          currentSectionEl.removeAttr('role').hide();
         }
 
         currentSection = section.current;
-        currentSectionEl = $('#' + currentSection.ui_id).parent().show().trigger('shown');
+        currentSectionEl = $('#' + currentSection.ui_id).parent().show().attr('role', 'main').trigger('shown');
         var outputElements = currentSectionEl.find('.shiny-bound-output');
         var recalculating = outputElements.length;
 
@@ -808,11 +870,21 @@ window.Exam = function () {
       if (sectionsOptionsEl.length > 0) {
         sectionsOptions = JSON.parse(sectionsOptionsEl.text());
         sectionsOptionsEl.remove();
-      }
+      } // Add the correct label to each section
+
+
+      $('section.level1').each(function () {
+        var el = $(this);
+        exports.aria.labelledBy(el, el.children('h1'));
+      });
+      $('#section-header').attr('aria-hidden', 'true');
 
       if (!sectionsOptions.progressive) {
         // All-at-once exam. Show the "next button" only for the last section.
         $('.examinr-section-next').hide();
+        var mainContainer = $('.main-container');
+        mainContainer.attr('role', 'main');
+        exports.aria.labelledBy(mainContainer, $('h1.title'));
         $('section.level1').last().find('.examinr-section-next').show();
       } else {
         // progressive exams

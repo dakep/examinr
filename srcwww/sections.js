@@ -13,10 +13,14 @@ exports.sections = (function () {
   Shiny.addCustomMessageHandler('__.examinr.__-sectionChange', function (section) {
     if (section.current) {
       if (currentSectionEl) {
-        currentSectionEl.hide()
+        currentSectionEl.removeAttr('role').hide()
       }
       currentSection = section.current
-      currentSectionEl = $('#' + currentSection.ui_id).parent().show().trigger('shown')
+      currentSectionEl = $('#' + currentSection.ui_id).parent()
+        .show()
+        .attr('role', 'main')
+        .trigger('shown')
+
       const outputElements = currentSectionEl.find('.shiny-bound-output')
       var recalculating = outputElements.length
       if (recalculating > 0) {
@@ -51,9 +55,22 @@ exports.sections = (function () {
       sectionsOptions = JSON.parse(sectionsOptionsEl.text())
       sectionsOptionsEl.remove()
     }
+
+    // Add the correct label to each section
+    $('section.level1').each(function () {
+      const el = $(this)
+      exports.aria.labelledBy(el, el.children('h1'))
+    })
+    $('#section-header').attr('aria-hidden', 'true')
+
     if (!sectionsOptions.progressive) {
       // All-at-once exam. Show the "next button" only for the last section.
       $('.examinr-section-next').hide()
+      const mainContainer = $('.main-container')
+      mainContainer.attr('role', 'main')
+
+      exports.aria.labelledBy(mainContainer, $('h1.title'))
+
       $('section.level1').last().find('.examinr-section-next').show()
     } else {
       // progressive exams

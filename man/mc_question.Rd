@@ -14,7 +14,8 @@ mc_question(
   mc = TRUE,
   title_container = h5,
   static_title = NULL,
-  label = NULL
+  label = "Select the correct answer(s).",
+  hide_label = FALSE
 )
 
 answer(label, correct = FALSE, always_show = FALSE)
@@ -43,6 +44,8 @@ it will be rendered dynamically. If \code{TRUE}, always render the title statica
 title dynamically on the server.}
 
 \item{label}{answer text to show. Supports markdown formatting and inline code chunks of the form \code{`r value`}.}
+
+\item{hide_label}{hide the label from non-screen readers.}
 
 \item{correct}{if the answer is correct or not.}
 

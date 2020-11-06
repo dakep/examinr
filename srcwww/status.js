@@ -7,10 +7,10 @@ exports.status = (function () {
   var timelimit = Number.POSITIVE_INFINITY
   var statusContainer
 
-  const dialogContainerTitle = $('<h4 class="modal-title" id="examinr-status-dialog-title-' +
-    Math.random().toString(36).slice(2) + '">')
-  const dialogContainerContent = $('<div class="modal-body" id="examinr-status-dialog-body-' +
-    Math.random().toString(36).slice(2) + '">')
+  const dialogContainerTitle = $('<h4 class="modal-title" id="' +
+    exports.aria.randomId('examinr-status-dialog-title-') + '">')
+  const dialogContainerContent = $('<div class="modal-body" id="' +
+    exports.aria.randomId('examinr-status-dialog-body-') + '">')
   const dialogContainerFooter = $(
     '<div class="modal-footer">' +
       '<button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>' +
@@ -241,18 +241,23 @@ exports.status = (function () {
                                     '<span class="sec"></span>' +
                                   '</span>')
 
-        if (config.progressive && config.haveTimelimit) {
-          progressEl.html(messages.progress.combined
-            .replace('{section}', sectionProgress)
-            .replace('{timer}', timerHtml))
-        } else if (config.progressive) {
-          progressEl.html(sectionProgress)
-        } else if (config.haveTimelimit) {
-          progressEl.html(timerHtml)
-        }
+        if (!config.progressive && !config.haveTimelimit) {
+          // Neither timer nor section progress --> no need for a progress banner.
+          progressEl.hide()
+        } else {
+          if (config.progressive && config.haveTimelimit) {
+            progressEl.html(messages.progress.combined
+              .replace('{section}', sectionProgress)
+              .replace('{timer}', timerHtml))
+          } else if (config.progressive) {
+            progressEl.html(sectionProgress)
+          } else if (config.haveTimelimit) {
+            progressEl.html(timerHtml)
+          }
 
-        statusContainer.append(progressEl)
-        updateTimeLeft()
+          statusContainer.append(progressEl)
+          updateTimeLeft()
+        }
       }
     }
 

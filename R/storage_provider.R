@@ -401,7 +401,9 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
                                 t.section, t.saved_at, t.section_data
                               FROM %s t
                               INNER JOIN (
-                                SELECT attempt_id, section, MAX(saved_at) saved_at FROM %s GROUP BY attempt, section) ft
+                                SELECT attempt_id, section, MAX(saved_at) saved_at
+                                FROM %s
+                                GROUP BY attempt_id, section) ft
                               ON(t.attempt_id = ft.attempt_id AND t.section = ft.section AND t.saved_at = ft.saved_at)
                               WHERE %s', section_data_table, section_data_table, filter_sql)
         stmt <- DBI::dbSendQuery(conn, read_stmt, immediate = FALSE)
