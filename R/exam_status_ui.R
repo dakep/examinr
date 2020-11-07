@@ -2,7 +2,7 @@
 initialize_exam_status <- function (exam_metadata, attempts_config) {
   exam_metadata <- unserialize_object(exam_metadata)
   attempts_config <- unserialize_object(attempts_config)
-  return(structure(list(totalSections = length(knit_meta('examinr_section', clean = FALSE)),
+  return(structure(list(totalSections = length(knit_meta('examinr_section', clean = FALSE)) - 1L,
                         haveTimelimit = isTRUE(attempts_config$timelimit < Inf),
                         progressive = isTRUE(exam_metadata$progressive),
                         progressbar = isTRUE(exam_metadata$progress_bar)), class = 'examinr_exam_status'))

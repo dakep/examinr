@@ -56,9 +56,12 @@ initialize_sections_server <- function (user_sections, options) {
   if (!is.null(attempt)) {
     if (isTRUE(options$progressive)) {
       if (isTRUE(options$order == 'random')) {
-        not_fixed_sections <- which(!vapply(user_sections, FUN.VALUE = logical(1L), function (section) {
+        fixed_sections <- vapply(user_sections, FUN.VALUE = logical(1L), function (section) {
           section$overrides$fixed %||% FALSE
-        }))
+        })
+        # The last section is always fixed!
+        fixed_sections[[length(fixed_sections)]] <- TRUE
+        not_fixed_sections <- which(fixed_sections)
 
         shuffled_sections <- with_seed(attempt$seed, sample(not_fixed_sections))
         user_sections[not_fixed_sections] <- user_sections[shuffled_sections]
@@ -92,17 +95,8 @@ initialize_sections_server <- function (user_sections, options) {
       current_section <- TRUE
     }
 
-    # find last section with a button
-    sections_with_button <- which(vapply(user_sections, FUN.VALUE = logical(1L), `[[`, 'has_button'))
-    finish_attempt_section <- if (length (sections_with_button > 0L)) {
-      max(sections_with_button)
-    } else {
-      # No section has a button. Assume that submitting the last section finishes the attempt.
-      length(user_sections)
-    }
-
     session_env$sections <- user_sections
-    session_env$last_section_id <- user_sections[[finish_attempt_section]]$id
+    session_env$last_section_id <- user_sections[[length(user_sections) - 1L]]$id
     session_env$section_state <- reactiveValues(current = current_section)
 
     # Observe changes in the current section and relay to the client
@@ -191,5 +185,8 @@ goto_next_section <- function () {
     if (current_index < length(session_env$sections)) {
       session_env$section_state$current <- session_env$sections[[current_index + 1L]]
     }
+  } else {
+    # Immediately go to the last section.
+    session_env$section_state$current <- session_env$sections[[length(session_env$sections)]]
   }
 }

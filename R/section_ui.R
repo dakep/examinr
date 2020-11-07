@@ -91,9 +91,11 @@ knit_print.examinr_section_chunk <- function (x, ...) {
 }
 
 ## Add controls at the end of a section for navigation
-section_end <- function (section_id, section_ui_id, btn_label, btn_context) {
+section_end <- function (section_id, section_ui_id, exam_metadata, btn_label, btn_context) {
+  exam_metadata <- unserialize_object(exam_metadata)
   opts_chunk$set(examinr.section_id = NULL, examinr.section_ui_id = NULL)
   structure(list(id = section_id, ui_id = section_ui_id,
+                 progressive = exam_metadata$progressive,
                  context = enc2utf8(as.character(btn_context)),
                  label = enc2utf8(as.character(btn_label))),
             class = 'examinr_section_end')

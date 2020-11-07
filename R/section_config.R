@@ -1,10 +1,13 @@
 #' Exam Section Configuration
 #'
-#' Control the behavior of the individual sections of an exam.
-#' Each exam contains one or more sections, which are shown progressively to the user.
+#' Control the behavior of each individual section of an exam.
+#' Each exam contains one or more sections, which are shown either all-at-once or progressively to the user.
 #'
-#' The section configuration can be set in the metadata of the exam file and/or with the `section_config()` function.
+#' The section configuration can be set in the metadata of the exam file and with the `section_config()` function.
 #' Options set via `section_config()` take precedence over options set in the metadata.
+#'
+#' The last section in the exam document is assumed to be a "final remark" and displayed to the user after
+#' an attempt is finished, without possibility of submitting the section.
 #'
 #' Sections are identified by their name.
 #' For example, a section with title _# Section 1: Multiple Choice Questions_ would be identified by

@@ -92,6 +92,7 @@ window.Exam = function () {
     var timelimitTimer;
     var timelimit = Number.POSITIVE_INFINITY;
     var statusContainer;
+    var timerIsShown = false;
     var dialogContainerTitle = $('<h4 class="modal-title" id="' + exports.aria.randomId('examinr-status-dialog-title-') + '">');
     var dialogContainerContent = $('<div class="modal-body" id="' + exports.aria.randomId('examinr-status-dialog-body-') + '">');
     var dialogContainerFooter = $('<div class="modal-footer">' + '<button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>' + '</div>');
@@ -278,6 +279,11 @@ window.Exam = function () {
 
           timerEl.show();
 
+          if (!timerIsShown) {
+            fixMainOffset();
+            timerIsShown = true;
+          }
+
           if (hrsLeft > 0 || minLeft >= 12) {
             timelimitTimer = window.setTimeout(updateTimeLeft, 60000); // call every minute
           } else {
@@ -368,13 +374,13 @@ window.Exam = function () {
        */
       updateProgress: function updateProgress(currentSectionNr) {
         if (!currentSectionNr || isNaN(currentSectionNr) || currentSectionNr < 0 || currentSectionNr > config.totalSections) {
-          currentSectionNr = config.totalSections;
-        }
+          progressEl.hide();
+        } else {
+          progressEl.show().find('.examinr-section-nr').text(currentSectionNr);
 
-        progressEl.show().find('.examinr-section-nr').text(currentSectionNr);
-
-        if (config.progressbar) {
-          progressEl.find('.progress-bar').attr('aria-valuenow', currentSectionNr).width(Math.round(100 * currentSectionNr / config.totalSections) + '%');
+          if (config.progressbar) {
+            progressEl.find('.progress-bar').attr('aria-valuenow', currentSectionNr).width(Math.round(100 * currentSectionNr / config.totalSections) + '%');
+          }
         }
 
         fixMainOffset();
@@ -827,8 +833,10 @@ window.Exam = function () {
 
     Shiny.addCustomMessageHandler('__.examinr.__-sectionChange', function (section) {
       if (section.current) {
-        if (currentSectionEl) {
+        if (currentSectionEl && currentSectionEl.length > 0) {
           currentSectionEl.removeAttr('role').hide();
+        } else if (section.current.ui_id) {
+          $('section.level1').hide();
         }
 
         currentSection = section.current;
@@ -878,20 +886,23 @@ window.Exam = function () {
         exports.aria.labelledBy(el, el.children('h1'));
       });
       $('#section-header').attr('aria-hidden', 'true');
+      $('.examinr-section-next').click(function () {
+        exports.shim.toggle($('body'), true);
+      });
 
       if (!sectionsOptions.progressive) {
-        // All-at-once exam. Show the "next button" only for the last section.
+        // All-at-once exam. Show the "next button" only for the last real section.
         $('.examinr-section-next').hide();
         var mainContainer = $('.main-container');
         mainContainer.attr('role', 'main');
-        exports.aria.labelledBy(mainContainer, $('h1.title'));
-        $('section.level1').last().find('.examinr-section-next').show();
+        exports.aria.labelledBy(mainContainer, $('h1.title')); // hide the last section (used for final remarks)
+
+        var allSections = $('section.level1');
+        allSections.slice(-2, -1).find('.examinr-section-next').show();
+        allSections.last().hide();
       } else {
         // progressive exams
         $('section.level1').hide();
-        $('.examinr-section-next').click(function () {
-          exports.shim.toggle($('body'), true);
-        });
       }
     });
     return {};

@@ -21,12 +21,15 @@ useful for progressive exams where the last section is only for information purp
 \item{fix_order}{logical if the section should remain fixed in order.}
 }
 \description{
-Control the behavior of the individual sections of an exam.
-Each exam contains one or more sections, which are shown progressively to the user.
+Control the behavior of each individual section of an exam.
+Each exam contains one or more sections, which are shown either all-at-once or progressively to the user.
 }
 \details{
-The section configuration can be set in the metadata of the exam file and/or with the \code{section_config()} function.
+The section configuration can be set in the metadata of the exam file and with the \code{section_config()} function.
 Options set via \code{section_config()} take precedence over options set in the metadata.
+
+The last section in the exam document is assumed to be a "final remark" and displayed to the user after
+an attempt is finished, without possibility of submitting the section.
 
 Sections are identified by their name.
 For example, a section with title \emph{# Section 1: Multiple Choice Questions} would be identified by

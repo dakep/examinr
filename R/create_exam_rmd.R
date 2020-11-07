@@ -15,6 +15,8 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
   in_con <- file(input_rmd, open = 'rt', encoding = encoding)
   on.exit(close(in_con), add = TRUE, after = FALSE)
 
+  exam_metadata_serialized <- serialize_object(exam_metadata)
+
   # Does the R chunk need to be extracted and put into the section chunk?
   move_rchunk_into_section <- function (line, static_chunks) {
     label <- str_match(line, '```\\{r\\s+([^,\\}\\s]+)')[[2L]]
@@ -62,19 +64,18 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
 
     btn_context <- section_config_overrides[[section]]$btn_context %||% exam_metadata$section_btn_context
     writeLines(c('```{r, examinr.sectionchunk=TRUE}',
-                 sprintf('examinr:::section_end("%s", "%s", %s, "%s")', section, section_ui_id,
-                         btn_label, btn_context),
+                 sprintf('examinr:::section_end("%s", "%s", "%s", %s, "%s")', section, section_ui_id,
+                         exam_metadata_serialized, btn_label, btn_context),
                  '```'), con = out_con)
   }
 
   ## Write the exam initialization which requires the section
   write_init_exam <- function () {
-    exam_metadata <- serialize_object(exam_metadata)
     writeLines(c('```{r, examinr.sectionchunk=TRUE}',
                  sprintf('examinr:::initialize_exam_status("%s", "%s")',
-                         exam_metadata, serialize_object(attempts_config)),
+                         exam_metadata_serialized, serialize_object(attempts_config)),
                  sprintf('examinr:::initialize_sections("%s", "%s")',
-                         exam_metadata, serialize_object(section_config_overrides)),
+                         exam_metadata_serialized, serialize_object(section_config_overrides)),
                  '```'), con = out_con)
   }
 
@@ -167,7 +168,7 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
   }
 
   if (inside_section) {
-    write_section_chunk(section_content, current_section, current_section_ui_id)
+    write_section_chunk(section_content, current_section, current_section_ui_id, section_chunk_counter)
   }
   if (inside_fixed_section || inside_section) {
     write_section_end(current_section, current_section_ui_id)

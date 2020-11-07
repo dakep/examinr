@@ -6,6 +6,7 @@ exports.status = (function () {
   var timelimitTimer
   var timelimit = Number.POSITIVE_INFINITY
   var statusContainer
+  var timerIsShown = false
 
   const dialogContainerTitle = $('<h4 class="modal-title" id="' +
     exports.aria.randomId('examinr-status-dialog-title-') + '">')
@@ -194,6 +195,10 @@ exports.status = (function () {
           timerEl.children('.sec').show().text(toBase10(secLeft))
         }
         timerEl.show()
+        if (!timerIsShown) {
+          fixMainOffset()
+          timerIsShown = true
+        }
 
         if (hrsLeft > 0 || minLeft >= 12) {
           timelimitTimer = window.setTimeout(updateTimeLeft, 60000) // call every minute
@@ -270,6 +275,7 @@ exports.status = (function () {
         '</div>')
       statusContainer.addClass('examinr-with-progressbar').append(progressbarEl)
     }
+
     fixMainOffset()
   })
 
@@ -299,13 +305,14 @@ exports.status = (function () {
     updateProgress: function (currentSectionNr) {
       if (!currentSectionNr || isNaN(currentSectionNr) || currentSectionNr < 0 ||
           currentSectionNr > config.totalSections) {
-        currentSectionNr = config.totalSections
-      }
-      progressEl.show().find('.examinr-section-nr').text(currentSectionNr)
-      if (config.progressbar) {
-        progressEl.find('.progress-bar')
-          .attr('aria-valuenow', currentSectionNr)
-          .width(Math.round(100 * currentSectionNr / config.totalSections) + '%')
+        progressEl.hide()
+      } else {
+        progressEl.show().find('.examinr-section-nr').text(currentSectionNr)
+        if (config.progressbar) {
+          progressEl.find('.progress-bar')
+            .attr('aria-valuenow', currentSectionNr)
+            .width(Math.round(100 * currentSectionNr / config.totalSections) + '%')
+        }
       }
       fixMainOffset()
     }
