@@ -1,74 +1,195 @@
+#' @importFrom shiny moduleServer renderUI
+#' @importFrom htmltools tagList tags
+#' @importFrom withr with_options
+question_title_server <- function (question, ns_str, section_id) {
+  question <- unserialize_object(question)
+  moduleServer(ns_str, function (input, output, session) {
+    observe_section_change(section_id = question$section_id, {
+      output$title <- renderUI({
+        rendering_env <- get_rendering_env(session)
+        title_html <- with_options(list(digits = question$digits),
+                                   render_markdown_as_html(question$title, use_rmarkdown = FALSE, env = rendering_env))
+
+        trigger_mathjax(title_html)
+      })
+    })
+  })
+}
+
+#' @importFrom shiny NS observeEvent
+#' @importFrom rlang warn
+render_textquestion_server <- function (question, ns) {
+  question <- unserialize_object(question)
+  ns <- NS(ns)
+
+  if (!is.null(question$solution_expr)) {
+    # Register the auto-grader whenever the attempt status changes
+    observeEvent(get_attempt_status(), {
+      rendering_env <- baseenv()
+      solution <- if (isTRUE(get_attempt_status())) {
+        # Compute the solution
+        rendering_env <- get_rendering_env()
+        tryCatch(eval(question$solution_expr, envir = rendering_env),
+                 error = function (e) {
+                   warn(sprintf("Cannot compute solution to question %s: %s", question$label, cnd_message(e)))
+                   return(NULL)
+                 })
+      } else {
+        NULL
+      }
+
+      correct_num_answer <- NULL
+      if (length(solution) > 0L) {
+        if (identical(question$type, 'numeric')) {
+          correct_num_answer <- attr(solution, 'answer', exact = TRUE)
+          attr(solution, 'answer') <- NULL
+
+          if (is.numeric(solution)) {
+            correct_num_answer <- solution
+            solution <- as.character(solution)
+          }
+
+          if (length(correct_num_answer) > 0L && (!is.numeric(correct_num_answer) || anyNA(correct_num_answer))) {
+            warn(sprintf("Invalid numeric answer to question %s: %s", question$label,
+                         paste(correct_num_answer, collapse = ', ')))
+            correct_num_answer <- NULL
+          }
+        } else {
+          correct_num_answer <- NULL
+        }
+        solution <- render_markdown_as_html(solution, use_rmarkdown = FALSE, env = rendering_env)
+      }
+
+      # Register the auto-grader
+      ag_env <- new.env(parent = getNamespace('examinr'))
+      ag_env$available_points <- question$points
+      ag_env$solution <- solution
+      ag_env$correct_num_answer <- correct_num_answer
+      ag_env$tolerance <- question$accuracy
+
+      register_autograder(ns(question$input_id), function (input_value, session) {
+        grade <- list(points = NULL, available = available_points, solution = solution)
+
+        # auto-grade numeric questions
+        if (!is.null(input_value) && length(correct_num_answer) == 1L) {
+          num_val <- tryCatch(as.numeric(input_value[[1L]]),
+                              warning = function (w) { return(NA_real_) },
+                              error = function (w) { return(NA_real_) })
+
+          # compare answers
+          grade$points <- if (isTRUE(abs(correct_num_answer - num_val) <= tolerance)) {
+            available_points
+          } else {
+            0
+          }
+        }
+        return(grade)
+      }, envir = ag_env)
+    })
+  }
+}
+
 #' @importFrom shiny moduleServer updateCheckboxGroupInput updateRadioButtons
 #' @importFrom withr with_seed
 render_mcquestion_server <- function (question, ns) {
   question <- unserialize_object(question)
   moduleServer(ns, function (input, output, session) {
-    with_seed(get_current_user()$seed, {
-      # How many "correct" answer options to display
-      nr_sample_correct <- if (isTRUE(question$mc) && length(question$nr_answers) == 1L) {
-        max_sample <- min(length(question$answers$correct$sample), question$nr_answers - sum(question$nr_always_show))
-        if (max_sample > 0L) {
-          sample.int(max_sample, 1L)
+    observe_section_change(section_id = question$section_id, label = 'render mc question', {
+      attempt_seed <- get_current_attempt(session)$seed
+
+      with_seed(attempt_seed, {
+        nr_sample_answers <- c(correct = 0L, incorrect = 0L)
+        if (length(question$nr_answers) == 1L) {
+          # How many answers, in addition to the always shown answers, are necessary
+          total_nr_sample_answers <- question$nr_answers - sum(question$nr_always_show)
+
+          nr_sample_answers[['correct']] <- if (isTRUE(question$mc)) {
+            # Sample at most as many correct answers as available
+            max_sample <- min(length(question$answers$correct$sample), total_nr_sample_answers)
+            # Sample at least as many correct answers as needed to have
+            # (a) at least one correct answer displayed, and
+            # (b) enough incorrect answer options to fill up the required number of answers
+            min_sample <- max(question$nr_always_show[['correct']] == 0L,
+                              total_nr_sample_answers - length(question$answers$incorrect$sample))
+
+            if (max_sample > 0L) {
+              min_sample + sample.int(max_sample - min_sample + 1L, 1L) - 1L
+            } else {
+              0L
+            }
+          } else {
+            # For single-choice questions sample at most 1 correct answer
+            min(1L, total_nr_sample_answers)
+          }
+
+          nr_sample_answers[['incorrect']] <- total_nr_sample_answers - nr_sample_answers[['correct']]
         } else {
-          0L
+          nr_sample_answers <- question$nr_answers[c('incorrect', 'correct')] -
+            question$nr_always_show[c('incorrect', 'correct')]
         }
-      } else if (!isTRUE(question$mc)) {
-        1L
-      } else {
-        question$nr_answers[['correct']] - question$nr_always_show[['correct']]
-      }
 
-      # How many "incorrect" answer options to display
-      nr_sample_incorrect <- if (length(question$nr_answers) == 1L) {
-        max_sample <- min(length(question$answers$incorrect$sample),
-                          question$nr_answers - nr_sample_correct - sum(question$nr_always_show))
-        if (max_sample > 0L) {
-          sample.int(max_sample, 1L)
-        } else {
-          0L
-        }
-      } else {
-        question$nr_answers[['incorrect']] - question$nr_always_show[['incorrect']]
-      }
+        # Randomly select the answers to display
+        shown_answers <- with(question$answers,
+                              c(sample(correct$sample, nr_sample_answers[['correct']]),
+                                sample(incorrect$sample, nr_sample_answers[['incorrect']]),
+                                correct$always, incorrect$always))
 
-      # Randomly select the answers to display
-      shown_answers <- with(question$answers,
-                            c(sample(correct$sample, nr_sample_correct),
-                              sample(incorrect$sample, nr_sample_incorrect),
-                              correct$always, incorrect$always))
-
-      # Extract the values and render the labels for the displayed answer options.
-      rendering_env <- get_rendering_env()
-      values <- vapply(shown_answers, `[[`, 'value', FUN.VALUE = character(1L), USE.NAMES = FALSE)
-      labels <- with_options(list(digits = question$digits), {
-        lapply(shown_answers, function (answer) {
-          trigger_mathjax(render_markdown_as_html(answer$label, use_rmarkdown = FALSE, env = rendering_env))
+        # Extract the values and render the labels for the displayed answer options.
+        rendering_env <- get_rendering_env()
+        values <- vapply(shown_answers, `[[`, 'value', FUN.VALUE = character(1L), USE.NAMES = FALSE)
+        labels <- with_options(list(digits = question$digits), {
+          lapply(shown_answers, function (answer) {
+            trigger_mathjax(render_markdown_as_html(answer$label, use_rmarkdown = FALSE, env = rendering_env))
+          })
         })
+
+        # Determine the order of the shown answer options
+        answer_order <- if (question$random_answer_order) {
+          sample.int(length(shown_answers))
+        } else {
+          order(values)
+        }
+
+        values <- enc2utf8(values[answer_order])
+        labels <- labels[answer_order]
       })
 
-      # Determine the order of the shown answer options
-      answer_order <- if (question$random_answer_order) {
-        sample.int(length(shown_answers))
-      } else {
-        order(values)
+      # Register the auto-grader if the attempt is active
+      if (isTRUE(get_attempt_status())) {
+        weights <- vapply(shown_answers, FUN.VALUE = numeric(1L), `[[`, 'weight')
+        names(weights) <- values
+
+        ag_env <- new.env(parent = getNamespace('examinr'))
+        ag_env$available_points <- question$points
+        ag_env$min_points <- question$min_points
+        ag_env$weights <- question$points * c(weights[weights > 0] / sum(weights[weights > 0]), weights[weights <= 0])
+
+        register_autograder(session$ns(question$input_id), function (input_value, session) {
+          grade <- list(points = 0, available = available_points, answer = list(),
+                        solution = as.list(names(weights[weights > 0])))
+
+          if (!is.null(input_value) && length(input_value) > 0L && !anyNA(input_value)) {
+            input_value <- enc2utf8(input_value)
+            grade$points <- max(min_points, sum(weights[input_value]))
+            grade$answer <- unname(mapply(weight = weights[input_value], value = input_value, FUN = list,
+                                          SIMPLIFY = FALSE))
+          }
+
+          return(grade)
+        }, envir = ag_env)
       }
 
-      values <- values[answer_order]
-      labels <- labels[answer_order]
+      # Send the answer options to the client
+      latest_valid_input <- 'N/A'
+
+      if (isTRUE(question$mc)) {
+        updateCheckboxGroupInput(session, inputId = question$input_id,
+                                 selected = latest_valid_input, choiceValues = values,
+                                 choiceNames = labels)
+      } else {
+        updateRadioButtons(session, inputId = question$input_id, selected = latest_valid_input,
+                           choiceValues = values, choiceNames = labels)
+      }
     })
-
-    # Send the answer options to the client
-    latest_valid_input <- 'N/A'
-
-    if (isTRUE(question$mc)) {
-      observe_section_change(question$section_id,
-                             updateCheckboxGroupInput(session, inputId = question$input_id,
-                                                      selected = latest_valid_input, choiceValues = values,
-                                                      choiceNames = labels))
-    } else {
-      observe_section_change(question$section_id,
-                             updateRadioButtons(session, inputId = question$input_id, selected = latest_valid_input,
-                                                choiceValues = values, choiceNames = labels))
-    }
   })
 }

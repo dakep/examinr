@@ -6,9 +6,9 @@ section_chunk_server <- function (metadata, content) {
   content <- unserialize_object(content)
   global_domain <- getDefaultReactiveDomain()
   moduleServer(metadata$chunk_ns, function (input, output, session) {
-    observe_section_change(metadata$id, {
+    observe_section_change(section_id = metadata$id, {
       output$out <- renderUI(trigger_mathjax(render_markdown_as_html(content, env = get_rendering_env())))
-    })
+    }, domain = session)
   })
 }
 
@@ -23,9 +23,9 @@ section_end_server <- function (metadata) {
     NULL
   }
 
-  moduleServer(metadata$ui_id, function (input, output, session) {
+  moduleServer(metadata$id, function (input, output, session) {
     observeEvent(input$`btn-next`, {
-      if (is_attempt_active()) {
+      if (isTRUE(get_attempt_status())) {
         saved <- save_section_data(global_session %||% session, session$ns('btn-next'))
         if (isTRUE(saved)) {
           goto_next_section()
@@ -36,35 +36,25 @@ section_end_server <- function (metadata) {
 }
 
 ## Initialize section navigation
-#' @importFrom shiny getDefaultReactiveDomain
 #' @importFrom rlang abort warn cnd_message
 #' @importFrom withr with_seed
-initialize_sections_server <- function (user_sections, options) {
-  session <- getDefaultReactiveDomain()
-
-  if (is.null(session)) {
-    abort("shiny session is not available")
-  }
-
-  user_sections <- unserialize_object(user_sections)
-  options <- unserialize_object(options)
-  session_env <- get_session_env(session)
-
-  # Determine the order of sections. This is fixed for a given attempt
-  attempt <- get_current_attempt(session)
+initialize_sections_server <- function (session, user_sections, exam_metadata) {
+  # Determine the order of sections. This will be fixed for the session and not changed when the attempt changes!
+  attempt <- isolate(get_current_attempt(session))
 
   if (!is.null(attempt)) {
-    if (isTRUE(options$progressive)) {
-      if (isTRUE(options$order == 'random')) {
+    if (isTRUE(exam_metadata$progressive)) {
+      if (identical(exam_metadata$order, 'random')) {
         fixed_sections <- vapply(user_sections, FUN.VALUE = logical(1L), function (section) {
           section$overrides$fixed %||% FALSE
         })
         # The last section is always fixed!
         fixed_sections[[length(fixed_sections)]] <- TRUE
-        not_fixed_sections <- which(fixed_sections)
-
-        shuffled_sections <- with_seed(attempt$seed, sample(not_fixed_sections))
-        user_sections[not_fixed_sections] <- user_sections[shuffled_sections]
+        not_fixed_sections <- which(!fixed_sections)
+        if (length(not_fixed_sections) > 1L) {
+          shuffled_sections <- with_seed(attempt$seed, sample(not_fixed_sections))
+          user_sections[not_fixed_sections] <- user_sections[shuffled_sections]
+        }
       }
       names(user_sections) <- vapply(user_sections, FUN.VALUE = character(1L), `[[`, 'id')
 
@@ -95,75 +85,138 @@ initialize_sections_server <- function (user_sections, options) {
       current_section <- TRUE
     }
 
-    session_env$sections <- user_sections
-    session_env$last_section_id <- user_sections[[length(user_sections) - 1L]]$id
-    session_env$section_state <- reactiveValues(current = current_section)
+    if (identical(exam_metadata$feedback, 'immediately')) {
+      # Append a "dummy" section to redirect the user to the feedback afterwards.
+      user_sections <- c(user_sections, list(list(feedback = TRUE)))
+    }
+
+    initialize_section_state(session, user_sections, current_section)
 
     # Observe changes in the current section and relay to the client
     # This should run first so that the elements are visible on the client-side.
     examinr_ns <- asNamespace('examinr')
+
     observeEvent(quote(get_current_section()),
-                 quote(send_message('sectionChange', list(current = get_current_section()))),
+                 quote(send_message('sectionChange', get_current_section())),
                  priority = 100, handler.env = examinr_ns, event.env = examinr_ns, handler.quoted = TRUE,
                  event.quoted = TRUE)
   }
 }
 
-## Execute the handler expression when a section is made visible on the client and the attempt is still valid.
+## Initialize the session
+initialize_section_state <- function (session, sections, current_section = TRUE) {
+  session_env <- get_session_env(session)
+  session_env$sections <- sections
+  session_env$last_section_id <- sections[[length(sections) - 1L]]$id
+  session_env$section_state <- reactiveValues(current = current_section)
+}
+
+## Execute the handler expression `x` either when the section changes or when the attempt changes (but is still valid)
 ##
-## @param ... arguments passed on to [observeEvent()].
-#' @importFrom shiny exprToFunction observeEvent getDefaultReactiveDomain
-observe_section_change <- function (section_id, handlerExpr, handler.env = parent.frame(), handler.quoted = FALSE, ...,
-                                    eventExpr = NULL, event.env = NULL, event.quoted = NULL) {
-  handler_fun <- exprToFunction(handlerExpr, handler.env, handler.quoted)
-  observeEvent(eventExpr = quote(get_current_section()), event.quoted = TRUE,
-               handlerExpr = quote({
-                 current_section <- get_current_section()
-                 if (is_attempt_active() && (isTRUE(current_section) || isTRUE(current_section$id == section_id))) {
-                   handler_fun()
-                 }
-               }), handler.quoted = TRUE, ...)
+## @param section_id if not null, execute `x` only if the section with id `section_id` is visible.
+## @param ... arguments passed on to [observe()].
+#' @importFrom shiny exprToFunction observe
+observe_section_change <- function (x, section_id = NULL, ..., label = NULL, env = parent.frame(), quoted = FALSE) {
+  handler_fun <- exprToFunction(x, env, quoted)
+
+  observe(x = {
+    current_attempt <- get_current_attempt()
+    attempt_status <- isolate(get_attempt_status()) # Don't trigger if the status changes.
+    current_section <- get_current_section()
+
+    if ((isTRUE(attempt_status) || identical(attempt_status, 'feedback')) &&
+        (isTRUE(current_section) || is.null(section_id) || identical(current_section$id, section_id))) {
+      isolate(handler_fun())
+    }
+  }, label = label, ...)
 }
 
 get_current_section <- function () {
   get_session_env()$section_state$current
 }
 
-#' @importFrom stringr str_detect fixed str_ends
+#' @importFrom stringr str_detect fixed str_remove
 #' @importFrom shiny reactiveValuesToList
+#' @importFrom rlang warn cnd_message
 save_section_data <- function (session, btn_id = NULL) {
-  session_env <- get_session_env(session)
-  transformers <- session_env$transformer %||% list()
-  isolate({
-    input_names <- names(session$input)
-    input_names <- input_names[str_detect(input_names, fixed('Q-'))]
-    input_values <- reactiveValuesToList(session$input)[input_names]
-    current_section <- session_env$section_state$current
-  })
+  current_attempt <- isolate(get_current_attempt(session))
+  attempt_status <- isolate(get_attempt_status(session))
 
-  input_values <- lapply(input_names, function (name) {
-    transf <- which(str_ends(names(transformers), fixed(name)))
-    if (length(transf) == 1L) {
-      transformers[[transf]](input_values[[name]], session)
+  # Save section data if the current attempt is valid and not-null
+  if (!is.null(current_attempt) && isTRUE(attempt_status)) {
+    session_env <- get_session_env(session)
+    transformers <- session_env$transformer %||% list()
+    autograders <- session_env$autograders %||% list()
+
+    # Get the full names of all inputs containing the string "Q-", which are all the
+    # inputs pertaining to actual questions.
+    isolate({
+      session_input_names <- names(session$input)
+      session_input_names <- session_input_names[str_detect(session_input_names, fixed('Q-'))]
+      input_values <- reactiveValuesToList(session$input)[session_input_names]
+      current_section <- session_env$section_state$current
+    })
+
+    # Get the fully-qualified input names and update the names of the input values.
+    fq_input_names <- vapply(session_input_names, FUN.VALUE = character(1L), session$ns)
+    names(input_values) <- fq_input_names
+    names(fq_input_names) <- fq_input_names
+
+    # Transform input values (now the input values will have the names
+    input_values <- lapply(fq_input_names, function (name) {
+      if (!is.null(transformers[[name]])) {
+        tryCatch({
+          transformers[[name]](input_values[[name]], session)
+        }, error = function (e) {
+          warn(sprintf("Transformer for input %s raises error: %s", name, cnd_message(e)))
+          return(input_values[[name]])
+        })
+      } else {
+        input_values[[name]]
+      }
+    })
+
+    # Auto-grade input values (after transformation!)
+    grades <- lapply(fq_input_names, function (name) {
+      if (!is.null(autograders[[name]])) {
+        tryCatch({
+          autograders[[name]](input_values[[name]], session)
+        }, error = function (e) {
+          warn(sprintf("Auto-grader for input %s raises error: %s", name, cnd_message(e)))
+          return(NULL)
+        })
+      } else {
+        NULL
+      }
+    })
+    grades <- grades[!vapply(grades, FUN.VALUE = logical(1L), is.null)]
+
+    current_section_id <- if (isTRUE(current_section)) {
+      '*'
     } else {
-      input_values[[name]]
+      current_section$id
     }
-  })
-  names(input_values) <- str_remove(input_names, '^.*Q\\-')
 
-  current_section_id <- if (isTRUE(current_section)) {
-    '*'
-  } else {
-    current_section$id
-  }
+    # Drop the prefix from the fully-qualified name and only save the actual question label
+    names(input_values) <- str_remove(names(input_values), '^.+Q-')
+    names(grades) <- str_remove(names(grades), '^.+Q-')
 
-  current_attempt_id <- get_current_attempt()$id
-  if (!is.null(current_attempt_id)) {
-    data_saved <- sp_save_section_data(current_attempt_id, current_section_id, input_values)
+    data_saved <- sp_save_section_data(current_attempt$id, current_section_id, input_values)
 
     if (isTRUE(data_saved)) {
-      # Section data is saved. Check if this is the final section (or the last section with a button)
-      if (isTRUE(current_section) || isTRUE(current_section_id == session_env$last_section_id)) {
+      # If any of the questions were auto-graded, update the grades for this attempt
+      if (length(grades) > 0L) {
+        if (!is.null(session_env$attempt_points)) {
+          session_env$attempt_points[names(grades)] <- grades
+        } else {
+          session_env$attempt_points <- grades
+        }
+        # Save the grades. A failure will not be communicated to the user!
+        sp_grade_attempt(current_attempt$id, session_env$attempt_points)
+      }
+
+      # Check if this is the final section (or the last section with a button)
+      if (isTRUE(current_section) || identical(current_section_id, session_env$last_section_id)) {
         finish_current_attempt(session)
       }
     } else {

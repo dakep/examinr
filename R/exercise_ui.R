@@ -28,14 +28,14 @@ opts_hook_possible_exercise_initial_pass <- function (options, ...) {
     }
   } else {
     # Check if the chunk is a support chunk for any exercise.
-    associated_exercises <- if (isTRUE(options$label == options$exercise.setup) ||
-                                isTRUE(options$label == options$exercise.solution)) {
+    associated_exercises <- if (identical(options$label, options$exercise.setup) ||
+                                identical(options$label, options$exercise.solution)) {
       # First check if the chunk is a globally set support chunk
       options$label
     } else {
-      filter_expr <- expr(all_labels(exercise == TRUE &&
-                                       (exercise.setup == !!(options$label) ||
-                                          exercise.solution == !!(options$label))))
+      filter_expr <- expr(all_labels(isTRUE(exercise) &&
+                                       (identical(exercise.setup, !!(options$label)) ||
+                                          identical(exercise.solution, !!(options$label)))))
       eval(filter_expr)
     }
 
@@ -77,11 +77,12 @@ extract_support_code <- function (support_label) {
 ## when evaluation the user code.
 extract_relevant_chunk_options <- function (options) {
   options[names(options) %in% c('results', 'dev.args', 'dpi', 'fig.width', 'fig.height', 'fig.asp', 'fig.dim',
-                                'out.width', 'out.height', 'fig.retina', 'engine')]
+                                'out.width', 'out.height', 'fig.retina', 'engine', 'df_print', 'dev.args')]
 }
 
 #' @importFrom rlang abort
-#' @importFrom stringr str_detect str_remove
+#' @importFrom stringr str_remove fixed
+#' @importFrom htmltools tagList tags HTML
 #' @importFrom shiny NS
 #' @importFrom rmarkdown shiny_prerendered_chunk
 knit_hook_exercise <- function (before, options, envir, ...) {
@@ -92,13 +93,16 @@ knit_hook_exercise <- function (before, options, envir, ...) {
 
   if (before) {
     label <- get_chunk_label(options)
+    section_ns <- NS(opts_chunk$get('examinr.section_id') %||% random_ui_id('unknown_section'))
+    points <- options$exercise.points %||% 1
+    points_str <- format_points(points)
 
-    section_ns <- NS(opts_chunk$get('examinr.section_ui_id') %||% opts_chunk$get('examinr.section_id') %||%
-                       random_ui_id('unknown_section'))
-
-    points_str <- format_points(options$exercise.points %||% 1)
+    # Use a transparent background for png's by default
+    options$dev.args <- c(options$dev.args %||% list(), list(bg = 'transparent'))
+    options$df_print <- options$exercise.df_print %||% options$df_print %||% 'default'
 
     ex_data_srv <- list(label = label,
+                        points = points,
                         support_code = options$exercise.support_code,
                         chunk_options = extract_relevant_chunk_options(options),
                         input_id = section_ns(paste('Q', label, sep = '-')),
@@ -112,20 +116,17 @@ knit_hook_exercise <- function (before, options, envir, ...) {
                        outputId = ex_data_srv$output_id,
                        points = points_str,
                        buttonLabel = options$exercise.button %||% get_status_message('exercise')$buttonLabel,
-                       panelClass = add_prefix('panel-', options$exam.question_context %||% 'default'),
-                       buttonClass = add_prefix('btn-', options$exercise.button_context %||% 'default'),
-                       labelClass = add_prefix('label-', options$exam.points_context %||% 'info'),
                        title = options$exercise.title %||% get_status_message('exercise')$panelTitle,
                        lines = options$exercise.lines %||% 5,
                        autocomplete = options$exercise.autocomplete %||% TRUE)
 
-
-    exercise_div <- sprintf('<div class="examinr-exercise"><script type="application/json">%s</script>',
-                            to_json(ex_data_js))
-
     shiny_prerendered_chunk('server', sprintf('examinr:::exercise_chunk_server("%s")', serialize_object(ex_data_srv)))
 
-    return(exercise_div)
+    exercise_div <- tags$div(class = 'examinr-exercise examinr-question examinr-q-exercise',
+                             `data-questionlabel` = label, `data-maxpoints` = points,
+                             tags$script(type = 'application/json', HTML(to_json(ex_data_js))))
+
+    return(str_remove(as.character(exercise_div), fixed('</div>')))
   } else {
     return('</div>')
   }

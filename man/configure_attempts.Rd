@@ -20,7 +20,7 @@ show_attempts_configuration()
 \item{user_ids}{a character vector of user id's, matched against the user id as determined by the authentication
 provider specified in \code{\link[=exam_config]{exam_config()}}.}
 
-\item{opens, closes}{the opening and closing time of the exam for the given users,
+\item{opens, closes}{the opening and closing date/time of the exam for the given users,
 in the format \emph{YYYY-MM-DD HH:MM Timezone} (e.g., \verb{2020-10-15 19:15 Europe/Vienna}
 for October 15th, 2020 at 19:15 in Vienna, Austria).
 The exam is only accessible within this time frame.
@@ -46,4 +46,9 @@ the global setting. This function can only be called from a \emph{server-start} 
 For verifying the attempts configurations, the current configurations and all overrides can be displayed in an
 interactive document via \code{show_attempts_configuration()}. This is only meant for verification purposes and should
 not be used in the actual exam!
+}
+\details{
+If the configuration seems to conflict with the global configuration, a warning is displayed.
+Conflicts are if the global configuration does specify an option, but the user-specific
+override explicitly disables an option (e.g., a global time-limit, but no time-limit for some users).
 }

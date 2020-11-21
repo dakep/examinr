@@ -2,7 +2,7 @@
 % Please edit documentation in R/question_types_ui.R
 \name{text_question}
 \alias{text_question}
-\title{Create a Text Question}
+\title{Create a Question With Text Input}
 \usage{
 text_question(
   title,
@@ -11,12 +11,11 @@ text_question(
   width = "100\%",
   height = NULL,
   placeholder = NULL,
-  title_container = h5,
+  title_container = h6,
   static_title = NULL,
-  min = NA,
-  max = NA,
-  step = NA,
-  accuracy = step,
+  accuracy = 0.001,
+  solution = NULL,
+  solution_quoted = FALSE,
   label = "Type your answer below.",
   hide_label = FALSE
 )
@@ -44,15 +43,25 @@ Internet Explorer 8 and 9 do not support this option.}
 it will be rendered dynamically. If \code{TRUE}, always render the title statically. If \code{FALSE}, always render the
 title dynamically on the server.}
 
-\item{min, max, step}{if \code{type="numeric"}, gives the minimum and maximum allowed value as well as the interval
-for stepping between min and max.}
+\item{solution}{an expression to compute the solution to the answer.
+The expression is evaluated in the environment returned by the data provider set up via \code{\link[=exam_config]{exam_config()}}.
+See below for details on how to auto-grade questions of type \emph{numeric}.}
 
-\item{accuracy}{numeric accuracy for grading inputs with \code{type="numeric"}.}
+\item{solution_quoted}{is the \code{solution} expression quoted?}
 
 \item{label}{a label to help screen readers describe the purpose of the input element.}
 
 \item{hide_label}{hide the label from non-screen readers.}
+
+\item{markdown_html()}{numeric accuracy for grading inputs with \code{type="numeric"}.}
 }
 \description{
-Text questions are not auto-graded.
+Render a question which asks the user to input a value. Questions of \emph{numeric} support auto-grading.
+}
+\details{
+The solution is computed by evaluating the expression given in \code{solution} in the rendering environment.
+The expression must yield either a single character string or, if the question is of type \emph{numeric}, a numeric value.
+The result of the expression is rendered with \link[commonmark:commonmark]{commonmark}.
+To auto-grade \emph{numeric} questions, the \code{solution} expression can yield a numeric value or a character value with
+attribute \code{answer}. This number is compared against the user's answer (with tolerance \code{accuracy}).
 }

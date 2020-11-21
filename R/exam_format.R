@@ -24,122 +24,154 @@
 #'   The exam is only accessible within this time frame.
 #'   This can be overridden for individual users with [configure_attempts()].
 #'   Can also be `NA` to either make the exam available immediately, indefinitely, or both (the default).
+#' @param feedback the date/time on which the solution and feedback are available, `"immediately"` for showing
+#'   feedback immediately after the exam is submitted, or `NA`, in which case no feedback view is available.
+#'   Note that if feedback is shown immediately after the exam is submitted, the last section is treated as
+#'   a regular section.
 #' @param use_cdn load javascript libraries from external content delivery networks (CDNs).
 #'   Use this if the shiny server is slow at serving static resources, but beware of the downsides of
 #'   relying on content from a third-party!
-#' @param question_context,points_context,exercise_button_context,next_button_context contextual style classes for
-#'   question panels, points labels, exercise buttons, and section navigation buttons.
-#'   Can be `default` or any of the bootstrap 3 contextual classes listed at
-#'   <https://getbootstrap.com/docs/3.3/css/#helper-classes-colors>.
-#'   These can also be set on a per-question or per-exercise level by specifying code chunk options
-#'   `exam.question_context`, `exam.points_context` and `exercise.button_context`.
-#'   A section-specific button context can be set via [section_config()].
-#' @param ... passed on to [html_document()][rmarkdown::html_document()]. Parameters `section_divs` and `toc` are not
-#'   supported.
+#'   Note that the default MathJax library is *always* loaded from a CDN.
+#' @param fig_width default width (in inches) for figures.
+#' @param fig_height default height (in inches) for figures.
+#' @param fig_retina scaling to perform for retina displays. Set to `NULL` to prevent retina scaling.
+#'   See [rmarkdown::html_document()] for details.
+#' @param fig_caption `TRUE` to render figures with captions.
+#' @param dev graphics device to use for figure output (defaults to png).
+#' @param df_print method to be used for printing data frames.
+#'   Valid values include "default", "kable", "tibble", and "paged". See [rmarkdown::html_document()] for details.
+#' @param self_contained produce a HTML file with all external dependencies included using `data:` URIs.
+#'   Note that the default MathJax library is always loaded from an external CDN (see `use_cdn` for details).
+#' @param highlight Enable syntax highlighting style via pandoc.
+#'   Supported styles include "default", "tango", "pygments", "kate", "monochrome", "espresso", "zenburn", "haddock".
+#'   Pass `NULL` to prevent syntax highlighting.
+#' @param mathjax if and how to include MathJax. The "default" option uses MathJax v3 from a CDN.
+#'   You can pass an alternate URL or pass `NULL` to disable MathJax entirely.
+#' @param css one or more CSS files to include in the document.
+#' @param lang define the language of the exam document. Defaults to the current system's locale, but this
+#'   is often not accurate.
+#' @param md_extensions markdown extensions to be added or removed from the default definition of R Markdown.
+#'   See [rmarkdown::rmarkdown_format()] for details.
+#' @param extra_dependencies,... additional arguments passed on to the base R Markdown HTML output
+#'  [rmarkdown::html_document_base()].
 #'
-#' @importFrom rmarkdown output_format html_document html_dependency_jquery shiny_prerendered_chunk
+#' @importFrom rmarkdown output_format html_document_base shiny_prerendered_chunk from_rmarkdown knitr_options_html
+#' @importFrom rmarkdown pandoc_options
 #' @importFrom htmltools htmlDependency
 #' @importFrom stringr str_starts str_sub
 #' @importFrom utils packageVersion
-#' @importFrom knitr knit_meta knit
-#' @importFrom tools file_path_sans_ext
+#' @importFrom knitr knit_meta knit opts_knit knit_hooks opts_chunk opts_hooks
+#' @importFrom tools file_path_sans_ext file_ext
 #'
 #' @export
 exam_document <- function (id = 'exam', version = '0.1', use_cdn = FALSE, render = c('server', 'static'),
-                           progressive = FALSE, order = c('random', 'fixed'),
-                           max_attempts = Inf, timelimit = Inf, opens = NA, closes = NA, grace_period = 120,
-                           next_button_context = 'primary', question_context = 'default',
-                           points_context = 'info', exercise_button_context = 'primary', ...) {
-  html_document_args <- list(...)
-  html_document_args$section_divs <- TRUE
-  html_document_args$anchor_sections <- FALSE
-  html_document_args$toc <- FALSE
-
+                           progressive = FALSE, order = c('random', 'fixed'), max_attempts = Inf, timelimit = Inf,
+                           opens = NA, closes = NA, feedback = NA, grace_period = 120, self_contained = TRUE,
+                           fig_width = 7, fig_height = 5, fig_retina = 2, fig_caption = TRUE, keep_md = FALSE,
+                           dev = 'png', highlight = 'default',  df_print = 'default', css = NULL,
+                           mathjax = 'default', md_extensions = NULL,  extra_dependencies = NULL, ...) {
   # Parse attempts configuration
   attempts_config <- set_attempts_config_from_metadata(opens = opens, closes = closes, max_attempts = max_attempts,
                                                        timelimit = timelimit, grace_period = grace_period)
 
+  if (!is.na(feedback) && !identical(feedback, 'immediately')) {
+    feedback <- parse_datetime(feedback)
+  }
+
   # Verify exam metadata
   exam_metadata <- list(id = as.character(id)[[1L]],
                         version = as.character(numeric_version(version[[1L]])),
+                        feedback = feedback,
                         render = match.arg(render),
                         progressive = isTRUE(progressive),
                         order = match.arg(order),
-                        section_btn_context = next_button_context,
                         section_btn_label = get_status_message('sections')$nextButtonLabel)
+  # build pandoc args
+  pandoc_args <- c('--standalone', '--section-divs', '--variable', 'enable-high-contrast:1')
 
-  html_document_args$extra_dependencies <- c(html_document_args$extra_dependencies %||% list(), list(
-    html_dependency_jquery(),
+  # template path and assets
+  template_file <- normalizePath(system.file('templates', 'exam.html', package = 'examinr', mustWork = TRUE))
+
+  pandoc_args <- c(pandoc_args, '--template', normalizePath(template_file))
+
+  extra_dependencies <- c(extra_dependencies %||% list(), list(
     html_dependency_ace(use_cdn),
     htmlDependency('exam', packageVersion('examinr'),
-                   package = 'examinr', src = 'www',
+                   src = system.file('www', package = 'examinr', mustWork = TRUE),
                    script = 'exam.min.js', stylesheet = 'exam.min.css')))
 
-  out <- output_format(
-    pandoc = list(to = 'html5'),
-    post_knit = function (metadata, input, runtime, encoding, ...) {
-      if (tolower(tools::file_ext(input)) != 'rmd') {
-        return(NULL)
-      }
-      # Using the information collected in the first pass, create a new Rmd file and knit it again.
-      # Collect stats from the first run
-      first_pass_stats <- list(
-        section_config_overrides = section_config_overrides(),
-        static_chunks = unlist(knit_meta('examinr_static_chunk_label'), FALSE, FALSE) %||% character(0L)
-      )
-      # Create a new Rmd file with exam sections
-      new_rmd <- create_exam_rmd(input_rmd = input, static_chunks = first_pass_stats$static_chunks,
-                                 exam_metadata = exam_metadata, attempts_config = attempts_config,
-                                 section_config_overrides = first_pass_stats$section_config_overrides,
-                                 encoding = encoding)
+  if (identical(mathjax, 'default')) {
+    pandoc_args <- c(pandoc_args, '--mathjax', '--variable', 'mathjax-v3-cdn:1')
+    mathjax <- NULL
+  }
 
-      on.exit(unlink(new_rmd, recursive = FALSE, force = TRUE), add = TRUE, after = FALSE)
+  # highlighting using pandoc's highlighters
+  pandoc_args <- c(pandoc_args, '--highlight-style', highlight)
 
-      ## Knit the new Rmd file into the original markdown file
-      output <- file.path(dirname(input), sprintf('%s.knit.md', file_path_sans_ext(basename(input))))
+  # add all user-specified CSS files
+  for (path in css) {
+    pandoc_args <- c(pandoc_args, "--css", normalizePath(path))
+  }
 
-      # clean the metadata from the first run
-      knit_meta()
-
-      # set the options for knitting the exam
-      knitr::opts_knit$set(examinr.initial_pass = FALSE)
-      knitr::knit_hooks$set(exercise = knit_hook_exercise)
-      knitr::opts_chunk$set(examinr.exam = TRUE,
-                            exam.question_context = question_context,
-                            exam.points_context = points_context)
-      knitr::opts_hooks$set(examinr.sectionchunk = exam_section_opts_hook)
-
-      # Register the attempts configuration in the server process
-      shiny_prerendered_chunk('server-start', sprintf('examinr:::register_attempts_config("%s")',
-                                                      serialize_object(attempts_config)))
-      # Initialize the exam session
-      shiny_prerendered_chunk('server', sprintf('examinr:::initialize_exam_session("%s")',
-                                                serialize_object(exam_metadata)))
-
-      knit_env <- new.env(parent = parent.frame())
-      knitr::knit(input = new_rmd, output = output, quiet = TRUE, envir = knit_env, encoding = encoding)
-
+  post_knit <- function (metadata, input, runtime, encoding, ...) {
+    if (!identical(tolower(file_ext(input)), 'rmd')) {
       return(NULL)
-    },
-    # pre_processor = function (...) {
-    #   browser()
-    # },
-    # post_processor = function (metadata, input_file, output_file, clean, verbose, ...) {
-    #   if (exam_pass > 1L) {
-    #     output_file
-    #   } else {
-    #     create_exam_md(input_file = rmd_input_file,
-    #                    static_chunks = first_pass_stats$static_chunks,
-    #                    exam_metadata = exam_metadata,
-    #                    section_config_overrides = first_pass_stats$section_config_overrides,
-    #                    output_file = output_file, verbose = verbose, clean = clean, metadata = metadata, ...)
-    #   }
-    # },
-    base_format = do.call(html_document, html_document_args),
-    knitr = list(opts_chunk = list(examinr.exam = TRUE),
-                 opts_knit = list(examinr.initial_pass = TRUE),
-                 opts_hooks = list(examinr.exam = opts_hook_exam_format)))
+    }
+    # Using the information collected in the first pass, create a new Rmd file and knit it again.
+    # Collect stats from the first run
+    first_pass_stats <- list(
+      section_config_overrides = section_config_overrides(),
+      static_chunks = unlist(knit_meta('examinr_static_chunk_label'), FALSE, FALSE) %||% character(0L)
+    )
+    # Create a new Rmd file with exam sections
+    new_rmd <- create_exam_rmd(input_rmd = input, static_chunks = first_pass_stats$static_chunks,
+                               exam_metadata = exam_metadata, attempts_config = attempts_config,
+                               section_config_overrides = first_pass_stats$section_config_overrides,
+                               encoding = encoding)
 
+    on.exit(unlink(new_rmd, recursive = FALSE, force = TRUE), add = TRUE, after = FALSE)
+
+    ## Knit the new Rmd file into the original markdown file
+    output <- file.path(dirname(input), sprintf('%s.knit.md', file_path_sans_ext(basename(input))))
+
+    # clean the metadata from the first run
+    knit_meta()
+
+    # set the options for knitting the exam
+    opts_knit$set(examinr.initial_pass = FALSE)
+    knit_hooks$set(exercise = knit_hook_exercise)
+    opts_chunk$set(examinr.exam = TRUE,
+                   exercise.df_print = df_print)
+    opts_hooks$set(examinr.sectionchunk = exam_section_opts_hook)
+
+    # Register the attempts configuration in the server process
+    shiny_prerendered_chunk('server-start', sprintf('examinr:::register_attempts_config("%s")',
+                                                    serialize_object(attempts_config)))
+
+    knit_env <- new.env(parent = parent.frame())
+    knit(input = new_rmd, output = output, quiet = TRUE, envir = knit_env, encoding = encoding)
+
+    return(NULL)
+  }
+
+  knitr_options <- knitr_options_html(fig_width, fig_height, fig_retina, keep_md, dev)
+  knitr_options$opts_chunk <- c(knitr_options$opts_chunk %||% list(), list(examinr.exam = TRUE))
+  knitr_options$opts_knit <- c(knitr_options$opts_knit %||% list(), list(examinr.initial_pass = TRUE))
+  knitr_options$opts_hooks <- c(knitr_options$opts_hooks %||% list(), list(examinr.exam = opts_hook_exam_format))
+
+  out <- output_format(
+    pandoc = pandoc_options(to = 'html5', from = from_rmarkdown(fig_caption, md_extensions), args = pandoc_args),
+    knitr = knitr_options,
+    keep_md = keep_md,
+    clean_supporting = TRUE,
+    df_print = df_print,
+    post_knit = post_knit,
+    base_format = html_document_base(theme = NULL,
+                                     self_contained = self_contained,
+                                     mathjax = mathjax,
+                                     template = template,
+                                     extra_dependencies = extra_dependencies,
+                                     ...))
   return(out)
 }
 
@@ -162,11 +194,11 @@ opts_hook_exam_format <- function (options, ...) {
     return(options)
   }
 
-  if (!isTRUE(opts_knit$get('rmarkdown.runtime') == 'shiny_prerendered')) {
+  if (!identical(opts_knit$get('rmarkdown.runtime'), 'shiny_prerendered')) {
     abort("examinr exams can only be used with `runtime: shiny_prerendered`.")
   }
 
-  if (is.null(options[['context']]) || isTRUE(options[['context']] == 'render')) {
+  if (is.null(options[['context']]) || identical(options[['context']], 'render')) {
     # Check all chunks within the "render" context for R exercise
     if (isTRUE(opts_knit$get('examinr.initial_pass'))) {
       return(opts_hook_possible_exercise_initial_pass(options, ...))
@@ -178,8 +210,75 @@ opts_hook_exam_format <- function (options, ...) {
   }
 }
 
-## Initialize a new exam session
-initialize_exam_session <- function (exam_metadata) {
+## Initialize all components.
+## This must be called at the end of the document to ensure all section information has been collected.
+initialize_exam <- function (exam_metadata, attempts_config, section_config_overrides) {
   exam_metadata <- unserialize_object(exam_metadata)
-  initialize_attempt(exam_id = exam_metadata$id, exam_version = exam_metadata$version)
+  attempts_config <- unserialize_object(attempts_config)
+  section_config_overrides <- unserialize_object(section_config_overrides)
+
+  # Merge section information with section configuration overrides
+  sections <- knit_meta('examinr_section')
+
+  sections <- lapply(sections, function (section) {
+    section$overrides <- section_config_overrides[[section$name]] %||% list()
+    return(section)
+  })
+
+  return(structure(list(exam_metadata = exam_metadata,
+                        attempts_config = attempts_config,
+                        sections = sections),
+                   class = 'examinr_exam_init'))
+}
+
+## Print section initialization
+#' Overrides for knit_print.
+#' @inheritParams knitr::knit_print
+#' @method knit_print examinr_exam_init
+#' @rdname knit_print
+#' @importFrom rmarkdown shiny_prerendered_chunk
+#' @importFrom htmltools tagList
+#' @export
+#' @keywords internal
+knit_print.examinr_exam_init <- function (x, ...) {
+  shiny_prerendered_chunk('server', sprintf('examinr:::initialize_exam_server("%s")', serialize_object(x)))
+
+  ui_attempts_config <- list(totalSections = length(x$sections) - 1L,
+                             haveTimelimit = isTRUE(x$attempts_config$timelimit < Inf),
+                             progressive = isTRUE(x$exam_metadata$progressive),
+                             progressbar = isTRUE(x$exam_metadata$progress_bar))
+
+  ui_sections_config <- list(progressive = isTRUE(x$exam_metadata$progressive),
+                             hideLastSection = !identical(x$exam_metadata$feedback, 'immediately'))
+
+  ui <- tagList(tags$script(type = 'application/json', class = 'examinr-attempts-config',
+                            HTML(to_json(ui_attempts_config))),
+                tags$script(type = 'application/json', class = 'examinr-sections-config',
+                            HTML(to_json(ui_sections_config))),
+                tags$script(type = 'application/json', class = 'examinr-status-messages',
+                            HTML(to_json(get_status_message()))))
+  knit_print(ui, ...)
+}
+
+## Initialize a new exam session
+#' @importFrom shiny parseQueryString getDefaultReactiveDomain
+initialize_exam_server <- function (config) {
+  config <- unserialize_object(config)
+  session <- getDefaultReactiveDomain()
+
+  if (is.null(session)) {
+    abort("shiny session not available")
+  }
+
+  # Login user ...
+
+  query <- parseQueryString(isolate(session$clientData$url_search))
+
+  if (identical(query$display, 'feedback')) {
+    initialize_feedback(session, config$exam_metadata, config$sections)
+  } else if (identical(query$display, 'grading')) {
+  } else {
+    initialize_attempt(session, exam_id = config$exam_metadata$id, exam_version = config$exam_metadata$version)
+    initialize_sections_server(session, config$sections, config$exam_metadata)
+  }
 }

@@ -1,5 +1,29 @@
-.main-container {
+$high-contrast-theme: true !default;
+
+.title {
+  text-align: center;
+}
+
+main.container {
   display: none;
+  @include make-container();
+}
+
+// Responsive containers that are 100% wide until a breakpoint
+@each $breakpoint, $container-max-width in $container-max-widths {
+  @include media-breakpoint-up($breakpoint, $grid-breakpoints) {
+    .container {
+      max-width: $container-max-width;
+    }
+  }
+}
+
+// icon placement
+.icon {
+  display: inline-flex;
+  align-self: center;
+  top: .125em;
+  position: relative;
 }
 
 // Section styling
@@ -8,18 +32,132 @@
   float: right;
 }
 
+// Question styling
+.examinr-question {
+  margin: map-get($spacers, 2) 0 map-get($spacers, 4);
+
+  h6.card-header {
+    font-weight: normal;
+
+    div.shiny-html-output {
+      display: inline;
+    }
+  }
+
+  .card-body > .form-group {
+    margin-bottom: 0;
+  }
+
+  .examinr-points {
+    float: right;
+
+    .awarded::after {
+      content: "/";
+      padding: map-get($spacers, 1);
+    }
+  }
+
+  .hide-label .form-group > label {
+    @include sr-only();
+  }
+
+  &.examinr-q-mcquestion {
+    .shiny-input-checkboxgroup,
+    .shiny-input-radiogroup {
+      width: 100%;
+      min-width: 300px;
+    }
+  }
+}
+
+div.sourceCode {
+  padding: map-get($spacers, 2);
+}
+
+@if $high-contrast-theme {
+  // overwrite pandoc code style
+  div.sourceCode {
+    background-color: transparent;
+    border: 2px solid $gray-700;
+    border-radius: $border-radius;
+  }
+  pre.sourceCode {
+    margin-bottom: 0;
+
+    &, span {
+      color: $black;
+    }
+    span.co {
+      color: $gray-700;
+    }
+  }
+}
+
 // Status bar
 .examinr-exam-status {
+  @include make-row(0);
+
+  $size-inactive: 1.85 * $font-size-base !default;
+  $size-active: 1.1 * $size-inactive;
+
   position: fixed;
   top: 0;
   right: 0;
   left: 0;
-  background-color: #ffffff;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
   text-align: center;
   z-index: 100;
+  padding: map-get($spacers, 3) map-get($spacers, 3);
+  line-height: $size-inactive;
+
+  .col-left {
+    @include make-col(3);
+    text-align: left;
+  }
+
+  .col-right {
+    @include make-col(3);
+    text-align: right;
+  }
+
+  .col-center {
+    @include make-col(6);
+    text-align: center;
+  }
+
+  .btn-high-contrast {
+    $color: $gray-900 !default;
+    $margin-active: -($size-active - $size-inactive) / 2;
+
+    @if $high-contrast-theme {
+      $color: $gray-400;
+    }
+
+    background: transparent;
+    border: 0;
+    line-height: 0;
+    padding: 0;
+    position: relative;
+    z-index: 200;
+    color: $color;
+    font-size: $size-inactive;
+    margin: 0;
+
+    &:hover,
+    &:active,
+    &:focus {
+      color: $black;
+      font-size: $size-active;
+      margin: $margin-active;
+    }
+  }
 
   .examinr-progress {
     display: none;
+    position: relative;
     margin: 0;
   }
 
@@ -53,24 +191,42 @@
 
 // Exercise chunks
 .examinr-exercise {
-  .panel {
-    border-radius: 0;
-  }
-
-  .panel-heading,
-  .panel-footer .alert {
-    padding-top: 5px;
-    padding-bottom: 8px;
-    border-radius: 0;
+  .card-header,
+  .card-footer {
+    padding-top: map-get($spacers, 1);
+    padding-bottom: map-get($spacers, 1);
     margin: 0;
   }
-  .panel-heading .label {
-    margin-left: 0.5rem;
+
+  .examinr-exercise-status pre {
+    padding-left: map-get($spacers, 3);
   }
 
-  .panel-body,
-  .panel-footer {
+  @if $high-contrast-theme {
+    .ace_gutter {
+      background-color: $gray-700;
+    }
+  }
+
+  .examinr-run-button {
+    margin: 0;
+    padding: 0 map-get($spacers, 2);
+  }
+
+  .card-body {
     padding: 0;
+  }
+
+  .examinr-exercise-output {
+    margin-top: map-get($spacers, 2);
+
+    .card-body {
+      padding: $spacer;
+      overflow: scroll;
+      pre {
+        overflow: visible;
+      }
+    }
   }
 }
 
@@ -117,7 +273,7 @@ body > .examinr-recompute-overlay > .examinr-recompute {
     height: 100%;
     border-radius: 100%;
     border: $spinner-wheel-width solid transparent;
-    border-top-color: #3498db;
+    border-top-color: theme-color('info');
   }
 
   &:before {
@@ -126,7 +282,7 @@ body > .examinr-recompute-overlay > .examinr-recompute {
   }
 
   &:after {
-    border: $spinner-wheel-width solid #ccc;
+    border: $spinner-wheel-width solid theme-color('light');
   }
 }
 
@@ -143,5 +299,45 @@ body > .examinr-recompute-overlay > .examinr-recompute {
     -ms-transform: rotate(360deg);
     -o-transform: rotate(360deg);
     transform: rotate(360deg);
+  }
+}
+
+// grading styling
+.examinr-grading-points {
+  float: right;
+  width: 12em;
+  max-width: 100%;
+}
+
+
+.examinr-grading-feedback {
+  &:not(:first-child) {
+    margin-top: map-get($spacers, 3);
+  }
+  &:not(:last-child) {
+    margin-bottom: map-get($spacers, 3);
+  }
+
+  div:not(.input-group-prepend),
+  pre {
+    margin-left: map-get($spacers, 3);
+    line-height: $line-height-base;
+  }
+
+  h6 {
+    margin-left: 0;
+  }
+}
+
+.examinr-grading-attempt {
+  float: right;
+
+  .input-group {
+    min-width: 15em;
+    max-width: 50%;
+
+    select {
+      margin-left: map-get($spacers, 3);
+    }
   }
 }

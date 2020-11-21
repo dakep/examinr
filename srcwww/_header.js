@@ -1,4 +1,3 @@
-window.Exam = (function () {
-  'use strict'
-
-  const exports = {}
+if (typeof exports === 'undefined') {
+  window.exports = window.Exam = {}
+}

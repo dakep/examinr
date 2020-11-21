@@ -12,13 +12,14 @@ mc_question(
   nr_answers = 5,
   random_answer_order = TRUE,
   mc = TRUE,
-  title_container = h5,
+  title_container = h6,
   static_title = NULL,
   label = "Select the correct answer(s).",
-  hide_label = FALSE
+  hide_label = FALSE,
+  min_points = 0
 )
 
-answer(label, correct = FALSE, always_show = FALSE)
+answer(label, correct = FALSE, always_show = FALSE, weight = correct)
 }
 \arguments{
 \item{title}{question title. Markdown is supported and by default the title will be rendered dynamically if it
@@ -47,9 +48,18 @@ title dynamically on the server.}
 
 \item{hide_label}{hide the label from non-screen readers.}
 
+\item{min_points}{if \code{points} multiplied by the the sum of the weights of all selected answer options is negative,
+where to cut off negative points. If \code{NULL}, there is no lower bound.}
+
 \item{correct}{if the answer is correct or not.}
 
 \item{always_show}{even if answer options are randomized, always show this answer.}
+
+\item{weight}{the weight of this answer, if selected. By default, correct answers have a weight of 1, and incorrect
+answers have a weight of 0. A negative weight will subtract that proportion of available points from the user's
+points (e.g., penalizing for selecting incorrect answer options).
+The sum of all displayed \strong{positive} weights is standardized to sum to 1,
+\strong{but negative weights are not standardized.}}
 }
 \description{
 Render a multiple- or single-choice question.

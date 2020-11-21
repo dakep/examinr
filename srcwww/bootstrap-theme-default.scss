@@ -1,0 +1,9 @@
+$theme-colors: (
+  "primary":    #0072B2,
+  "secondary":  #5b7892,
+  "dark":       #002e49
+);
+
+$high-contrast-theme: false;
+
+@import "bootstrap-unthemed.scss";

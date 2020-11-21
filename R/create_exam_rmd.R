@@ -31,7 +31,7 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
   }
 
   # Write a section chunk
-  write_section_chunk <- function (content, section, section_ui_id, chunk_counter) {
+  write_section_chunk <- function (content, section_id, chunk_counter) {
     if (length(content) > 0L) {
       content <- unlist(content, recursive = FALSE, use.names = FALSE)
 
@@ -42,40 +42,37 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
       } else {
         content_enc <- serialize_object(content)
         writeLines(c('```{r, examinr.sectionchunk=TRUE}',
-                     sprintf('examinr:::section_chunk("%s", "%s", "%s", %d)',
-                             section, section_ui_id, content_enc, chunk_counter),
+                     sprintf('examinr:::section_chunk("%s", "%s", %d)', section_id, content_enc, chunk_counter),
                      '```'), con = out_con)
       }
     }
   }
 
-  write_section_start <- function (section, section_ui_id) {
+  write_section_start <- function (section_id) {
     writeLines(c('```{r, examinr.sectionchunk=TRUE}',
-                 sprintf('examinr:::section_start("%s", "%s")', section, section_ui_id),
-                 '```'), con = out_con)
+                 sprintf('examinr:::section_start("%s")', section_id),
+                 '```\n'), con = out_con)
   }
 
-  write_section_end <- function (section, section_ui_id) {
-    btn_label <- section_config_overrides[[section]]$btn_label %||% exam_metadata$section_btn_label
+  write_section_end <- function (section_name, section_id) {
+    btn_label <- section_config_overrides[[section_name]]$btn_label %||% exam_metadata$section_btn_label
 
     if (!is.na(btn_label)) {
       btn_label <- paste('"', btn_label, '"', sep =  '')
     }
 
-    btn_context <- section_config_overrides[[section]]$btn_context %||% exam_metadata$section_btn_context
-    writeLines(c('```{r, examinr.sectionchunk=TRUE}',
-                 sprintf('examinr:::section_end("%s", "%s", "%s", %s, "%s")', section, section_ui_id,
-                         exam_metadata_serialized, btn_label, btn_context),
-                 '```'), con = out_con)
+    writeLines(c('\n```{r, examinr.sectionchunk=TRUE}',
+                 sprintf('examinr:::section_end("%s", "%s", "%s", %s)',
+                         section_name, section_id, exam_metadata_serialized, btn_label),
+                 '```\n'), con = out_con)
   }
 
   ## Write the exam initialization which requires the section
   write_init_exam <- function () {
     writeLines(c('```{r, examinr.sectionchunk=TRUE}',
-                 sprintf('examinr:::initialize_exam_status("%s", "%s")',
-                         exam_metadata_serialized, serialize_object(attempts_config)),
-                 sprintf('examinr:::initialize_sections("%s", "%s")',
-                         exam_metadata_serialized, serialize_object(section_config_overrides)),
+                 sprintf('examinr:::initialize_exam("%s", "%s", "%s")',
+                         exam_metadata_serialized, serialize_object(attempts_config),
+                         serialize_object(section_config_overrides)),
                  '```'), con = out_con)
   }
 
@@ -83,8 +80,8 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
 
   inside_section <- FALSE
   inside_fixed_section <- FALSE
-  current_section <- ''
-  current_section_ui_id <- ''
+  current_section_name <- ''
+  current_section_id <- ''
   section_chunk_counter <- 1L
   inside_code_chunk <- FALSE
   run_chunk_server <- FALSE
@@ -105,7 +102,7 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
       } else {
         writeLines(line, out_con)
       }
-      if (line == '```') {
+      if (identical(line, '```')) {
         run_chunk_server <- FALSE
         inside_code_chunk <- FALSE
       }
@@ -113,22 +110,23 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
       ## A new section starts
       if (inside_section) {
         # a new section starts. output previous section.
-        write_section_chunk(section_content, current_section, current_section_ui_id, section_chunk_counter)
+        write_section_chunk(section_content, current_section_id, section_chunk_counter)
         section_chunk_counter <- section_chunk_counter + 1L
         section_content <- vector('list')
       }
       if (inside_section || inside_fixed_section) {
-        write_section_end(current_section, current_section_ui_id)
+        write_section_end(current_section_name, current_section_id)
       }
 
       inside_section <- TRUE
       inside_fixed_section <- FALSE
-      current_section <- normalize_section_name(line)
-      current_section_ui_id <- random_ui_id(current_section)
+      current_section_name <- normalize_string(line)
+      current_section_id <- paste(normalize_string(exam_metadata$id), normalize_string(exam_metadata$version),
+                                  current_section_name, sep = '-')
       section_chunk_counter <- 1L
 
       # capture a new section, unless the next section is a "fixed" section
-      if (isTRUE(current_section %in% fixed_sections)) {
+      if (isTRUE(current_section_name %in% fixed_sections)) {
         inside_fixed_section <- TRUE
         inside_section <- FALSE
       }
@@ -136,7 +134,7 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
       writeLines('\n', out_con)
       writeLines(line, out_con)
       writeLines('\n', out_con)
-      write_section_start(current_section, current_section_ui_id)
+      write_section_start(current_section_id)
 
     } else if (str_starts(line, fixed('```{'))) {
       ## A code chunk begins
@@ -149,7 +147,7 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
         if (run_chunk_server) {
           section_content <- c(section_content, line)
         } else {
-          write_section_chunk(section_content, current_section, current_section_ui_id, section_chunk_counter)
+          write_section_chunk(section_content, current_section_id, section_chunk_counter)
           section_chunk_counter <- section_chunk_counter + 1L
           section_content <- vector('list')
 
@@ -168,17 +166,13 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
   }
 
   if (inside_section) {
-    write_section_chunk(section_content, current_section, current_section_ui_id, section_chunk_counter)
+    write_section_chunk(section_content, current_section_id, section_chunk_counter)
   }
   if (inside_fixed_section || inside_section) {
-    write_section_end(current_section, current_section_ui_id)
+    write_section_end(current_section_name, current_section_id)
   }
 
   write_init_exam()
 
-  # Render the newly created document
-  # new_output <- render(run_document, quiet = !verbose, envir = parent.frame(), clean = clean,
-  #                      output_options = list('.examinr.first_pass' = list()))
-  # unlink(output_file)
   return(new_rmd)
 }

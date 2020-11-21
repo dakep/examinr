@@ -1,30 +1,36 @@
 #! /usr/bin/env Rscript
 
-## Compile all required components of the ace editor javascript library
-## into a single minified javascript file in "../inst/lib"
+## Compile all required components of the third-party javascript libraries
+## into individual minified javascript files in "../inst/lib"
 
 library(digest)
 library(stringr)
 library(base64enc)
 
-source('../R/ace.R')
+source('../R/third_party_libs.R')
 
-res <- ace_cdn_resources()
-
-script_contents <- vapply(res$scripts, FUN.VALUE = character(1L), function (script) {
-  url <- paste(res$base_href, res$version, script$src, sep = '/')
-  script_contents <- readLines(url, encoding = 'UTF8', warn = FALSE)
-  integrity_algo <- str_extract(script$integrity, '^[a-z0-9]+')
+download_script <- function (url, integrity) {
+  script_contents <- paste(readLines(url, encoding = 'UTF8', warn = FALSE), collapse = '\n')
+  integrity_algo <- str_extract(integrity, '^[a-z0-9]+')
   computed_integrity <- base64encode(digest(script_contents, serialize = FALSE, algo = integrity_algo, raw = TRUE))
   computed_integrity <- paste(integrity_algo, computed_integrity, sep = '-')
-  if (script$integrity != computed_integrity) {
+  if (!identical(integrity, computed_integrity)) {
     stop("Integrity of remote javascript code from ", url, " cannot be verified!\n",
-         "Computed integrity\n\t", computed_integrity, "\ndoes not match expected integrity\n\t", script$integrity)
+         "Computed integrity\n\t", computed_integrity, "\ndoes not match expected integrity\n\t", integrity)
   }
   script_contents
+}
+
+# ACE editor
+
+ace <- ace_cdn_resources()
+
+script_contents <- vapply(ace$scripts, FUN.VALUE = character(1L), function (script) {
+  url <- paste(ace$base_href, script$src, sep = '/')
+  download_script(url, script$integrity)
 })
 
-ace_lib_fh <- file(file.path('..', 'inst', 'lib', sprintf('ace-%s.js', res$version)), open = 'wt')
+ace_lib_fh <- file(file.path('..', 'inst', 'lib', sprintf('ace-%s.js', ace$version)), open = 'wt')
 writeLines('/*** BEGIN LICENSE BLOCK ***
 Copyright (c) 2010, Ajax.org B.V.
 All rights reserved.

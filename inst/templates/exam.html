@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html$if(lang)$ lang="$lang$" xml:lang="$lang$"$endif$ class="high-contrast">
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>$title$</title>
+
+$for(header-includes)$
+$header-includes$
+$endfor$
+
+$if(mathjax-v3-cdn)$
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-chtml-full.js"
+        integrity="sha512-i9QsPZJQF49/MM8tHzZxNdmt3C65wrJlq75nLsHGB38LTS3hq3cyVLp6+T7RBwEP5xH7BA2tHNmYgNt91UiORQ=="
+        crossorigin="anonymous"
+        async
+        data-external="1">
+</script>
+$endif$
+
+$if(highlighting-css)$
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+$highlighting-css$
+</style>
+$endif$
+
+$for(css)$
+<link rel="stylesheet" href="$css$" />
+$endfor$
+
+</head>
+
+<body>
+$for(include-before)$
+$include-before$
+$endfor$
+
+<div class="examinr-exam-status">
+  <div class="col-left">
+    $if(enable-high-contrast)$
+    <button class="btn-high-contrast" tabindex="0">
+      <svg aria-label="Toggle high contrast" width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-circle-half" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" d="M8 15V1a7 7 0 1 1 0 14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"></path>
+      </svg>
+    </button>
+    $endif$
+  </div>
+  <div class="col-center"></div>
+  <div class="col-right"></div>
+</div>
+
+$if(title)$
+<h1 class="title display-3">$title$</h1>
+$endif$
+
+
+<main class="container text-break">
+$body$
+</main>
+
+$for(include-after)$
+$include-after$
+$endfor$
+
+$if(mathjax-url)$
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "$mathjax-url$";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+$endif$
+
+</body>
+</html>

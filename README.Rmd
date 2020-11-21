@@ -25,7 +25,13 @@ Easily create exams in R by writing Rmarkdown files as interactive shiny documen
 
 ## TODO
 
+- solution text for text/numeric answers
+- expression to determine if answer option is correct/incorrect
+  * validation of arguments won't be possible anymore
 - "visual" authentication provider, i.e., one with a login UI
+- feedback
+  * select attempt / re-render sections
+  * show all sections at once
 - grading
   * _live_ grading of answers at the end of the exam
   * _automatic_ grading of auto-gradable questions

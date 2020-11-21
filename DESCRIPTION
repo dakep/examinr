@@ -30,7 +30,6 @@ Suggests:
   DBI,
   testthat
 Collate:
-    'ace.R'
     'authentication_provider.R'
     'create_exam_rmd.R'
     'state_frame.R'
@@ -39,17 +38,18 @@ Collate:
     'exercise_evaluators.R'
     'exam_config.R'
     'exam_format.R'
-    'exam_status_ui.R'
     'exercise_autocomplete.R'
     'exercise_options.R'
     'exercise_server.R'
     'exercise_ui.R'
+    'feedback_server.R'
     'question_types_server.R'
     'question_types_ui.R'
     'section_config.R'
     'section_server.R'
     'section_ui.R'
     'status_messages.R'
+    'third_party_libs.R'
     'utilities.R'
 Encoding: UTF-8
 LazyData: true

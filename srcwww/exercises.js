@@ -8,17 +8,20 @@ exports.exercises = (function () {
 
   const kMinLines = 5
   const kMaxDefaultLines = 20
+  const kThemeMonochrome = 'ace/theme/monochrome'
+  const kThemeDefault = 'ace/theme/textmate'
 
-  var exerciseRunButtonEnabled = true
+  let currentTheme = kThemeMonochrome
+  let exerciseRunButtonEnabled = true
 
   function attachAceEditor (id, code) {
-    var editor = ace.edit(id)
+    const editor = ace.edit(id)
     editor.setHighlightActiveLine(false)
     editor.setShowPrintMargin(false)
     editor.setShowFoldWidgets(false)
     editor.setBehavioursEnabled(true)
     editor.renderer.setDisplayIndentGuides(false)
-    editor.setTheme('ace/theme/textmate')
+    editor.setTheme(currentTheme)
     editor.$blockScrolling = Infinity
     editor.session.setMode('ace/mode/r')
     editor.session.getSelection().clearSelection()
@@ -31,112 +34,113 @@ exports.exercises = (function () {
       running = !exerciseRunButtonEnabled
     }
 
-    exports.shim.toggle(outputContainer, running)
+    exports.utils.toggleShim(outputContainer, running)
     exerciseRunButtonEnabled = (running === false)
     $('.examinr-run-button').prop('disabled', !exerciseRunButtonEnabled)
   }
 
-  function initializeExerciseEditors () {
-    $('.examinr-exercise').each(function () {
-      const exercise = $(this)
-      const exerciseOptions = JSON.parse(exercise.children('script[type="application/json"]').detach().text() || '{}')
-      var code = ''
-      exercise.children('pre').each(function () {
-        code += $(this).children('code').text() + '\n'
-      }).remove()
+  function initializeExerciseEditor () {
+    const exercise = $(this)
+    const exerciseOptions = JSON.parse(exercise.children('script[type="application/json"]').detach().text() || '{}')
+    let code = ''
+    exercise.children('pre').each(function () {
+      code += $(this).children('code').text() + '\n'
+    }).remove()
 
-      const codeLines = code.split(/\r?\n/).length
+    const codeLines = code.split(/\r?\n/).length
 
-      const lines = (exerciseOptions.lines ? Math.max(1, exerciseOptions.lines)
-        : Math.min(Math.max(kMinLines, codeLines), kMaxDefaultLines))
+    const lines = (exerciseOptions.lines ? Math.max(1, exerciseOptions.lines)
+      : Math.min(Math.max(kMinLines, codeLines), kMaxDefaultLines))
 
-      if (codeLines < lines) {
-        code += '\n'.repeat(lines - codeLines)
-      }
+    if (codeLines < lines) {
+      code += '\n'.repeat(lines - codeLines)
+    }
 
-      const editorId = exerciseOptions.inputId + '-editor'
-      const pointsLabel = exerciseOptions.points ? '<span class="label ' + (exerciseOptions.labelClass || '') + '">' +
-        exerciseOptions.points + '</span>' : ''
+    const editorId = exerciseOptions.inputId + '-editor'
+    const pointsLabel = exerciseOptions.points
+      ? '<span class="examinr-points badge badge-secondary">' + exerciseOptions.points + '</span>'
+      : ''
 
-      const messageStrings = exports.status.getMessage('exercise') || {}
+    const messageStrings = exports.status.getMessage('exercise') || {}
 
-      const exercisePanel = $('<div class="panel ' + (exerciseOptions.panelClass || '') + '">' +
-        '<div class="panel-heading">' +
-          '<button type="button" class="btn ' + (exerciseOptions.buttonClass || '') + ' btn-xs examinr-run-button pull-right">' +
-            '<span class="glyphicon glyphicon-play" aria-hidden="true"></span>' + exerciseOptions.buttonLabel +
-          '</button>' +
-          '<h5 class="panel-title">' + (exerciseOptions.title || '') + pointsLabel + '</h5>' +
-        '</div>' +
-        '<div class="panel-body">' +
-          '<div id="' + editorId + '" class="examinr-exercise-editor" role="textbox" contenteditable="true" ' +
-              'aria-multiline="true" tabindex=0 ></div>' +
-        '</div>' +
-        '<div class="panel-footer">' +
-          '<div class="small alert alert-warning examinr-exercise-status" role="log">' +
-            messageStrings.notYetRun +
-          '</div>' +
-        '</div>' +
-      '</div>')
+    const exercisePanel = $('<div class="card">' +
+      '<h6 class="card-header">' + (exerciseOptions.title || '') + pointsLabel + '</h6>' +
+      '<div class="card-body">' +
+        '<div id="' + editorId + '" class="examinr-exercise-editor" role="textbox" contenteditable="true" ' +
+            'aria-multiline="true" tabindex=0 ></div>' +
+      '</div>' +
+      '<div class="card-footer text-muted">' +
+        '<button type="button" class="btn btn-secondary btn-sm examinr-run-button float-right">' +
+          '<span class="icon"><svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-play-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg></span>' +
+          exerciseOptions.buttonLabel +
+        '</button>' +
+        '<div class="examinr-exercise-status">' + messageStrings.notYetRun + '</div>' +
+      '</div>' +
+    '</div>')
 
-      const outputContainer = $('<div class="examinr-exercise-output well" role="status"></div>')
-      const exerciseEditor = exercise.find('#' + editorId)
+    const outputContainer = $('<div class="examinr-exercise-output card bg-light">' +
+      (messageStrings.outputTitle
+        ? ('<div class="card-header text-muted small">' + messageStrings.outputTitle + '</div>')
+        : '') +
+      '<div class="card-body p-3" role="status"></div>' +
+    '</div>')
+    const exerciseEditor = exercise.find('#' + editorId)
 
-      exercise.append(exercisePanel).append(outputContainer)
+    exercise.append(exercisePanel).append(outputContainer)
 
-      // make exercise more accessible
-      exports.aria.labelledBy(exercise, exercisePanel.find('.panel-title'))
-      exports.aria.associate('controls', exercisePanel.find('.examinr-run-button'), outputContainer)
-      exerciseEditor.attr('aria-label', exerciseOptions.inputLabel)
-      exerciseEditor.children().attr('aria-hidden', 'true')
+    // make exercise more accessible
+    exports.accessibility.ariaLabelledBy(exercise, exercisePanel.find('.card-header'))
+    exports.accessibility.ariaAssociate('controls', exercisePanel.find('.examinr-run-button'), outputContainer.find('.card-body'))
+    exerciseEditor.attr('aria-label', exerciseOptions.inputLabel)
+    exerciseEditor.children().attr('aria-hidden', 'true')
 
-      if (!messageStrings.notYetRun) {
-        exercise.find('.examinr-exercise-status').hide()
-      } else {
-        exports.aria.describedBy(exercisePanel, exercise.find('.examinr-exercise-status'))
-      }
-      exercise.find('.examinr-exercise-output').hide()
+    if (!messageStrings.notYetRun) {
+      exercise.find('.examinr-exercise-status').hide()
+    } else {
+      exports.accessibility.ariaDescribedBy(exercisePanel, exercise.find('.examinr-exercise-status'))
+    }
+    exercise.find('.examinr-exercise-output').hide()
 
-      const runCodeButton = exercise.find('.examinr-run-button')
+    const runCodeButton = exercise.find('.examinr-run-button')
 
-      // Proxy a "run code" event through the button to also trigger shiny input events.
-      const triggerClick = function () {
-        runCodeButton.click()
-      }
+    // Proxy a "run code" event through the button to also trigger shiny input events.
+    const triggerClick = function () {
+      runCodeButton.click()
+    }
 
-      const editor = attachAceEditor(editorId, code)
-      editor.setFontSize(0.8125 * parseFloat(exercise.find('.panel-body').css('font-size')))
-      editor.commands.addCommand({
-        name: 'run_rcode',
-        bindKey: { win: 'Ctrl+Enter', mac: 'Command+Enter' },
-        exec: triggerClick
+    const editor = attachAceEditor(editorId, code)
+    editor.setFontSize(0.8125 * parseFloat(exercise.find('.card-body').css('font-size')))
+    editor.commands.addCommand({
+      name: 'run_rcode',
+      bindKey: { win: 'Ctrl+Enter', mac: 'Command+Enter' },
+      exec: triggerClick
+    })
+    editor.commands.addCommand({
+      name: 'run_rcode-shift',
+      bindKey: { win: 'Ctrl+Shift+Enter', mac: 'Command+Shift+Enter' },
+      exec: triggerClick
+    })
+
+    const updateAceHeight = function () {
+      editor.setOptions({
+        minLines: lines,
+        maxLines: lines
       })
-      editor.commands.addCommand({
-        name: 'run_rcode-shift',
-        bindKey: { win: 'Ctrl+Shift+Enter', mac: 'Command+Shift+Enter' },
-        exec: triggerClick
-      })
+    }
+    updateAceHeight()
+    editor.getSession().on('change', updateAceHeight)
 
-      const updateAceHeight = function () {
-        editor.setOptions({
-          minLines: lines,
-          maxLines: lines
-        })
-      }
-      updateAceHeight()
-      editor.getSession().on('change', updateAceHeight)
+    runCodeButton.click(function () {
+      editor.focus()
+    })
 
-      runCodeButton.click(function () {
-        editor.focus()
-      })
+    exercise.data({
+      editor: editor,
+      options: exerciseOptions
+    })
 
-      exercise.data({
-        editor: editor,
-        options: exerciseOptions
-      })
-
-      exercise.parents('section').on('shown', function () {
-        editor.resize(true)
-      })
+    exercise.parents('section').on('shown', function () {
+      editor.resize(true)
     })
   }
 
@@ -191,17 +195,22 @@ exports.exercises = (function () {
       renderValue: function (exercise, data) {
         exercise = $(exercise)
         if (data.result) {
-          exercise.find('.examinr-exercise-output').show().html(data.result)
+          const outputContainer = exercise.find('.examinr-exercise-output').show().find('.card-body')
+          outputContainer.html(data.result)
+          outputContainer.find('.kable-table table').addClass('table table-striped table-sm')
         } else {
-          exercise.find('.examinr-exercise-output').hide().html('')
+          exercise.find('.examinr-exercise-output').hide()
         }
         if (data.status) {
-          exercise.find('.examinr-exercise-status')
+          const footerClass = (data.status_class && data.status_class !== 'info')
+            ? ('alert-' + data.status_class) : 'text-muted'
+
+          exercise.find('.card-footer')
+            .removeClass('text-muted')
             .removeClass('alert-success')
-            .removeClass('alert-info')
             .removeClass('alert-warning')
             .removeClass('alert-danger')
-            .addClass('alert-' + (data.status_class || 'info'))
+            .addClass(footerClass)
           exercise.find('.examinr-exercise-status').show().html(data.status)
         } else {
           exercise.find('.examinr-exercise-status').hide().html('')
@@ -225,9 +234,19 @@ exports.exercises = (function () {
   }
 
   $(function () {
-    initializeExerciseEditors()
+    $('.examinr-exercise').each(initializeExerciseEditor)
     initializeEditorBindings()
   })
 
-  return {}
+  return {
+    highContrastTheme: function (enabled) {
+      currentTheme = enabled ? kThemeMonochrome : kThemeDefault
+      $('.examinr-exercise').each(function () {
+        const editor = $(this).data('editor')
+        if (editor) {
+          editor.setTheme(currentTheme)
+        }
+      })
+    }
+  }
 }())

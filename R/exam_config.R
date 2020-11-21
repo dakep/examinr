@@ -321,7 +321,7 @@ sp_get_last_section <- function (attempt_id) {
 #' @importFrom rlang abort cnd_message
 seed_attempt <- function (user, prev_attempts) {
   tryCatch({
-    seed <-  .exam_configuration$get('seed_attempt')(user, prev_attempts)
+    seed <- .exam_configuration$get('seed_attempt')(user, prev_attempts)
     if (!is.integer(seed)) {
       stop("generated seed is not an integer.")
     }
@@ -392,9 +392,10 @@ cached_data_provider <- function (fun, enabled) {
 }
 
 #' @importFrom rlang warn
+#' @importFrom withr local_preserve_seed
 get_rendering_env <- function (section, session) {
   # get a "random seed" to ensure data generation does not determine all other r code
-  reset_seed <- sample.int(.Machine$integer.max, 1L)
+  local_preserve_seed()
 
   data_env <- .exam_configuration$get('data_provider')(get_current_attempt(session), section)
   if (is.list(data_env)) {
@@ -405,9 +406,6 @@ get_rendering_env <- function (section, session) {
     warn("Data provider returns invalid environment.")
     data_env <- globalenv()
   }
-
-  # new use the previously generated "random seed".
-  set.seed(reset_seed)
 
   return(data_env)
 }

@@ -1,6 +1,12 @@
-#' Create a Text Question
+#' Create a Question With Text Input
 #'
-#' Text questions are not auto-graded.
+#' Render a question which asks the user to input a value. Questions of _numeric_ support auto-grading.
+#'
+#' The solution is computed by evaluating the expression given in `solution` in the rendering environment.
+#' The expression must yield either a single character string or, if the question is of type _numeric_, a numeric value.
+#' The result of the expression is rendered with [commonmark][commonmark::markdown_html()].
+#' To auto-grade _numeric_ questions, the `solution` expression can yield a numeric value or a character value with
+#' attribute `answer`. This number is compared against the user's answer (with tolerance `accuracy`).
 #'
 #' @param title question title. Markdown is supported and by default the title will be rendered dynamically if it
 #'   contains inline R code.
@@ -12,41 +18,59 @@
 #'  `type="textarea"`.
 #' @param placeholder A character string giving the user a hint as to what can be entered into the control.
 #'   Internet Explorer 8 and 9 do not support this option.
-#' @param min,max,step if `type="numeric"`, gives the minimum and maximum allowed value as well as the interval
-#'   for stepping between min and max.
-#' @param accuracy numeric accuracy for grading inputs with `type="numeric"`.
+#' @param markdown_html() numeric accuracy for grading inputs with `type="numeric"`.
 #' @param label a label to help screen readers describe the purpose of the input element.
 #' @param hide_label hide the label from non-screen readers.
 #' @param title_container a function to generate an HTML element to contain the question title.
 #' @param static_title if `NULL`, the title will be rendered statically if it doesn't contain inline R code, otherwise
 #'   it will be rendered dynamically. If `TRUE`, always render the title statically. If `FALSE`, always render the
 #'   title dynamically on the server.
+#' @param solution an expression to compute the solution to the answer.
+#'   The expression is evaluated in the environment returned by the data provider set up via [exam_config()].
+#'   See below for details on how to auto-grade questions of type _numeric_.
+#' @param solution_quoted is the `solution` expression quoted?
 #'
 #' @export
-#' @importFrom htmltools h5
-#' @importFrom rlang abort
+#' @importFrom htmltools h6
+#' @importFrom rlang abort enexpr is_expression
 text_question <- function (title, points = 1, type = c('textarea', 'text', 'numeric'), width = '100%', height = NULL,
-                           placeholder = NULL, title_container = h5, static_title = NULL, min = NA, max = NA, step = NA,
-                           accuracy = step, label = "Type your answer below.", hide_label = FALSE) {
+                           placeholder = NULL, title_container = h6, static_title = NULL, accuracy = 1e-3,
+                           solution = NULL, solution_quoted = FALSE,
+                           label = "Type your answer below.", hide_label = FALSE) {
 
   points_str <- format_points(points)
 
   if (is.null(label)) {
     abort("Every question must have a meaningful label")
   }
+  type <- match.arg(type)
+
+  if (!is.numeric(accuracy) || length(accuracy) == 0L || anyNA(accuracy) || !isTRUE(accuracy >= 0)) {
+    abort("`accuracy` must be a non-negative number.")
+  }
+
+  if (!isTRUE(solution_quoted)) {
+    solution <- enexpr(solution)
+  }
+
+  if (!is.null(solution) && !is_expression(solution)) {
+    abort("`solution` must be an expression")
+  }
 
   return(structure(list(label = get_chunk_label(),
                         input_label = label,
                         hide_label = isTRUE(hide_label),
-                        type = match.arg(type),
+                        type = type,
                         title = prepare_title(title, static_title),
                         placeholder = placeholder,
                         title_container = title_container,
                         accuracy = accuracy,
                         points_str = points_str,
+                        solution_expr = solution,
                         points = points,
+                        container_class = paste('examinr-q-textquestion', paste('examinr-q', type, sep = '-'),
+                                                sep = ' '),
                         width = width,
-                        numeric_args = list(min = min, max = max, step = step),
                         height = height),
                    class = c('textquestion', 'examinr_question')))
 }
@@ -64,18 +88,21 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
 #' @param label a label to help screen readers describe the purpose of the input element.
 #' @param hide_label hide the label from non-screen readers.
 #' @param random_answer_order should the order of answers be randomized? Randomization is unique for every user.
+#' @param min_points if `points` multiplied by the the sum of the weights of all selected answer options is negative,
+#'   where to cut off negative points. If `NULL`, there is no lower bound.
 #'
 #' @importFrom ellipsis check_dots_unnamed
 #' @importFrom knitr opts_current
 #' @importFrom rlang abort
-#' @importFrom htmltools h5 doRenderTags
+#' @importFrom htmltools h6 doRenderTags
 #' @importFrom digest digest2int
 #' @importFrom stringr str_detect
+#' @importFrom withr with_seed
 #'
 #' @export
 mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_order = TRUE, mc = TRUE,
-                        title_container = h5, static_title = NULL, label = "Select the correct answer(s).",
-                        hide_label = FALSE) {
+                        title_container = h6, static_title = NULL, label = "Select the correct answer(s).",
+                        hide_label = FALSE, min_points = 0) {
   if (is.null(label)) {
     abort("Every question must have a meaningful label")
   }
@@ -86,8 +113,12 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
 
   total_nr_answers <- length(answers)
 
+  # Generate the value to obfuscate, but persist order
+  values <- with_seed(digest2int(label), {
+    format(as.hexmode(sort.int(sample.int(.Machine$integer.max, total_nr_answers))))
+  })
   for (i in seq_along(answers)) {
-    answers[[i]]$value <- as.character(i)
+    answers[[i]]$value <- values[[i]]
   }
 
   is_correct <- unlist(lapply(answers, function(answer) {
@@ -144,6 +175,10 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
 
   points_str <- format_points(points)
 
+  if (!is.null(min_points) && !isTRUE(min_points <= 0)) {
+    abort("`min_points` must be a single non-positive number or `NULL`.")
+  }
+
   return(structure(list(label = get_chunk_label(),
                         input_label = label,
                         hide_label = isTRUE(hide_label),
@@ -151,6 +186,7 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
                         answers = answers,
                         nr_answers = nr_answers,
                         points = points,
+                        min_points = min_points,
                         points_str = points_str,
                         nr_always_show = nr_always_show,
                         random_answer_order = isTRUE(random_answer_order),
@@ -176,11 +212,25 @@ prepare_title <- function (title, static_title) {
 #' @param label answer text to show. Supports markdown formatting and inline code chunks of the form `` `r value` ``.
 #' @param correct if the answer is correct or not.
 #' @param always_show even if answer options are randomized, always show this answer.
+#' @param weight the weight of this answer, if selected. By default, correct answers have a weight of 1, and incorrect
+#'   answers have a weight of 0. A negative weight will subtract that proportion of available points from the user's
+#'   points (e.g., penalizing for selecting incorrect answer options).
+#'   The sum of all displayed **positive** weights is standardized to sum to 1,
+#'   **but negative weights are not standardized.**
+#'
+#' @importFrom rlang warn
 #'
 #' @export
 #' @rdname mc_question
-answer <- function (label, correct = FALSE, always_show = FALSE) {
-  structure(list(label = enc2utf8(label), correct = isTRUE(correct), always_show = isTRUE(always_show)),
+answer <- function (label, correct = FALSE, always_show = FALSE, weight = correct) {
+  correct <- isTRUE(correct)
+  if (correct && !isTRUE(weight > 0)) {
+    warn("Correct answers should not have a non-positive weight.")
+  } else if (!correct && isTRUE(weight < -1)) {
+    warn("A weight less than -1 subtracts more points than assigned to the question.")
+  }
+  structure(list(label = enc2utf8(label), correct = correct, always_show = isTRUE(always_show),
+                 weight = as.numeric(weight[[1L]])),
             class = 'examinr_question_answer')
 }
 
@@ -207,53 +257,35 @@ knit_print.examinr_question <- function (x, ...) {
   x$section_id <- opts_chunk$get('examinr.section_id') %||% random_ui_id('unknown_section')
   # add a upper-case "Q" in front of the label to distinguish question inputs from other inputs
   x$input_id <- paste('Q', x$label, sep = '-')
-  section_ns <- NS(opts_chunk$get('examinr.section_ui_id') %||% x$section_id)
+  section_ns <- NS(x$section_id)
   private_ns <- NS(section_ns(x$label))
 
   x$digits <- getOption('digits') %||% 6
-  x$panel_class <- add_prefix('panel-', opts_current$get('exam.question_context') %||% 'default')
-  x$label_class <- add_prefix('label-', opts_current$get('exam.points_context') %||% 'info')
 
   question_body_html <- render_question_body(x, section_ns)
 
+  points_container <- tags$span(class = 'badge badge-secondary examinr-points', x$points_str)
+
   question_title <- if (string_is_html(x$title)) {
-    x$title_container(x$title, tags$span(class = paste('label', x$label_class), x$points_str), trigger_mathjax(),
-                      class = 'panel-title')
+    x$title
   } else {
-    shiny_prerendered_chunk('server', code = sprintf('examinr:::render_question_title("%s", "%s")',
+    shiny_prerendered_chunk('server', code = sprintf('examinr:::question_title_server("%s", "%s")',
                                                      serialize_object(x), private_ns(NULL)))
 
-    htmlOutput(private_ns('title'), container = x$title_container, class = 'panel-title')
+    htmlOutput(private_ns('title'))
   }
 
-  more_body_classes <- ''
-  if (x$hide_label) {
-    more_body_classes <- 'hide-label'
+  if (is.null(x$container_class)) {
+    x$container_class <- paste('examinr-q', setdiff(class(x), 'examinr_question'), sep = '-', collapse = ' ')
   }
 
-  ui <- div(class = paste('panel examinr-question', x$panel_class, sep = ' '), role = 'group',
-            div(class = 'panel-heading', question_title),
-            div(class = paste('panel-body', more_body_classes), question_body_html))
+  ui <- div(class = paste('card examinr-question', x$container_class, sep = ' '), role = 'group',
+            `data-questionlabel` = x$label,
+            `data-maxpoints` = x$points,
+            trigger_mathjax(x$title_container(question_title, points_container, class = 'card-header')),
+            div(class = paste('card-body', if (x$hide_label) { 'hide-label' } else { NULL }), question_body_html))
 
   knit_print(ui, ...)
-}
-
-#' @importFrom shiny moduleServer renderUI
-#' @importFrom htmltools tagList tags
-#' @importFrom withr with_options
-render_question_title <- function (question, ns_str, section_id) {
-  question <- unserialize_object(question)
-  moduleServer(ns_str, function (input, output, session) {
-    observe_section_change(question$section_id, {
-      output$title <- renderUI({
-        rendering_env <- get_rendering_env(session)
-        title_html <- with_options(list(digits = question$digits),
-                                   render_markdown_as_html(question$title, use_rmarkdown = FALSE, env = rendering_env))
-
-        trigger_mathjax(title_html, tags$span(class = paste('label', question$label_class), question$points_str))
-      })
-    })
-  })
 }
 
 ## Render question body
@@ -277,18 +309,21 @@ render_question_body.textquestion <- function (question, ns, ...) {
     args$placeholder <- NULL
     args <- c(args, question$numeric_args)
   }
+
   input_fun <- switch(question$type,
                       textarea = 'textAreaInput',
                       text = 'textInput',
-                      numeric = 'numericInput')
+                      numeric = 'textInput')
 
   input <- exec(input_fun, !!!args)
 
+  shiny_prerendered_chunk('server', sprintf('examinr:::render_textquestion_server("%s", "%s")',
+                                            serialize_object(question), ns(NULL)))
+
   if (question$type == 'textarea') {
-    tagAppendAttributes(input, style = sprintf('width: %s;', question$width))
-  } else {
-    return(input)
+    return(tagAppendAttributes(input, style = sprintf('width: %s;', question$width)))
   }
+  return(input)
 }
 
 #' @importFrom rmarkdown shiny_prerendered_chunk

@@ -7,45 +7,11 @@ exam_section_opts_hook <- function (options, ...) {
   return(options)
 }
 
-## Initialize the UI component for section management
-#' @importFrom knitr knit_meta
-#' @importFrom rlang abort
-initialize_sections <- function (options, overrides) {
-  overrides <- unserialize_object(overrides)
-  # Merge section information with section configuration overrides
-  sections <- knit_meta('examinr_section')
-
-  sections <- lapply(sections, function (section) {
-    section$overrides <- overrides[[section$id]] %||% list()
-    return(section)
-  })
-
-  return(structure(list(sections = sections, options = options), class = 'examinr_section_init'))
-}
-
-## Print section initialization
-#' Overrides for knit_print.
-#' @inheritParams knitr::knit_print
-#' @method knit_print examinr_section_init
-#' @rdname knit_print
-#' @importFrom rmarkdown shiny_prerendered_chunk
-#' @export
-#' @keywords internal
-knit_print.examinr_section_init <- function (x, ...) {
-  # Note that x$options is already serialized!
-  shiny_prerendered_chunk('server', sprintf('examinr:::initialize_sections_server("%s", "%s")',
-                                            serialize_object(x$sections),
-                                            x$options))
-
-  knit_print(tags$script(id = 'examinr-sections-options', type = 'application/json',
-                         to_json(unserialize_object(x$options))), ...)
-}
-
 ## Start a new section
 #' @importFrom knitr opts_chunk
-section_start <- function (section_id, section_ui_id) {
-  opts_chunk$set(examinr.section_id = section_id, examinr.section_ui_id = section_ui_id)
-  return(structure(list(id = section_id, ui_id = section_ui_id), class = 'examinr_section_start'))
+section_start <- function (section_id) {
+  opts_chunk$set(examinr.section_id = section_id)
+  return(structure(list(id = section_id), class = 'examinr_section_start'))
 }
 
 ## Print section start
@@ -59,13 +25,13 @@ section_start <- function (section_id, section_ui_id) {
 #' @keywords internal
 knit_print.examinr_section_start <- function (x, ...) {
   # render an anchor div to find the section from the UI javascript code.
-  knit_print(tags$div(id = x$ui_id))
+  knit_print(tags$div(id = x$id), ...)
 }
 
 ## Render a chunk of a section
 #' @importFrom knitr opts_chunk
-section_chunk <- function (section_id, section_ui_id, content_enc, chunk_counter) {
-  structure(list(id = section_id, ui_id = section_ui_id, content_enc = content_enc, counter = chunk_counter),
+section_chunk <- function (section_id, content_enc, chunk_counter) {
+  structure(list(id = section_id, content_enc = content_enc, counter = chunk_counter),
             class = 'examinr_section_chunk')
 }
 
@@ -80,10 +46,9 @@ section_chunk <- function (section_id, section_ui_id, content_enc, chunk_counter
 #' @export
 #' @keywords internal
 knit_print.examinr_section_chunk <- function (x, ...) {
-  chunk_ns <- paste(x$ui_id, x$counter, sep = '-')
-  ns <- NS(chunk_ns)
+  ns <- NS(paste(x$id, x$counter, sep = '-'))
 
-  metadata <- c(x[c('id', 'ui_id')], chunk_ns = chunk_ns)
+  metadata <- list(id = x$id, chunk_ns = ns(NULL))
   shiny_prerendered_chunk('server', code = sprintf('examinr:::section_chunk_server("%s", "%s")',
                                                    serialize_object(metadata), x$content_enc))
 
@@ -91,12 +56,10 @@ knit_print.examinr_section_chunk <- function (x, ...) {
 }
 
 ## Add controls at the end of a section for navigation
-section_end <- function (section_id, section_ui_id, exam_metadata, btn_label, btn_context) {
+section_end <- function (section_name, section_id, exam_metadata, btn_label) {
   exam_metadata <- unserialize_object(exam_metadata)
-  opts_chunk$set(examinr.section_id = NULL, examinr.section_ui_id = NULL)
-  structure(list(id = section_id, ui_id = section_ui_id,
-                 progressive = exam_metadata$progressive,
-                 context = enc2utf8(as.character(btn_context)),
+  opts_chunk$set(examinr.section_id = NULL)
+  structure(list(name = section_name, id = section_id, progressive = exam_metadata$progressive,
                  label = enc2utf8(as.character(btn_label))),
             class = 'examinr_section_end')
 }
@@ -112,15 +75,13 @@ section_end <- function (section_id, section_ui_id, exam_metadata, btn_label, bt
 #' @export
 #' @keywords internal
 knit_print.examinr_section_end <- function (x, ...) {
-  knit_meta_add(list(structure(list(id = x$id, ui_id = x$ui_id, has_button = !is.na(x$label)),
+  knit_meta_add(list(structure(list(id = x$id, name = x$name, has_button = !is.na(x$label)),
                                class = 'examinr_section')))
 
   if (is.na(x$label)) {
     return(invisible(NULL))
   }
-  ns <- NS(x$ui_id)
   shiny_prerendered_chunk('server', code = sprintf('examinr:::section_end_server("%s")', serialize_object(x)))
 
-  knit_print(actionButton(ns('btn-next'), label = x$label,
-                          class = paste('examinr-section-next', add_prefix('btn-', x$context %||% 'default'))), ...)
+  knit_print(actionButton(NS(x$id, 'btn-next'), label = x$label, class = 'examinr-section-next btn-primary'), ...)
 }

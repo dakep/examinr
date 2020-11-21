@@ -1,0 +1,37 @@
+
+$gray-100: #fff;
+$gray-200: #fff;
+$gray-300: #fff;
+$gray-400: #495057;
+$gray-500: #495057;
+$gray-600: #495057;
+$gray-700: #495057;
+$gray-800: #000;
+$gray-900: #000;
+$pink:     #000;
+$body-color: #000;
+$text-muted: $gray-400;
+
+$theme-colors: (
+  "primary":    #000,
+  "secondary":  #046,
+  "success":    #054,
+  "info":       $gray-400,
+  "warning":    #b64f00,
+  "danger":     #700,
+  "light":      #fff,
+  "dark":       #000
+);
+
+// Alerts: make bg (almost) white and keep the color of the text/border as-is.
+$alert-bg-level: -12; // Make bg almost white
+$alert-border-level: 0;
+$alert-color-level: 0;
+
+// Make cards easier to distinguish
+$border-width: 2px;
+$card-border-color: rgba($gray-700, 0.75);
+
+$high-contrast-theme: true;
+
+@import "bootstrap-unthemed.scss";

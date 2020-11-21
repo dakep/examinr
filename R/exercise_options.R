@@ -37,7 +37,6 @@ exercise_options <- function (title, button, button_context, timelimit, lines, a
   exercise_options <- list(
     title = title %||% opts_chunk$get('exercise.title'),
     button = button %||% opts_chunk$get('exercise.button'),
-    button_context = button_context %||% opts_chunk$get('exercise.button_context'),
     setup = setup %||% opts_chunk$get('exercise.setup'),
     solution = solution %||% opts_chunk$get('exercise.solution'),
     checker = checker %||% opts_chunk$get('exercise.checker'),

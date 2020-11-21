@@ -2,33 +2,38 @@ exports.sections = (function () {
   'use strict'
 
   const recalculatedDelay = 250
-  var sectionsOptions = {}
-  var currentSectionEl
-  var currentSection = {}
+  let currentSectionEl
+  let currentSection = {}
+  let actualSections
 
   function finishedRecalculating () {
-    exports.shim.toggle($('body'), false)
+    exports.utils.toggleShim($('body'), false)
   }
 
   Shiny.addCustomMessageHandler('__.examinr.__-sectionChange', function (section) {
-    if (section.current) {
+    if (section) {
+      if (section.feedback === true) {
+        // Redirect to the feedback
+        window.location.search = '?display=feedback'
+      }
+
       if (currentSectionEl && currentSectionEl.length > 0) {
         currentSectionEl.removeAttr('role').hide()
-      } else if (section.current.ui_id) {
+      } else if (section.id) {
         $('section.level1').hide()
       }
-      currentSection = section.current
-      currentSectionEl = $('#' + currentSection.ui_id).parent()
+      currentSection = section
+      currentSectionEl = $('#' + currentSection.id).parent()
         .show()
         .attr('role', 'main')
         .trigger('shown')
 
       const outputElements = currentSectionEl.find('.shiny-bound-output')
-      var recalculating = outputElements.length
+      let recalculating = outputElements.length
       if (recalculating > 0) {
         // Assume that all outputs need to be recalculated.
         // If not, call finishedRecalculating() after a set delay.
-        var recalculatingTimerId = window.setTimeout(finishedRecalculating, recalculatedDelay)
+        let recalculatingTimerId = window.setTimeout(finishedRecalculating, recalculatedDelay)
         outputElements.one('shiny:recalculated', function () {
           --recalculating
           if (recalculating <= 0) {
@@ -44,48 +49,52 @@ exports.sections = (function () {
       } else {
         finishedRecalculating()
       }
+
       exports.status.resetMessages()
-      if (section.current.order) {
-        exports.status.updateProgress(section.current.order)
+      if (section.order) {
+        exports.attempt.updateSection(section.order)
       }
     }
   })
 
   $(function () {
-    const sectionsOptionsEl = $('#examinr-sections-options')
-    if (sectionsOptionsEl.length > 0) {
-      sectionsOptions = JSON.parse(sectionsOptionsEl.text())
-      sectionsOptionsEl.remove()
-    }
+    const sectionsConfig = JSON.parse($('script.examinr-sections-config').remove().text() || '{}')
 
+    actualSections = $('section.level1')
     // Add the correct label to each section
-    $('section.level1').each(function () {
+    actualSections.each(function () {
       const el = $(this)
-      exports.aria.labelledBy(el, el.children('h1'))
+      exports.accessibility.ariaLabelledBy(el, el.children('h1'))
     })
-    $('#section-header').attr('aria-hidden', 'true')
 
     $('.examinr-section-next').click(function () {
-      exports.shim.toggle($('body'), true)
+      exports.utils.toggleShim($('body'), true)
     })
 
-    if (!sectionsOptions.progressive) {
+    if (!sectionsConfig.progressive) {
       // All-at-once exam. Show the "next button" only for the last real section.
       $('.examinr-section-next').hide()
-      const mainContainer = $('.main-container')
-      mainContainer.attr('role', 'main')
-
-      exports.aria.labelledBy(mainContainer, $('h1.title'))
+      exports.accessibility.ariaLabelledBy($('main'), $('h1.title'))
 
       // hide the last section (used for final remarks)
-      const allSections = $('section.level1')
-      allSections.slice(-2, -1).find('.examinr-section-next').show()
-      allSections.last().hide()
+      if (sectionsConfig.hideLastSection) {
+        actualSections.last().hide()
+        actualSections = actualSections.slice(0, -1)
+        actualSections.last().find('.examinr-section-next').show()
+      }
     } else {
-      // progressive exams
-      $('section.level1').hide()
+      // progressive exams: hide all sections
+      actualSections.hide()
+      if (sectionsConfig.hideLastSection) {
+        $('section.level1:last .examinr-section-next').remove()
+        actualSections = actualSections.slice(0, -1)
+      }
     }
   })
 
-  return {}
+  return {
+    showAll: function () {
+      actualSections.show().trigger('shown')
+    }
+  }
 }())

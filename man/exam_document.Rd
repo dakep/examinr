@@ -15,11 +15,21 @@ exam_document(
   timelimit = Inf,
   opens = NA,
   closes = NA,
+  feedback = NA,
   grace_period = 120,
-  next_button_context = "primary",
-  question_context = "default",
-  points_context = "info",
-  exercise_button_context = "primary",
+  self_contained = TRUE,
+  fig_width = 7,
+  fig_height = 5,
+  fig_retina = 2,
+  fig_caption = TRUE,
+  keep_md = FALSE,
+  dev = "png",
+  highlight = "default",
+  df_print = "default",
+  css = NULL,
+  mathjax = "default",
+  md_extensions = NULL,
+  extra_dependencies = NULL,
   ...
 )
 }
@@ -32,7 +42,8 @@ etc.}
 
 \item{use_cdn}{load javascript libraries from external content delivery networks (CDNs).
 Use this if the shiny server is slow at serving static resources, but beware of the downsides of
-relying on content from a third-party!}
+relying on content from a third-party!
+Note that the default MathJax library is \emph{always} loaded from a CDN.}
 
 \item{render}{render section content on the server (\code{"server"}) or statically when rendering the document
 (\code{"static"}). If rendered on the server, the section content will only be sent to the user's browser
@@ -58,19 +69,48 @@ The exam is only accessible within this time frame.
 This can be overridden for individual users with \code{\link[=configure_attempts]{configure_attempts()}}.
 Can also be \code{NA} to either make the exam available immediately, indefinitely, or both (the default).}
 
+\item{feedback}{the date/time on which the solution and feedback are available, \code{"immediately"} for showing
+feedback immediately after the exam is submitted, or \code{NA}, in which case no feedback view is available.
+Note that if feedback is shown immediately after the exam is submitted, the last section is treated as
+a regular section.}
+
 \item{grace_period}{number of seconds of "grace" period given to users before an active attempt is disabled.
 This can be overridden for individual users with \code{\link[=configure_attempts]{configure_attempts()}}.}
 
-\item{question_context, points_context, exercise_button_context, next_button_context}{contextual style classes for
-question panels, points labels, exercise buttons, and section navigation buttons.
-Can be \code{default} or any of the bootstrap 3 contextual classes listed at
-\url{https://getbootstrap.com/docs/3.3/css/#helper-classes-colors}.
-These can also be set on a per-question or per-exercise level by specifying code chunk options
-\code{exam.question_context}, \code{exam.points_context} and \code{exercise.button_context}.
-A section-specific button context can be set via \code{\link[=section_config]{section_config()}}.}
+\item{self_contained}{produce a HTML file with all external dependencies included using \verb{data:} URIs.
+Note that the default MathJax library is always loaded from an external CDN (see \code{use_cdn} for details).}
 
-\item{...}{passed on to \link[rmarkdown:html_document]{html_document()}. Parameters \code{section_divs} and \code{toc} are not
-supported.}
+\item{fig_width}{default width (in inches) for figures.}
+
+\item{fig_height}{default height (in inches) for figures.}
+
+\item{fig_retina}{scaling to perform for retina displays. Set to \code{NULL} to prevent retina scaling.
+See \code{\link[rmarkdown:html_document]{rmarkdown::html_document()}} for details.}
+
+\item{fig_caption}{\code{TRUE} to render figures with captions.}
+
+\item{dev}{graphics device to use for figure output (defaults to png).}
+
+\item{highlight}{Enable syntax highlighting style via pandoc.
+Supported styles include "default", "tango", "pygments", "kate", "monochrome", "espresso", "zenburn", "haddock".
+Pass \code{NULL} to prevent syntax highlighting.}
+
+\item{df_print}{method to be used for printing data frames.
+Valid values include "default", "kable", "tibble", and "paged". See \code{\link[rmarkdown:html_document]{rmarkdown::html_document()}} for details.}
+
+\item{css}{one or more CSS files to include in the document.}
+
+\item{mathjax}{if and how to include MathJax. The "default" option uses MathJax v3 from a CDN.
+You can pass an alternate URL or pass \code{NULL} to disable MathJax entirely.}
+
+\item{md_extensions}{markdown extensions to be added or removed from the default definition of R Markdown.
+See \code{\link[rmarkdown:rmarkdown_format]{rmarkdown::rmarkdown_format()}} for details.}
+
+\item{extra_dependencies, ...}{additional arguments passed on to the base R Markdown HTML output
+\code{\link[rmarkdown:html_document_base]{rmarkdown::html_document_base()}}.}
+
+\item{lang}{define the language of the exam document. Defaults to the current system's locale, but this
+is often not accurate.}
 }
 \description{
 Exam Output Format

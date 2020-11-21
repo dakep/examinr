@@ -37,9 +37,11 @@ render_markdown_as_html <- function (text, use_rmarkdown = 'auto', env = parent.
       text <- paste(text, collapse = '\n')
     }
 
-    if (isTRUE(use_rmarkdown == 'auto')) {
+    if (identical(use_rmarkdown, 'auto')) {
       use_rmarkdown <- str_detect(text, fixed('```{'))
     }
+
+    text <- enc2utf8(text)
 
     html_string <- if (isTRUE(use_rmarkdown)) {
       tmpfolder <- tempfile('rendermd')
@@ -79,7 +81,7 @@ render_markdown_as_html <- function (text, use_rmarkdown = 'auto', env = parent.
           })
         })
       } else {
-        markdown_html(text, smart = TRUE, extensions = TRUE)
+        enc2utf8(markdown_html(text, smart = TRUE, extensions = TRUE))
       }
     }
     if (str_detect(html_string, '^\\s*<p>.*</p>\\s*$')) {
@@ -94,7 +96,7 @@ render_markdown_as_html <- function (text, use_rmarkdown = 'auto', env = parent.
 #' @importFrom stringr str_replace
 format_inline_results <- function (results) {
   vapply(results, FUN.VALUE = character(1L), USE.NAMES = FALSE, function (x) {
-    if (!(class(x)[[1L]] == 'numeric') || is.na(x) || x == 0) {
+    if (!identical(class(x), 'numeric') || is.na(x) || x == 0) {
       return(as.character(x))
     }
     if (is.infinite(x)) {
@@ -166,10 +168,24 @@ get_chunk_label <- function (options, required = TRUE) {
   return(label)
 }
 
-#' @importFrom htmltools tagList HTML tags
-trigger_mathjax <- function(...) {
-  tagList(..., htmltools::tags$script(
-    HTML('if(typeof MathJax !== "undefined") { MathJax && MathJax.Hub.Queue(["Typeset", MathJax.Hub]) }')))
+#' @importFrom htmltools tagList HTML tags tagAppendAttributes tagHasAttribute
+trigger_mathjax <- function(tag, ...) {
+  if (nargs() == 1L && is.list(tag)) {
+    is_dummy <- 'false'
+    id <- tagGetAttribute(tag, 'id')
+    if (is.null(id)) {
+      id <- random_ui_id('mathjax-triggered')
+      tag <- tagAppendAttributes(tag, id = id)
+    } else {
+    }
+  } else {
+    id <- random_ui_id('mathjax-triggered')
+    is_dummy <- 'true'
+    tag <- div(tag, ..., id = id)
+  }
+
+  tagList(tag, tags$script(HTML(sprintf('if(window.Exam) { window.Exam.utils.triggerMathJax("%s", %s) }',
+                                        id, is_dummy))))
 }
 
 ## Like base::pmatch, but returns NULL if the given value is NULL
@@ -182,14 +198,46 @@ pmatch_null <- function (value, choices) {
 }
 
 #' @importFrom shiny getDefaultReactiveDomain
+#' @importFrom rlang is_missing
 get_session_env <- function (session) {
-  if (missing(session)) {
+  if (is_missing(session)) {
     session <- getDefaultReactiveDomain()
   }
   if (!exists('__.examinr_session_env.__', envir = session$userData, mode = 'environment', inherits = FALSE)) {
     assign('__.examinr_session_env.__', new.env(parent = emptyenv()), envir = session$userData)
   }
   get('__.examinr_session_env.__', envir = session$userData, mode = 'environment', inherits = FALSE)
+}
+
+register_transformer <- function (input_id, fun, envir = TRUE, session) {
+  session_env <- get_session_env(session)
+  if (!is.null(envir)) {
+    if (isTRUE(envir)) {
+      # Use the examinr namespace as environment for the auto-grader
+      envir <- parent.env(environment())
+    }
+    environment(fun) <- envir
+  }
+
+  if (is.null(session_env$transformer)) {
+    session_env$transformer <- list()
+  }
+  session_env$transformer[[input_id]] <- fun
+}
+
+register_autograder <- function (input_id, fun, envir = TRUE, session) {
+  session_env <- get_session_env(session)
+  if (!is.null(envir)) {
+    if (isTRUE(envir)) {
+      # Use the examinr namespace as environment for the auto-grader
+      envir <- parent.env(environment())
+    }
+    environment(fun) <- envir
+  }
+  if (is.null(session_env$autograders)) {
+    session_env$autograders <- list()
+  }
+  session_env$autograders[[input_id]] <- fun
 }
 
 #' @importFrom jsonlite toJSON
@@ -242,6 +290,50 @@ send_status_message <- function (msg_id, type = c('error', 'locked', 'warning', 
 ## Check if the current chunk is in the given context.
 ## If knitr is not in progress, always returns `TRUE`.
 is_knitr_context <- function (context) {
-  return (!isTRUE(getOption('knitr.in.progress')) || isTRUE(opts_current$get('context') == context) ||
-            isTRUE(opts_current$get('label') == context))
+  return (!isTRUE(getOption('knitr.in.progress')) || identical(opts_current$get('context'), context) ||
+            identical(opts_current$get('label'), context))
+}
+
+## Normalize a string for use as HTML identifier
+##  - strip any header attributes (the trailing "{...}") and leading/trailing white-space
+##  - replace any sequence of non-alphanumeric character with a single instance of `replace`
+##  - make lower-case
+#' @importFrom stringi stri_trim_both
+#' @importFrom stringr str_detect str_starts fixed str_match str_replace_all
+normalize_string <- function (str, replace = '-') {
+  has_identifiers <- which(str_detect(str, '\\s*\\{.*\\}\\s*$'))
+  if (length(has_identifiers) > 0L) {
+    str[has_identifiers] <- str_match(str[has_identifiers], '^#?\\s*(.+)\\s*\\{.*\\}\\s*$')[, 2]
+  }
+  stri_trim_both(str_replace_all(tolower(str), '[^\\p{Alphabetic}\\p{Decimal_Number}]+', replace),
+                 pattern = '[^\\p{Wspace}\\-#]')
+}
+
+#' @importFrom stringr str_match
+#' @importFrom rlang abort
+parse_datetime <- function (datetime) {
+  if (is_missing(datetime) || is.null(datetime)) {
+    return(NULL)
+  } else if (all(is.na(datetime))) {
+    return(NA)
+  }
+
+  date <- str_match(datetime, '^([0-9\\: \\-]+)(?: +(\\P{Decimal_Number}.+))?$')
+
+  if (is.na(date[[1L]]) || is.na(date[[2L]])) {
+    abort(paste("Format of date-time is invalid:", datetime))
+  }
+
+  tz_str <- if (!is.na(date[[3L]])) { date[[3L]] } else { '' }
+  withCallingHandlers({
+    parsed <- strptime(date[[2L]], format = '%Y-%m-%d %H:%M', tz = tz_str)
+    if (is.na(parsed)) {
+      abort("Invalid date-time string")
+    }
+    return(parsed)
+  }, warning = function (w) {
+    abort(paste("Format of date-time is invalid:", datetime), parent = w)
+  }, error = function (e) {
+    abort(paste("Format of date-time is invalid:", datetime), parent = e)
+  })
 }

@@ -87,9 +87,8 @@ The function should return \code{TRUE} if the data is saved successfully and \co
 \subsection{\code{get_section_data(attempt_id, section, ...)}}{
 
 Query the most recent section data for the given attempt.
-If \code{user} or \code{section} are \code{NULL}, the function should not filter data for this criterion.
-In this case the function should return only the most recent section data available for each unique combination of
-user and section.
+If \code{section} is \code{NULL}, the function should not filter data for this criterion.
+In this case the function should return only the most recent section data available for the given attempt.
 The function must return a list of section data objects matching the given filter. Each object must contain the
 following:
 

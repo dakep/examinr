@@ -3,7 +3,7 @@
  * Original work Copyright 2019 RStudio
  * Derived work Copyright 2020 David Kepplinger
  */
-exports.autocomplete = (function () {
+(function () {
   'use strict'
 
   const kModifierKeyNone = 0
@@ -169,6 +169,4 @@ exports.autocomplete = (function () {
   $(function () {
     $('.examinr-exercise').each(initializeExerciseAutocomplete)
   })
-
-  return {}
 }())

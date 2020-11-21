@@ -1,0 +1,15 @@
+@use "sass:string";
+
+$font-size-base: 1.1rem;
+$badge-padding-y: .5em;
+
+// Use the default theme only if the user-agent doesn't impose any restrictions on the contrast or colors.
+html {
+  @import "bootstrap-theme-default.scss";
+  @import "exam.scss";
+}
+
+html.high-contrast {
+  @import "bootstrap-theme-highcontrast.scss";
+  @import "exam.scss";
+}

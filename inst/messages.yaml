@@ -41,6 +41,12 @@ noMoreAttempts:
   body: >
     You have used all attempts for this exam.
 
+feedbackUnavailable:
+  # This error is displayed when the user tries to access feedback which is not (yet) available.available
+  title: "Feedback not available"
+  body: >
+    There is no feedback available at this time.
+
 startError:
   # This error is displayed if the attempt cannot be started due to technical problems.
   # The user can reload the page by clicking on the button with the configured label.
@@ -78,11 +84,18 @@ exercise:
   buttonLabel: "Run code"
   panelTitle: "Coding question"
   label: "Type your R code here"
+  outputTitle: "Code output"
   # The following messages pertain to individual exercise chunks.
   # If a message should be disabled, it can be left blank
-  notYetRun: "Run the code by clicking the button in the top right corner of the exercise."
+  notYetRun: "Run the code by clicking the button on the bottom right corner of the exercise."
   syntaxError: "Code is invalid: <pre><code>{diagnostics}</code></pre>"
   unknownError: "Code cannot be run."
   emptyResult: "Code executed successfully, but no output generated."
   timeout: "Code takes too long to execute."
   success: "Code executed successfully."
+
+feedback:
+  solutionLabel: "Correct answer:"
+  commentLabel: "Comment:"
+  status: "{awarded_points} / {total_points} points"
+  attemptLabel: "Attempt"

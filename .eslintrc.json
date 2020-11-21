@@ -14,7 +14,7 @@
       "Shiny": "readonly",
       "ace": "readonly"
     },
-    "ignorePatterns": ["inst/www/*.js", "**/_*.js"],
+    "ignorePatterns": ["inst/www/*.js", "srcwww/idb-keyval/*.js"],
     "rules": {
       "no-global-assign": ["error"],
       "standard/no-callback-literal": "warn"

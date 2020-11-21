@@ -4,14 +4,17 @@ exercise_chunk_server <- function (exercise_data) {
   session <- getDefaultReactiveDomain()
 
   # register a transformation function for this exercise
-  session_env <- get_session_env(session)
-  if (is.null(session_env$transformer)) {
-    session_env$transformer <- list()
-  }
-
-  session_env$transformer[[exercise_data$input_id]] <- function (input_value, session) {
+  register_transformer(exercise_data$input_id, session = session, function (input_value, session) {
     input_value$code
-  }
+  })
+
+  ag_env <- new.env(parent = getNamespace('examinr'))
+  ag_env$solution <- exercise_data$support_code$solution
+  ag_env$available_points <- exercise_data$points
+
+  register_autograder(exercise_data$input_id, session = session, function (input_value, session) {
+    return(list(points = NULL, available = available_points, solution = paste(solution, collapse = '\n')))
+  }, envir = ag_env)
 
   observeEvent(session$input[[exercise_data$input_id]], {
     input_data <- session$input[[exercise_data$input_id]]
@@ -76,13 +79,15 @@ exercise_result <- function (feedback, html_output, error_message, timeout_excee
 
   status_class <- if (is_missing(severity)) {
     'success'
+  } else if (identical(severity, 'error')) {
+    'danger'
   } else {
-    ifelse(severity == 'error', 'danger', severity)
+    as.character(severity[[1L]])
   }
 
   fallback_status_msg <- if (is_missing(severity)) {
     get_status_message('exercise')$success
-  } else if (isTRUE(severity == 'error')) {
+  } else if (identical(severity, 'error')) {
     get_status_message('exercise')$unknownError
   } else {
     NULL
@@ -114,8 +119,10 @@ exercise_result_error <- function (error_message, severity = c('error', 'warning
 exercise_result_empty <- function (severity) {
   status_class <- if (is_missing(severity)) {
     'warning'
+  } else if (identical(severity, 'error')) {
+    'danger'
   } else {
-    ifelse(severity == 'error', 'danger', severity)
+    as.character(severity[[1L]])
   }
   structure(list(status_class = status_class, status = get_status_message('exercise')$emptyResult),
             class = 'exminar_exercise_result')
@@ -157,7 +164,7 @@ check_exercise_code <- function (input, exercise_data) {
   }
 
   # Check if the code is syntactically valid (if it's R code)
-  if (isTRUE(exercise_data$engine == 'r')) {
+  if (identical(exercise_data$engine, 'r')) {
     invalid_syntax <- tryCatch({
       str2expression(input$code)
       NULL
@@ -215,7 +222,7 @@ evaluate_exercise <- function (user_code, support_code, chunk_options, status_me
                        toc = FALSE,
                        anchor_sections = FALSE,
                        fig_caption = TRUE,
-                       df_print = 'default',
+                       df_print = chunk_options$df_print,
                        code_download = FALSE)
 
   out$knitr$opts_chunk <- c(chunk_options,
