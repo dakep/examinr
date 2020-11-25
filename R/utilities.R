@@ -124,6 +124,14 @@ string_is_html <- function (text) {
   }
   return(x)
 }
+## Choose the first argument which is not missing, not NULL, and not NA
+#' @importFrom rlang is_missing
+`%|NA|%` <- function (x, y) {
+  if (is_missing(x) || is.null(x) || anyNA(x)) {
+    return(y)
+  }
+  return(x)
+}
 
 #' @importFrom rlang is_missing
 choose_one <- function (left, right, prefer_left = TRUE) {
@@ -209,7 +217,8 @@ get_session_env <- function (session) {
   get('__.examinr_session_env.__', envir = session$userData, mode = 'environment', inherits = FALSE)
 }
 
-register_transformer <- function (input_id, fun, envir = TRUE, session) {
+#' @importFrom shiny getDefaultReactiveDomain
+register_transformer <- function (input_id, fun, envir = TRUE, session = getDefaultReactiveDomain()) {
   session_env <- get_session_env(session)
   if (!is.null(envir)) {
     if (isTRUE(envir)) {
@@ -225,7 +234,14 @@ register_transformer <- function (input_id, fun, envir = TRUE, session) {
   session_env$transformer[[input_id]] <- fun
 }
 
-register_autograder <- function (input_id, fun, envir = TRUE, session) {
+## Template for question feedback
+new_question_feedback <- function (max_points, points = NA_real_, comment = NULL, solution = NULL, answer = NULL) {
+  list(max_points = max_points, points = points, comment = comment, solution = solution, answer = answer)
+}
+
+## Register a function to evaluate user answers
+#' @importFrom shiny getDefaultReactiveDomain
+register_autograder <- function (input_id, fun, envir = TRUE, session = getDefaultReactiveDomain()) {
   session_env <- get_session_env(session)
   if (!is.null(envir)) {
     if (isTRUE(envir)) {
@@ -238,6 +254,13 @@ register_autograder <- function (input_id, fun, envir = TRUE, session) {
     session_env$autograders <- list()
   }
   session_env$autograders[[input_id]] <- fun
+}
+
+## Register a simple autograder returning the feedback template
+register_static_autograder <- function (input_id, max_points, ..., session) {
+  ag_env <- new.env(parent = getNamespace('examinr'))
+  ag_env$feedback <- new_question_feedback(max_points, ...)
+  register_autograder(input_id, function (...) { return(feedback) }, envir = ag_env, session = session)
 }
 
 #' @importFrom jsonlite toJSON

@@ -42,6 +42,9 @@
 #'   data.
 #' @param exercise_evaluator a function which creates an exercise evaluator. See
 #'   [exercise evaluators][exercise_evaluator] for details.
+#' @param seed_attempt a function to generate the seed for the random number generator used in a single attempt.
+#'   By default every user gets their unique seed which does not change between attempts.
+#'   See _Seeding function_ for more details.
 #' @param data_provider a data provider function which generates the user-specific (e.g., randomized) data for
 #'   the sections. See section _Data provider_ for details.
 #' @param exercise_data_provider a data provider function which generates the user-specific (e.g., randomized) data
@@ -336,17 +339,13 @@ seed_attempt <- function (user, prev_attempts) {
 #' @importFrom shiny getDefaultReactiveDomain
 #' @importFrom rlang warn abort
 get_current_user <- function (session) {
-  if (missing(session)) {
-    session <- getDefaultReactiveDomain()
-  }
   session_env <- get_session_env(session)
   if (is.null(session_env$user)) {
     # authenticate current user
-    session_env$user <- tryCatch({
+    session_env$user <- withCallingHandlers({
       .exam_configuration$get('auth_provider')(session)
     }, error = function (e) {
       abort(paste("Cannot authenticate user:", cnd_message(e)))
-      return(NULL)
     })
     if (!is.null(session_env$user) && !is.character(session_env$user$user_id)) {
       warn("User ID is of wrong type. Forcefully casting to character!")

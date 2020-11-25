@@ -322,7 +322,7 @@ exports.status = function () {
   var dialogContainerContent = $('<div class="modal-body" id="' + exports.utils.randomId('examinr-status-dialog-body-') + '">');
   var dialogContainerFooter = $('<div class="modal-footer">' + '<button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>' + '</div>');
   var dialogContainer = $('<div class="modal" tabindex="-1" role="alertdialog" ' + 'aria-labelledby="' + dialogContainerTitle.attr('id') + '"' + 'aria-describedby="' + dialogContainerContent.attr('id') + '">' + '<div class="modal-dialog modal-lg" role="document">' + '<div class="modal-content"><div class="modal-header"></div></div>' + '</div>' + '</div>');
-  var statusMessageEl = $('<div class="alert alert-danger lead examinr-status-message" role="alert"></div>');
+  var statusMessageEl = $('<div class="lead" role="alert"></div>');
   dialogContainer.find('.modal-header').append(dialogContainerTitle);
   dialogContainer.find('.modal-content').append(dialogContainerContent).append(dialogContainerFooter);
   /**
@@ -337,6 +337,7 @@ exports.status = function () {
    */
 
   Shiny.addCustomMessageHandler('__.examinr.__-statusMessage', function (condition) {
+    statusContainer.removeClass('alert-warning');
     statusMessageEl.detach();
 
     if (condition.type === 'error') {
@@ -345,8 +346,9 @@ exports.status = function () {
       showErrorDialog(condition.content.title, condition.content.body, 'none', '');
       $('main').hide();
     } else {
-      var alertContext = condition.type === 'warning' ? 'alert-warning' : 'alert-info';
-      statusMessageEl.removeClass('alert-warning alert-info').addClass(alertContext).append(statusMessageEl).html(condition.content.body).find('.examinr-timestamp').each(parseTimestamp);
+      statusMessageEl.html(condition.content.body).find('.examinr-timestamp').each(parseTimestamp);
+      exports.utils.toggleShim($('body'), false);
+      statusContainer.removeClass('alert-info').addClass(condition.type === 'warning' ? 'alert-warning' : 'alert-info').children('.col-center').append(statusMessageEl);
     }
 
     fixMainOffset();
@@ -367,7 +369,7 @@ exports.status = function () {
 
   function parseTimestamp() {
     var el = $(this);
-    var timestamp = parseInt(el.text());
+    var timestamp = parseInt(el.text(), 10);
 
     if (timestamp && !isNaN(timestamp)) {
       el.text(exports.utils.formatDate(timestamp * 1000));
@@ -438,6 +440,7 @@ exports.status = function () {
     resetMessages: function resetMessages() {
       statusMessageEl.detach();
       dialogContainer.detach();
+      statusContainer.removeClass('alert-warning alert-danger').addClass('alert-info');
       fixMainOffset();
     },
 
@@ -687,6 +690,8 @@ exports.feedback = function () {
 
   var correctIcon = '<svg aria-label="correct" class="examinr-feedback-annotation" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>';
   var incorrectIcon = '<svg aria-label="incorrect" class="examinr-feedback-annotation" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>';
+  var addCommentLabel = 'Add comment';
+  var removeCommentLabel = 'Remove comment';
   var numFormat = window.Intl.NumberFormat(undefined, {
     signDisplay: 'never',
     style: 'decimal',
@@ -695,7 +700,11 @@ exports.feedback = function () {
   });
   var feedbackRenderer = [];
   var shinyRenderDelay = 250;
-  var pointsEl;
+  var saveFeedbackDelay = 250;
+  var attemptSelectorId = exports.utils.randomId('attempt-sel');
+  var userSelectorId = exports.utils.randomId('user-sel');
+  var currentAttemptId;
+  var centerEl;
 
   function runAfterUpdate(input, func) {
     func();
@@ -708,7 +717,43 @@ exports.feedback = function () {
     var sel = $(this);
     exports.utils.toggleShim($('body'), true); // update the input value for the autocomplete input
 
-    Shiny.setInputValue('__.examinr.__-attemptSel', sel.val());
+    Shiny.setInputValue('__.examinr.__-attemptSel', sel.val()); // Check if the selected attempt is finished, otherwise add a visual feedback
+
+    if (!sel.children('option').filter(':selected').data('finishedat')) {
+      sel.addClass('is-not-finished');
+    } else {
+      sel.removeClass('is-not-finished');
+    }
+  }
+
+  function userChanged() {
+    var sel = $(this);
+    exports.utils.toggleShim($('body'), true); // update the input value for the autocomplete input
+
+    Shiny.setInputValue('__.examinr.__-gradingUserSel', sel.val());
+  }
+
+  function updateAttemptSelector(attempts, current) {
+    var sel = $('#' + attemptSelectorId);
+
+    if (sel.length > 0 && attempts && attempts.length > 0) {
+      var options = attempts.map(function (at) {
+        return '<option value="' + at.id + '" data-finishedat="' + (at.finishedAt || '') + '">' + (at.finishedAt ? exports.utils.formatDate(at.finishedAt * 1000) : 'Unfinished (started at ' + exports.utils.formatDate(at.startedAt * 1000) + ')') + '</option>';
+      }).join('');
+      sel.html(options).prop('disabled', attempts.length < 2).removeClass('is-not-finished');
+
+      if (current) {
+        if (current.id) {
+          sel.val(current.id);
+        }
+
+        if (!current.finishedAt) {
+          sel.addClass('is-not-finished');
+        }
+      }
+    } else {
+      sel.prop('disabled', true);
+    }
   }
   /**
    * Render feedback data
@@ -717,27 +762,37 @@ exports.feedback = function () {
 
   Shiny.addCustomMessageHandler('__.examinr.__-feedback', function (data) {
     exports.utils.toggleShim($('body'), false);
+    exports.status.resetMessages();
+    data.grading = data.grading === true;
 
-    if (!pointsEl) {
+    if (!centerEl) {
       $('.examinr-section-next').remove();
       $('main').show();
       exports.sections.showAll();
-      var options = '';
-      var disabled = 'disabled';
+      exports.status.append('<div class="input-group input-group-sm">' + '<div class="input-group-prepend">' + '<label class="input-group-text" for="' + attemptSelectorId + '">' + exports.status.getMessage('feedback').attemptLabel + '</label>' + '</div>' + '<select class="custom-select" id="' + attemptSelectorId + '"></select>' + '</div>', 'right').children('#' + attemptSelectorId).change(attemptChanged);
 
-      if (data.otherAttempts && data.otherAttempts.length > 0) {
-        options = data.otherAttempts.map(function (at) {
-          return '<option value="' + at.id + '">' + exports.utils.formatDate(at.finishedAt * 1000) + '</option>';
-        }).join('');
+      if (data.grading) {
+        centerEl = exports.status.append('<div class="input-group input-group-sm">' + '<div class="input-group-prepend">' + '<button class="btn btn-secondary" type="button">' + '<span aria-hidden="true">&lt;</span>' + '<span class="sr-only">Previous student</span>' + '</button>' + '<label class="input-group-text" for="' + userSelectorId + '">' + 'User' + '</label>' + '</div>' + '<select class="custom-select" id="' + userSelectorId + '" disabled></select>' + '<div class="input-group-append">' + '<button class="btn btn-secondary" type="button">' + '<span aria-hidden="true">&gt;</span>' + '<span class="sr-only">Next Student</span>' + '</button>' + '</div>' + '</div>');
 
-        if (data.otherAttempts.length > 1) {
-          disabled = '';
+        if (data.users && data.users.length > 0) {
+          var userSel = centerEl.children('#' + userSelectorId);
+          userSel.prop('disabled', false).change(userChanged).append(data.users.map(function (user) {
+            return '<option value="' + user.id + '">' + (user.displayName || user.id) + '</option>';
+          }).join(''));
         }
+      } else {
+        centerEl = exports.status.append('<span></span>');
       }
+    }
 
-      var selId = exports.utils.randomId('attempt-sel');
-      exports.status.append('<div class="input-group input-group-sm">' + '<div class="input-group-prepend">' + '<label class="input-group-text" for="' + selId + '">' + exports.status.getMessage('feedback').attemptLabel + '</label>' + '</div>' + '<select class="custom-select" ' + disabled + ' id="' + selId + '">' + options + '</select>' + '</div>', 'right').children('#' + selId).val(data.attempt.id).change(attemptChanged);
-      pointsEl = exports.status.append('<span></span>');
+    updateAttemptSelector(data.allAttempts, data.attempt);
+
+    if (data.attempt) {
+      currentAttemptId = data.attempt.id;
+
+      if (data.attempt.userId) {
+        centerEl.find('select').val(data.attempt.userId);
+      }
     } // turn feedback array into a map
 
 
@@ -753,11 +808,17 @@ exports.feedback = function () {
 
       for (var i = 0, end = feedbackRenderer.length; i < end; i++) {
         if (question.filter(feedbackRenderer[i].selector).length > 0) {
-          feedbackRenderer[i].callback(question, feedbackMap[label] || {});
+          feedbackRenderer[i].callback(question, feedbackMap[label] || {}, data.grading);
 
           if (label in feedbackMap) {
             totalPoints += feedbackMap[label].maxPoints || 0;
-            awardedPoints += feedbackMap[label].points || NaN;
+
+            if (feedbackMap[label].points || feedbackMap[label].points === 0) {
+              awardedPoints += feedbackMap[label].points;
+            } else {
+              awardedPoints = NaN;
+            }
+
             delete feedbackMap[label];
           } else {
             totalPoints += question.data('maxpoints') || 0;
@@ -775,7 +836,10 @@ exports.feedback = function () {
       awardedPoints = '&mdash;';
     }
 
-    pointsEl.html(exports.status.getMessage('feedback').status.replace('{awarded_points}', awardedPoints).replace('{total_points}', totalPoints));
+    if (!data.grading) {
+      centerEl.html(exports.status.getMessage('feedback').status.replace('{awarded_points}', awardedPoints).replace('{total_points}', totalPoints));
+    }
+
     exports.status.fixMainOffset();
   });
 
@@ -790,29 +854,147 @@ exports.feedback = function () {
     return footer;
   }
 
-  function renderDefaultFeedback(question, feedback) {
-    var badge = question.find('.examinr-points');
+  function saveFeedbackCallback(qid) {
+    return exports.utils.debounce(function (feedback) {
+      if (currentAttemptId) {
+        Shiny.setInputValue('__.examinr.__-saveFeedback', {
+          attempt: currentAttemptId,
+          qid: qid,
+          points: feedback.points,
+          comment: feedback.comment,
+          maxPoints: feedback.maxPoints
+        });
+      }
+    }, saveFeedbackDelay);
+  }
 
-    if (badge.find('.awarded').length === 0) {
-      badge.prepend('<span class="awarded"></span><span class="sr-only"> out of </span>');
+  function pointsChanged(event) {
+    var input = $(this);
+    var question = input.parents('.examinr-question');
+    var feedback = question.data('feedback');
+    var numVal = parseFloat(input.val());
+    input.val(numVal);
+
+    if (!isNaN(numVal)) {
+      feedback.points = numVal;
+      question.data('feedback', feedback);
+      event.data.saveFeedback(feedback);
+    }
+  }
+
+  function commentChanged(event) {
+    var input = $(this);
+    var question = input.parents('.examinr-question');
+    var feedback = question.data('feedback');
+    feedback.comment = input.val();
+    event.data.saveFeedback(feedback);
+    question.data('feedback', feedback);
+  }
+
+  function toggleCommentVisible(event) {
+    var toggleBtn = $(this);
+    var question = toggleBtn.parents('.examinr-question');
+    var feedback = question.data('feedback');
+    var commentsInputGroup = question.find('.examinr-grading-comment');
+    var commentsBtn = $(this);
+
+    if (commentsInputGroup.filter(':visible').length > 0) {
+      // Hide the comment box and remove the comment
+      commentsInputGroup.hide();
+      commentsBtn.find('.btn-label').html('+');
+      commentsBtn.find('.sr-only').text(addCommentLabel);
+
+      if (feedback.comment) {
+        feedback.hiddenComment = feedback.comment;
+        feedback.comment = null;
+        event.data.saveFeedback(feedback);
+      }
+    } else {
+      // Show the comment box and add the previously deleted comment
+      commentsInputGroup.show();
+      commentsBtn.find('.btn-label').html('&times;');
+      commentsBtn.find('.sr-only').text(removeCommentLabel);
+
+      if (feedback.hiddenComment) {
+        commentsInputGroup.find('textarea').val(feedback.hiddenComment).focus();
+        feedback.hiddenComment = null;
+      }
     }
 
-    if (feedback.points || feedback.points === 0) {
-      var context = feedback.points <= 0 ? 'danger' : feedback.points >= feedback.maxPoints ? 'success' : 'secondary';
-      badge.removeClass('badge-secondary badge-info badge-success badge-danger').addClass('badge-' + context).find('.awarded').addClass('lead').text(feedback.points);
-    } else {
-      badge.removeClass('badge-secondary badge-info badge-success badge-danger').addClass('badge-info').find('.awarded').removeClass('lead').html('&mdash;');
-    } // remove all previous feedback
+    question.data('feedback', feedback);
+  }
+  /**
+   * Add default feedback elements to a question.
+   * This renders the points (either as badge for feedback or as input element for grading) and appends
+   * the solution and any comments in the footer.
+   *
+   * @param {jQuery} question question element
+   * @param {Object} feedback feedback object
+   * @param {boolean} grading render for grading
+   */
 
 
-    question.find('.examinr-grading-feedback').remove();
-    var footer = questionFooter(question);
+  function renderDefaultFeedback(question, feedback, grading) {
+    var footer = questionFooter(question); // remove all previous feedback
+
+    footer.find('.examinr-grading-feedback').remove(); // Append the solution to the footer
 
     if (feedback.solution) {
       footer.append('<div class="examinr-grading-feedback">' + '<h6>' + exports.status.getMessage('feedback').solutionLabel + '</h6>' + '<div>' + feedback.solution + '</div>' + '</div>');
     }
 
-    if (feedback.comment) {
+    if (grading) {
+      if (question.find('.examinr-grading-points').length === 0) {
+        var badge = question.find('.examinr-points');
+        var pointsInputId = exports.utils.randomId('examinr-pts-');
+        var commentInputId = exports.utils.randomId('examinr-comment-');
+        badge.parent().addClass('clearfix').append('<div class="input-group input-group-sm examinr-points examinr-grading-points">' + '<label class="sr-only" for="' + pointsInputId + '">Points</label>' + '<input type="number" class="form-control" id="' + pointsInputId + '" step="any" required ' + 'max="' + 2 * feedback.maxPoints + '" />' + '<div class="input-group-append">' + '<span class="input-group-text">' + '<span class="sr-only"> out of </span>' + '<span class="examinr-points-outof">' + badge.text() + '</span>' + '</span>' + '<button type="button" class="btn btn-secondary">' + '<span class="btn-label" aria-hidden="true">' + (feedback.comment ? '&times;' : '+') + '</span>' + '<span class="sr-only">' + (feedback.comment ? removeCommentLabel : addCommentLabel) + '</span>' + '</button>' + '</div>' + '</div>');
+        badge.remove();
+        footer.append('<div class="input-group examinr-grading-comment">' + '<div class="input-group-prepend">' + '<label class="input-group-text" for="' + commentInputId + '">Comment</label>' + '</div>' + '<textarea class="form-control" id="' + commentInputId + '"></textarea>' + '</div>');
+        var saveFeedbackDebounced = {
+          saveFeedback: saveFeedbackCallback(feedback.qid)
+        };
+        question.find('#' + pointsInputId).on('change', saveFeedbackDebounced, pointsChanged);
+        question.find('#' + commentInputId).on('change', saveFeedbackDebounced, commentChanged);
+        question.find('.examinr-grading-points button').on('click', saveFeedbackDebounced, toggleCommentVisible);
+
+        if (!feedback.comment) {
+          footer.find('.examinr-grading-comment').hide();
+        }
+      }
+
+      question.find('.examinr-grading-points input').val(feedback.points);
+      question.data('feedback', feedback);
+    } else {
+      var _badge = question.find('.examinr-points'); // Render the awarded points in the badge
+
+
+      if (_badge.find('.examinr-points-awarded').length === 0) {
+        var outof = _badge.text();
+
+        _badge.html('<span class="examinr-points-awarded"></span><span class="sr-only"> out of </span> ' + '<span class="examinr-points-outof">' + outof + '</span>');
+      }
+
+      if (feedback.points || feedback.points === 0) {
+        var context = feedback.points <= 0 ? 'danger' : feedback.points >= feedback.maxPoints ? 'success' : 'secondary';
+
+        _badge.removeClass('badge-secondary badge-info badge-success badge-danger').addClass('badge-' + context).find('.examinr-points-awarded').addClass('lead').text(feedback.points);
+      } else {
+        _badge.removeClass('badge-secondary badge-info badge-success badge-danger').addClass('badge-info').find('.examinr-points-awarded').removeClass('lead').html('&mdash;');
+      }
+    }
+
+    if (grading) {
+      if (feedback.comment) {
+        question.find('.examinr-grading-points .btn .btn-label').html('&times;');
+        question.find('.examinr-grading-points .btn .sr-only').text(removeCommentLabel);
+        footer.find('.examinr-grading-comment').show().find('textarea').val(feedback.comment);
+      } else {
+        question.find('.examinr-grading-points .btn .btn-label').html('+');
+        question.find('.examinr-grading-points .btn .sr-only').text(addCommentLabel);
+        footer.find('.examinr-grading-comment').hide().find('textarea').val('');
+      }
+    } else if (feedback.comment) {
       footer.append('<div class="text-muted examinr-grading-feedback">' + '<h6>' + exports.status.getMessage('feedback').commentLabel + '</h6>' + '<div>' + feedback.comment + '</div>' + '</div>');
     }
 
@@ -822,22 +1004,22 @@ exports.feedback = function () {
 
   feedbackRenderer.push({
     selector: '.examinr-q-textquestion',
-    callback: function callback(question, feedback) {
-      renderDefaultFeedback(question, feedback);
+    callback: function callback(question, feedback, grading) {
+      renderDefaultFeedback(question, feedback, grading);
       question.find('.shiny-input-container input,.shiny-input-container textarea').prop('readonly', true).val(feedback.answer || '');
     }
   }); // Default feedback renderer for built-in questions created by `mc_question()`
 
   feedbackRenderer.push({
     selector: '.examinr-q-mcquestion',
-    callback: function callback(question, feedback) {
+    callback: function callback(question, feedback, grading) {
       var solution = feedback.solution;
       feedback.solution = null;
-      renderDefaultFeedback(question, feedback);
+      renderDefaultFeedback(question, feedback, grading);
       runAfterUpdate(question, function () {
         // reset old feedback
         question.find('.examinr-feedback-annotation').remove();
-        question.find('label').removeAttr('class'); // display new feedback
+        question.find('.shiny-input-container label').removeAttr('class'); // display new feedback
 
         var cbs = question.find('input[type=checkbox],input[type=radio]');
         cbs.prop('disabled', true).prop('checked', false);
@@ -879,28 +1061,50 @@ exports.feedback = function () {
 
   feedbackRenderer.push({
     selector: '.examinr-q-exercise',
-    callback: function callback(question, feedback) {
+    callback: function callback(question, feedback, grading) {
+      var footer = questionFooter(question);
+
+      if (grading && footer.children('hr').length === 0) {
+        footer.append('<hr class="mb-3 mt-3" />');
+      }
+
       var solution = feedback.solution;
       feedback.solution = null;
-      renderDefaultFeedback(question, feedback);
+      renderDefaultFeedback(question, feedback, grading, grading);
       var editor = question.data('editor');
 
       if (editor) {
-        editor.setReadOnly(true);
+        if (!grading) {
+          editor.setReadOnly(true);
+        }
+
         editor.getSession().setValue(feedback.answer || '\n');
       }
 
-      question.find('.examinr-run-button').remove();
-      question.find('.examinr-exercise-status').remove();
-      var footer = questionFooter(question);
+      if (!grading) {
+        footer.find('.examinr-run-button').remove();
+        footer.find('.examinr-exercise-status').remove();
+      }
+
       footer.removeClass('alert alert-danger text-muted');
 
       if (solution) {
-        questionFooter(question).append('<div class="examinr-grading-feedback">' + '<h6>' + exports.status.getMessage('feedback').solutionLabel + '</h6>' + '<pre><code>' + solution + '</code></pre>' + '</div>');
+        footer.append('<div class="examinr-grading-feedback">' + '<h6>' + exports.status.getMessage('feedback').solutionLabel + '</h6>' + '<pre><code>' + solution + '</code></pre>' + '</div>');
       }
     }
   });
   return {
+    /**
+     * Add default feedback elements to a question.
+     * This renders the points (either as badge for feedback or as input element for grading) and appends
+     * the solution and any comments in the footer.
+     *
+     * @param {jQuery} question question element
+     * @param {Object} feedback feedback object
+     * @param {boolean} grading true if rendering for grading and false for regular (immutable) feedback
+     */
+    renderDefaultFeedback: renderDefaultFeedback,
+
     /**
      * Register a function to render the feedback for all questions matching the given selector.
      * If two functions match the same question, the function registered *later* will be called.
@@ -909,6 +1113,7 @@ exports.feedback = function () {
      * @param {function} func callback function which will be called with two arguments:
      *   {jQuery} question the question element
      *   {Object} the feedback object
+     *   {boolean} true if rendering for grading and false for regular (immutable) feedback
      */
     registerFeedbackRenderer: function registerFeedbackRenderer(selector, func) {
       feedbackRenderer.unshift({
@@ -1484,7 +1689,7 @@ exports.grading = function () {
     var pointsInput = $('<input type="number" class="form-control" />').attr('max', gradingData.maxPoints).attr('id', exports.utils.randomId());
     var feedbackBtn = gradingData.feedbackShown ? '&times;' : '+';
     var feedbackLabel = gradingData.feedbackShown ? 'Remove feedback' : 'Add feedback';
-    container.addClass('clearfix').append('<div class="input-group input-group-sm examinr-grading-points">' + '<label class="sr-only" for="' + pointsInput.attr('id') + '">Points</label>' + '<div class="input-group-append">' + '<span class="input-group-text">/ ' + placeholder + '</span>' + '<button type="button" class="btn btn-secondary">' + '<span class="btn-label" aria-hidden="true">' + feedbackBtn + '</span>' + '<span class="sr-only">' + feedbackLabel + '</span>' + '</button>' + '</div>' + '</div>').find('.input-group').prepend(pointsInput);
+    container.addClass('clearfix').append('<div class="input-group input-group-sm examinr-points">' + '<label class="sr-only" for="' + pointsInput.attr('id') + '">Points</label>' + '<div class="input-group-append">' + '<span class="input-group-text">/ ' + placeholder + '</span>' + '<button type="button" class="btn btn-secondary">' + '<span class="btn-label" aria-hidden="true">' + feedbackBtn + '</span>' + '<span class="sr-only">' + feedbackLabel + '</span>' + '</button>' + '</div>' + '</div>').find('.input-group').prepend(pointsInput);
     question.data('grading', gradingData);
     container.find('.btn').click(toggleFeedback);
     exports.utils.disableNumberInputDefaults(pointsInput);

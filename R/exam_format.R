@@ -276,7 +276,6 @@ initialize_exam_server <- function (config) {
 
   if (identical(query$display, 'feedback')) {
     initialize_feedback(session, config$exam_metadata, config$sections)
-  } else if (identical(query$display, 'grading')) {
   } else {
     initialize_attempt(session, exam_id = config$exam_metadata$id, exam_version = config$exam_metadata$version)
     initialize_sections_server(session, config$sections, config$exam_metadata)

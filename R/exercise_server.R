@@ -8,13 +8,8 @@ exercise_chunk_server <- function (exercise_data) {
     input_value$code
   })
 
-  ag_env <- new.env(parent = getNamespace('examinr'))
-  ag_env$solution <- exercise_data$support_code$solution
-  ag_env$available_points <- exercise_data$points
-
-  register_autograder(exercise_data$input_id, session = session, function (input_value, session) {
-    return(list(points = NULL, available = available_points, solution = paste(solution, collapse = '\n')))
-  }, envir = ag_env)
+  register_static_autograder(exercise_data$input_id, max_points = exercise_data$points,
+                             solution = paste(exercise_data$support_code$solution, collapse = '\n'), session = session)
 
   observeEvent(session$input[[exercise_data$input_id]], {
     input_data <- session$input[[exercise_data$input_id]]

@@ -51,10 +51,15 @@ main.container {
   .examinr-points {
     float: right;
 
-    .awarded::after {
+    .examinr-points-outof::before {
       content: "/";
       padding: map-get($spacers, 1);
     }
+  }
+
+  &.examinr-q-mcquestion .radio:first-child,
+  &.examinr-q-mcquestion .checkbox:first-child {
+    display: none;
   }
 
   .hide-label .form-group > label {
@@ -112,6 +117,12 @@ div.sourceCode {
   z-index: 100;
   padding: map-get($spacers, 3) map-get($spacers, 3);
   line-height: $size-inactive;
+
+  .col-left,
+  .col-right,
+  .col-center {
+    @include make-col-ready();
+  }
 
   .col-left {
     @include make-col(3);
@@ -329,15 +340,7 @@ body > .examinr-recompute-overlay > .examinr-recompute {
   }
 }
 
-.examinr-grading-attempt {
-  float: right;
-
-  .input-group {
-    min-width: 15em;
-    max-width: 50%;
-
-    select {
-      margin-left: map-get($spacers, 3);
-    }
-  }
+select.is-not-finished {
+  background-color: theme-color-level('warning', $alert-bg-level);
+  color: theme-color-level('warning', $alert-color-level);
 }

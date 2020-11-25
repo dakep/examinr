@@ -75,7 +75,7 @@ exports.grading = (function () {
     const feedbackLabel = gradingData.feedbackShown ? 'Remove feedback' : 'Add feedback'
 
     container.addClass('clearfix')
-      .append('<div class="input-group input-group-sm examinr-grading-points">' +
+      .append('<div class="input-group input-group-sm examinr-points">' +
         '<label class="sr-only" for="' + pointsInput.attr('id') + '">Points</label>' +
         '<div class="input-group-append">' +
           '<span class="input-group-text">/ ' + placeholder + '</span>' +

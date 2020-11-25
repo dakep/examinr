@@ -319,31 +319,49 @@ initialize_attempt <- function (session, exam_id, exam_version) {
   # Update the client at every new section or when the attempt changes
   # Make handler independent of current context
   observe(expr({
-    current_section <- get_current_section()
-    status <- get_session_env()$attempt_state$status
+    session <- getDefaultReactiveDomain()
+    current_section <- get_current_section(session)
+    status <- get_session_env(session)$attempt_state$status
     # Notify the client if the status is still valid or the attempt changed due to a timeout
     if (isTRUE(status) || identical(status, 'timeout')) {
-      send_message('attemptStatus', list(active = isTRUE(status), status = status,
-                                         timelimit = !!attempt_timeout, gracePeriod = !!config$grace_period))
+      send_message('attemptStatus', session = session,
+                   list(active = isTRUE(status), status = status, timelimit = !!attempt_timeout,
+                        gracePeriod = !!config$grace_period))
     }
-  }), env = getNamespace('examinr'), quoted = TRUE)
+  }), env = getNamespace('examinr'), quoted = TRUE, domain = session)
 
   return(TRUE)
 }
 
+#' @importFrom rlang abort
 initialize_attempt_state <- function (session, status, attempt) {
   session_env <- get_session_env(session)
-  session_env$attempt_state <- reactiveValues(status = status, current = attempt)
+  if (is.null(session_env$attempt_state)) {
+    session_env$attempt_state <- reactiveValues(status = status %||% NULL, current = attempt %||% NULL)
+  } else {
+    abort("Attempt state already initialized")
+  }
+}
+
+#' @importFrom rlang abort
+update_attempt_state <- function (session, status, attempt) {
+  session_env <- get_session_env(session)
+  if (is.null(session_env$attempt_state)) {
+    abort("Attempt state not initialized")
+  }
+  if (!missing(status)) {
+    session_env$attempt_state$status <- status
+  }
+  if (!missing(attempt)) {
+    session_env$attempt_state$current <- attempt
+  }
 }
 
 #' @importFrom shiny getDefaultReactiveDomain
-get_current_attempt <- function (session) {
-  if (missing(session)) {
-    session <- getDefaultReactiveDomain()
-  }
+#' @importFrom rlang abort
+get_current_attempt <- function (session = getDefaultReactiveDomain()) {
   return(get_session_env(session)$attempt_state$current)
 }
-
 
 ## Get the status of the current attempt.
 ##
@@ -354,21 +372,14 @@ get_current_attempt <- function (session) {
 ##   "feedback" ... the attempt is finished and shown for feedback
 ##   NA,FALSE ... no attempt is available
 #' @importFrom shiny getDefaultReactiveDomain
-get_attempt_status <- function (session) {
-  if (missing(session)) {
-    session <- getDefaultReactiveDomain()
-  }
+get_attempt_status <- function (session = getDefaultReactiveDomain()) {
   return(get_session_env(session)$attempt_state$status)
 }
 
 
 #' @importFrom shiny getDefaultReactiveDomain
 #' @importFrom rlang warn
-finish_current_attempt <- function (session, timeout = FALSE) {
-  if (is_missing(session)) {
-    session <- getDefaultReactiveDomain()
-  }
-
+finish_current_attempt <- function (session = getDefaultReactiveDomain(), timeout = FALSE) {
   session_env <- get_session_env()
   current_attempt <- session_env$attempt_state$current
 

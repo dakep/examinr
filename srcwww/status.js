@@ -23,7 +23,7 @@ exports.status = (function () {
       '</div>' +
     '</div>')
 
-  const statusMessageEl = $('<div class="alert alert-danger lead examinr-status-message" role="alert"></div>')
+  const statusMessageEl = $('<div class="lead" role="alert"></div>')
 
   dialogContainer.find('.modal-header').append(dialogContainerTitle)
   dialogContainer.find('.modal-content').append(dialogContainerContent).append(dialogContainerFooter)
@@ -39,6 +39,7 @@ exports.status = (function () {
    *    otherwise, the dialog is simply closed.
    */
   Shiny.addCustomMessageHandler('__.examinr.__-statusMessage', function (condition) {
+    statusContainer.removeClass('alert-warning')
     statusMessageEl.detach()
     if (condition.type === 'error') {
       showErrorDialog(condition.content.title, condition.content.body, condition.action, condition.content.button,
@@ -47,13 +48,16 @@ exports.status = (function () {
       showErrorDialog(condition.content.title, condition.content.body, 'none', '')
       $('main').hide()
     } else {
-      const alertContext = condition.type === 'warning' ? 'alert-warning' : 'alert-info'
-      statusMessageEl.removeClass('alert-warning alert-info')
-        .addClass(alertContext)
-        .append(statusMessageEl)
-        .html(condition.content.body)
+      statusMessageEl.html(condition.content.body)
         .find('.examinr-timestamp')
         .each(parseTimestamp)
+
+      exports.utils.toggleShim($('body'), false)
+
+      statusContainer.removeClass('alert-info')
+        .addClass(condition.type === 'warning' ? 'alert-warning' : 'alert-info')
+        .children('.col-center')
+        .append(statusMessageEl)
     }
     fixMainOffset()
   })
@@ -72,7 +76,7 @@ exports.status = (function () {
    */
   function parseTimestamp () {
     const el = $(this)
-    const timestamp = parseInt(el.text())
+    const timestamp = parseInt(el.text(), 10)
     if (timestamp && !isNaN(timestamp)) {
       el.text(exports.utils.formatDate(timestamp * 1000))
     } else {
@@ -144,6 +148,7 @@ exports.status = (function () {
     resetMessages: function () {
       statusMessageEl.detach()
       dialogContainer.detach()
+      statusContainer.removeClass('alert-warning alert-danger').addClass('alert-info')
       fixMainOffset()
     },
 

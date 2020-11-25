@@ -2,32 +2,43 @@
 % Please edit documentation in R/authentication_provider.R
 \name{authentication_provider}
 \alias{authentication_provider}
-\alias{rsconnect_authentication_provider}
 \title{Authentication Providers}
-\usage{
-rsconnect_authentication_provider(shiny_session)
-}
 \arguments{
-\item{shiny_session}{the shiny session object.}
+\item{session}{the shiny session object.}
 }
 \value{
 a list with user information. The list \strong{must} contain an element \code{user_id} with the user's unique
 identifier as character (it will be forcefully cast to \code{character}).
-The user information list can optionally include any number of additional objects, which will be stored alongside
+The user object may also contain the following
+\describe{
+\item{\code{display_name}}{a character string which will be displayed for grading. If missing, the user id is
+displayed for grading.}
+\item{\code{grading}}{if \code{TRUE}, the user has permissions to grade attempts.}
+}
+The user object can optionally include any number of additional entries which will be stored alongside
 the exam data.
-\strong{Warning:} this could pose serious privacy issues. Either not add additional information or ensure the data is
+\strong{Warning:} this could pose serious privacy issues. Either don't add additional information or ensure the data is
 stored encrypted and secure.
 
 Any additional information will be proxied to all callback functions receiving a \code{user} object.
 }
 \description{
 Every exam attempt is tied to a single \emph{user}.
-Each attempt can get a different randomization of the exam and all attempts are tied to a user.
 The exam document format does not determine the user, but invokes the authentication provider configured with
 \code{\link[=exam_config]{exam_config()}} to determine the user's identification.
 }
-\section{Functions}{
-\itemize{
-\item \code{rsconnect_authentication_provider}: use the name of the user authenticated with RStudio Connect as user id.
-}}
+\examples{
+# Use a "dummy" authentication provider which assigns everyone the same user id
+# and does not allow anyone to grade submitted attempts.
+exam_config(auth_provider = function (session) {
+  return(list(
+    user_id = "E-L",
+    display_name = "Eager Learner",
+    grading = FALSE
+  ))
+})
 
+}
+\seealso{
+\code{\link[=rsconnect_auth]{rsconnect_auth()}} for a simple authentication provider using the user information from RStudio Connect.
+}

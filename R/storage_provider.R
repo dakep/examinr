@@ -194,7 +194,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
   }
 
   get_user_id <- function (user, exam_id, exam_version) {
-    if (isTRUE(hash_user)) {
+    if (isTRUE(hash_user) && !isTRUE(attr(user, 'hashed', TRUE))) {
       if (isTRUE(hash_key)) {
         hmac(paste(exam_id, exam_version, sep = ''), user$user_id, algo = 'sha256', serialize = FALSE)
       } else if (is.null(hash_key)) {
@@ -341,6 +341,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
           lapply(seq_len(nrow(db_tbl)), function (i) {
             user_obj <- unserialize_object(db_tbl$user_obj[[i]])
             user_obj$user_id <- db_tbl$user_id[[i]]
+            attr(user_obj, 'hashed') <- TRUE
 
             list(id = db_tbl$attempt_id[[i]],
                  started_at = as.POSIXct(db_tbl$started_at[[i]], origin = unix_epoch),

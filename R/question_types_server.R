@@ -16,28 +16,27 @@ question_title_server <- function (question, ns_str, section_id) {
   })
 }
 
-#' @importFrom shiny NS observeEvent
+#' @importFrom shiny NS observeEvent getDefaultReactiveDomain
 #' @importFrom rlang warn
 render_textquestion_server <- function (question, ns) {
   question <- unserialize_object(question)
   ns <- NS(ns)
 
   if (!is.null(question$solution_expr)) {
-    # Register the auto-grader whenever the attempt status changes
-    observeEvent(get_attempt_status(), {
-      rendering_env <- baseenv()
-      solution <- if (isTRUE(get_attempt_status())) {
-        # Compute the solution
-        rendering_env <- get_rendering_env()
-        tryCatch(eval(question$solution_expr, envir = rendering_env),
-                 error = function (e) {
-                   warn(sprintf("Cannot compute solution to question %s: %s", question$label, cnd_message(e)))
-                   return(NULL)
-                 })
-      } else {
-        NULL
-      }
+    # The question has an expression to render the solution.
+    ag_env <- new.env(parent = getNamespace('examinr'))
+    ag_env$question <- question
 
+    register_autograder(ns(question$input_id), envir = ag_env, function (input_value, session) {
+      # compute the solution
+      rendering_env <- get_rendering_env()
+      solution <- tryCatch(eval(question$solution_expr, envir = rendering_env),
+                           error = function (e) {
+                             warn(sprintf("Cannot compute solution to question %s: %s",
+                                          question$label, cnd_message(e)))
+                             return(NULL)
+                           })
+      earned_points <- NA_real_
       correct_num_answer <- NULL
       if (length(solution) > 0L) {
         if (identical(question$type, 'numeric')) {
@@ -54,38 +53,28 @@ render_textquestion_server <- function (question, ns) {
                          paste(correct_num_answer, collapse = ', ')))
             correct_num_answer <- NULL
           }
-        } else {
-          correct_num_answer <- NULL
         }
         solution <- render_markdown_as_html(solution, use_rmarkdown = FALSE, env = rendering_env)
       }
 
-      # Register the auto-grader
-      ag_env <- new.env(parent = getNamespace('examinr'))
-      ag_env$available_points <- question$points
-      ag_env$solution <- solution
-      ag_env$correct_num_answer <- correct_num_answer
-      ag_env$tolerance <- question$accuracy
+      # auto-grade numeric questions
+      if (!is.null(input_value) && length(correct_num_answer) == 1L) {
+        num_val <- tryCatch(as.numeric(input_value[[1L]]),
+                            warning = function (w) { return(NA_real_) },
+                            error = function (w) { return(NA_real_) })
 
-      register_autograder(ns(question$input_id), function (input_value, session) {
-        grade <- list(points = NULL, available = available_points, solution = solution)
-
-        # auto-grade numeric questions
-        if (!is.null(input_value) && length(correct_num_answer) == 1L) {
-          num_val <- tryCatch(as.numeric(input_value[[1L]]),
-                              warning = function (w) { return(NA_real_) },
-                              error = function (w) { return(NA_real_) })
-
-          # compare answers
-          grade$points <- if (isTRUE(abs(correct_num_answer - num_val) <= tolerance)) {
-            available_points
-          } else {
-            0
-          }
+        # compare answer
+        earned_points <- if (isTRUE(abs(correct_num_answer - num_val) <= question$tolerance)) {
+          question$points
+        } else {
+          0
         }
-        return(grade)
-      }, envir = ag_env)
+      }
+      return(new_question_feedback(max_points = question$points, points = earned_points, solution = solution))
     })
+  } else {
+    # No solution. The auto-grader simply returns an empty feedback template
+    register_static_autograder(ns(question$input_id), max_points = question$points)
   }
 }
 
@@ -94,6 +83,12 @@ render_textquestion_server <- function (question, ns) {
 render_mcquestion_server <- function (question, ns) {
   question <- unserialize_object(question)
   moduleServer(ns, function (input, output, session) {
+    # Filter out the N/A option from the input. The option is added to ensure the input
+    # is captured when saving the section data!
+    register_transformer(session$ns(question$input_id), function (input_value, session) {
+      input_value[match(input_value, 'N/A', nomatch = 0L) == 0L]
+    }, session = session)
+
     observe_section_change(section_id = question$section_id, label = 'render mc question', {
       attempt_seed <- get_current_attempt(session)$seed
 
@@ -155,40 +150,35 @@ render_mcquestion_server <- function (question, ns) {
       })
 
       # Register the auto-grader if the attempt is active
-      if (isTRUE(get_attempt_status())) {
+      if (isTRUE(get_attempt_status(session))) {
         weights <- vapply(shown_answers, FUN.VALUE = numeric(1L), `[[`, 'weight')
         names(weights) <- values
 
         ag_env <- new.env(parent = getNamespace('examinr'))
-        ag_env$available_points <- question$points
-        ag_env$min_points <- question$min_points
         ag_env$weights <- question$points * c(weights[weights > 0] / sum(weights[weights > 0]), weights[weights <= 0])
+        ag_env$feedback <- new_question_feedback(max_points = question$points, points = 0,
+                                                 solution = as.list(names(ag_env$weights[weights > 0])))
+        ag_env$min_points <- question$min_points
 
         register_autograder(session$ns(question$input_id), function (input_value, session) {
-          grade <- list(points = 0, available = available_points, answer = list(),
-                        solution = as.list(names(weights[weights > 0])))
-
           if (!is.null(input_value) && length(input_value) > 0L && !anyNA(input_value)) {
             input_value <- enc2utf8(input_value)
-            grade$points <- max(min_points, sum(weights[input_value]))
-            grade$answer <- unname(mapply(weight = weights[input_value], value = input_value, FUN = list,
-                                          SIMPLIFY = FALSE))
+            feedback$points <- max(min_points, sum(weights[input_value]))
+            feedback$answer <- unname(mapply(weight = weights[input_value], value = input_value, FUN = list,
+                                             SIMPLIFY = FALSE))
           }
-
-          return(grade)
+          return(feedback)
         }, envir = ag_env)
       }
 
-      # Send the answer options to the client
-      latest_valid_input <- 'N/A'
-
+      # Send the answer options to the client. Add the 'N/A' option to ensure the input
+      # is captured when saving section data.
       if (isTRUE(question$mc)) {
-        updateCheckboxGroupInput(session, inputId = question$input_id,
-                                 selected = latest_valid_input, choiceValues = values,
-                                 choiceNames = labels)
+        updateCheckboxGroupInput(session, inputId = question$input_id, selected = 'N/A',
+                                 choiceValues = c('N/A', values), choiceNames = c('N/A', labels))
       } else {
-        updateRadioButtons(session, inputId = question$input_id, selected = latest_valid_input,
-                           choiceValues = values, choiceNames = labels)
+        updateRadioButtons(session, inputId = question$input_id, selected = 'N/A',
+                           choiceValues = c('N/A', values), choiceNames = c('N/A', labels))
       }
     })
   })

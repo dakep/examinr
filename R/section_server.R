@@ -25,8 +25,9 @@ section_end_server <- function (metadata) {
 
   moduleServer(metadata$id, function (input, output, session) {
     observeEvent(input$`btn-next`, {
-      if (isTRUE(get_attempt_status())) {
-        saved <- save_section_data(global_session %||% session, session$ns('btn-next'))
+      session <- global_session %||% session
+      if (isTRUE(get_attempt_status(session))) {
+        saved <- save_section_data(session, session$ns('btn-next'))
         if (isTRUE(saved)) {
           goto_next_section()
         }
@@ -104,10 +105,14 @@ initialize_sections_server <- function (session, user_sections, exam_metadata) {
 }
 
 ## Initialize the session
+#' @importFrom rlang abort
 initialize_section_state <- function (session, sections, current_section = TRUE) {
   session_env <- get_session_env(session)
   session_env$sections <- sections
   session_env$last_section_id <- sections[[length(sections) - 1L]]$id
+  if (!is.null(session_env$section_state)) {
+    abort("Section state already initialized")
+  }
   session_env$section_state <- reactiveValues(current = current_section)
 }
 
@@ -115,15 +120,15 @@ initialize_section_state <- function (session, sections, current_section = TRUE)
 ##
 ## @param section_id if not null, execute `x` only if the section with id `section_id` is visible.
 ## @param ... arguments passed on to [observe()].
-#' @importFrom shiny exprToFunction observe
+#' @importFrom shiny exprToFunction observe getDefaultReactiveDomain
 observe_section_change <- function (x, section_id = NULL, ..., label = NULL, env = parent.frame(), quoted = FALSE) {
   handler_fun <- exprToFunction(x, env, quoted)
 
   observe(x = {
-    current_attempt <- get_current_attempt()
-    attempt_status <- isolate(get_attempt_status()) # Don't trigger if the status changes.
-    current_section <- get_current_section()
-
+    session <- getDefaultReactiveDomain()
+    current_attempt <- get_current_attempt(session)
+    attempt_status <- isolate(get_attempt_status(session)) # Don't trigger if the status changes.
+    current_section <- get_current_section(session)
     if ((isTRUE(attempt_status) || identical(attempt_status, 'feedback')) &&
         (isTRUE(current_section) || is.null(section_id) || identical(current_section$id, section_id))) {
       isolate(handler_fun())
@@ -131,8 +136,9 @@ observe_section_change <- function (x, section_id = NULL, ..., label = NULL, env
   }, label = label, ...)
 }
 
-get_current_section <- function () {
-  get_session_env()$section_state$current
+#' @importFrom shiny getDefaultReactiveDomain
+get_current_section <- function (session = getDefaultReactiveDomain()) {
+  get_session_env(session)$section_state$current
 }
 
 #' @importFrom stringr str_detect fixed str_remove
