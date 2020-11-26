@@ -17,7 +17,6 @@ Imports:
   rlang,
   withr,
   jsonlite,
-  parallel,
   knitr (>= 1.23),
   commonmark,
   xml2,
@@ -25,7 +24,9 @@ Imports:
   htmltools,
   stringr,
   stringi,
-  base64enc
+  base64enc,
+  promises,
+  future
 Suggests:
   DBI,
   testthat

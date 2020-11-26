@@ -705,6 +705,7 @@ exports.feedback = function () {
   var userSelectorId = exports.utils.randomId('user-sel');
   var currentAttemptId;
   var centerEl;
+  var refreshContentEvents = 0;
 
   function runAfterUpdate(input, func) {
     func();
@@ -713,9 +714,19 @@ exports.feedback = function () {
     });
   }
 
+  function disableUi() {
+    exports.utils.toggleShim($('body'), true);
+    refreshContentEvents = 2;
+    $(document).one('shiny:idle', function () {
+      if (--refreshContentEvents <= 0) {
+        exports.utils.toggleShim($('body'), false);
+      }
+    });
+  }
+
   function attemptChanged() {
     var sel = $(this);
-    exports.utils.toggleShim($('body'), true); // update the input value for the autocomplete input
+    disableUi(); // update the input value for the autocomplete input
 
     Shiny.setInputValue('__.examinr.__-attemptSel', sel.val()); // Check if the selected attempt is finished, otherwise add a visual feedback
 
@@ -728,7 +739,7 @@ exports.feedback = function () {
 
   function userChanged() {
     var sel = $(this);
-    exports.utils.toggleShim($('body'), true); // update the input value for the autocomplete input
+    disableUi(); // update the input value for the autocomplete input
 
     Shiny.setInputValue('__.examinr.__-gradingUserSel', sel.val());
   }
@@ -761,7 +772,10 @@ exports.feedback = function () {
 
 
   Shiny.addCustomMessageHandler('__.examinr.__-feedback', function (data) {
-    exports.utils.toggleShim($('body'), false);
+    if (--refreshContentEvents <= 0) {
+      exports.utils.toggleShim($('body'), false);
+    }
+
     exports.status.resetMessages();
     data.grading = data.grading === true;
 
@@ -976,11 +990,11 @@ exports.feedback = function () {
       }
 
       if (feedback.points || feedback.points === 0) {
-        var context = feedback.points <= 0 ? 'danger' : feedback.points >= feedback.maxPoints ? 'success' : 'secondary';
+        var context = feedback.points <= 0 ? 'danger' : feedback.points >= feedback.maxPoints ? 'success' : 'info';
 
         _badge.removeClass('badge-secondary badge-info badge-success badge-danger').addClass('badge-' + context).find('.examinr-points-awarded').addClass('lead').text(feedback.points);
       } else {
-        _badge.removeClass('badge-secondary badge-info badge-success badge-danger').addClass('badge-info').find('.examinr-points-awarded').removeClass('lead').html('&mdash;');
+        _badge.removeClass('badge-secondary badge-info badge-success badge-danger').addClass('badge-secondary').find('.examinr-points-awarded').removeClass('lead').html('&mdash;');
       }
     }
 
@@ -1016,46 +1030,52 @@ exports.feedback = function () {
       var solution = feedback.solution;
       feedback.solution = null;
       renderDefaultFeedback(question, feedback, grading);
-      runAfterUpdate(question, function () {
-        // reset old feedback
-        question.find('.examinr-feedback-annotation').remove();
-        question.find('.shiny-input-container label').removeAttr('class'); // display new feedback
+      question.find('.shiny-input-container').one('shiny:updateinput', function () {
+        window.console.log('Updating input for question ' + feedback.qid);
+        window.setTimeout(function () {
+          // reset old feedback
+          question.find('.examinr-feedback-annotation').remove();
+          question.find('.shiny-input-container label').removeAttr('class'); // display new feedback
 
-        var cbs = question.find('input[type=checkbox],input[type=radio]');
-        cbs.prop('disabled', true).prop('checked', false);
+          var cbs = question.find('input[type=checkbox],input[type=radio]');
+          cbs.prop('disabled', true).prop('checked', false);
 
-        if (feedback.answer) {
-          feedback.answer.forEach(function (sel) {
-            if (sel.weight) {
-              var context = sel.weight > 0 ? 'success' : 'danger';
-              var weightStr = (sel.weight > 0 ? '+' : '&minus;') + numFormat.format(sel.weight);
-              cbs.filter('[value="' + sel.value + '"]').prop('checked', true).parent().append('<span class="examinr-feedback-annotation badge badge-pill badge-' + context + '">' + weightStr + '</span>');
-            }
-          });
-        }
+          if (feedback.answer) {
+            feedback.answer.forEach(function (sel) {
+              var cb = cbs.filter('[value="' + sel.value + '"]');
+              cb.prop('checked', true);
 
-        if (solution) {
-          var correctValues = new Set(solution);
-          cbs.each(function () {
-            var cb = $(this);
-            var label = cb.parent();
-
-            if (cb.prop('checked')) {
-              if (correctValues.has(cb.val())) {
-                label.addClass('text-success').prepend(correctIcon);
-              } else {
-                label.addClass('text-danger').prepend(incorrectIcon);
+              if (sel.weight) {
+                var context = sel.weight > 0 ? 'success' : 'danger';
+                var weightStr = (sel.weight > 0 ? '+' : '&minus;') + numFormat.format(sel.weight);
+                cb.parent().append('<span class="examinr-feedback-annotation badge badge-pill badge-' + context + '">' + weightStr + '</span>');
               }
-            } else {
-              if (correctValues.has(cb.val())) {
-                label.addClass('text-danger').prepend(incorrectIcon);
+            });
+          }
+
+          if (solution) {
+            var correctValues = new Set(solution);
+            cbs.each(function () {
+              var cb = $(this);
+              var label = cb.parent();
+
+              if (cb.prop('checked')) {
+                if (correctValues.has(cb.val())) {
+                  label.addClass('text-success').prepend(correctIcon);
+                } else {
+                  label.addClass('text-danger').prepend(incorrectIcon);
+                }
               } else {
-                label.addClass('text-muted').prepend(correctIcon);
+                if (correctValues.has(cb.val())) {
+                  label.addClass('text-danger').prepend(incorrectIcon);
+                } else {
+                  label.addClass('text-muted').prepend(correctIcon);
+                }
               }
-            }
-          });
-        }
-      });
+            });
+          }
+        }, shinyRenderDelay);
+      }); // runAfterUpdate(question, )
     }
   }); // Default feedback renderer for built-in exercise questions.
 

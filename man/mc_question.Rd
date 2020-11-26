@@ -19,7 +19,13 @@ mc_question(
   min_points = 0
 )
 
-answer(label, correct = FALSE, always_show = FALSE, weight = correct)
+answer(
+  label,
+  correct = FALSE,
+  always_show = FALSE,
+  weight = c(0, 1),
+  correct_quoted = FALSE
+)
 }
 \arguments{
 \item{title}{question title. Markdown is supported and by default the title will be rendered dynamically if it
@@ -51,16 +57,31 @@ title dynamically on the server.}
 \item{min_points}{if \code{points} multiplied by the the sum of the weights of all selected answer options is negative,
 where to cut off negative points. If \code{NULL}, there is no lower bound.}
 
-\item{correct}{if the answer is correct or not.}
+\item{correct}{an expression which, evaluated in the rendering environment, determines if the answer is correct
+or not. Can also be a simple logical.}
 
 \item{always_show}{even if answer options are randomized, always show this answer.}
 
 \item{weight}{the weight of this answer, if selected. By default, correct answers have a weight of 1, and incorrect
-answers have a weight of 0. A negative weight will subtract that proportion of available points from the user's
-points (e.g., penalizing for selecting incorrect answer options).
+answers have a weight of 0. See details for more information.
+A negative weight will subtract that proportion of available points from the user's
+points (e.g., to penalize for selecting incorrect answer options).
 The sum of all displayed \strong{positive} weights is standardized to sum to 1,
 \strong{but negative weights are not standardized.}}
+
+\item{correct_quoted}{is the expression given in \code{correct} quoted or not?}
 }
 \description{
-Render a multiple- or single-choice question.
+Show a multiple-choice or single-choice question.
+}
+\details{
+The \code{weight} of an answer option determines how many points are awarded/subtracted for selecting this answer option.
+If \code{correct} is an expression and correctness of an answer option can only be determined at run-time, \code{weight}
+can be a numeric vector with two elements. The first element is the weight applied if the answer is wrong, the
+second element is the weight applied if the answer is correct.
+
+The sum of weights of all displayed correct answers is standardized to sum to 1 (i.e., users selecting
+all displayed correct answers will get all points), but negative weights are used as given.
+For example, if the weight of an incorrect answer option is set to -0.5 and the total number of points available
+for a question is 4, selecting this answer option will reduce the number of points awarded by 2.
 }

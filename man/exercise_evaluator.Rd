@@ -2,13 +2,10 @@
 % Please edit documentation in R/exercise_evaluators.R
 \name{exercise_evaluator}
 \alias{exercise_evaluator}
-\alias{local_evaluator}
-\alias{psock_evaluator}
+\alias{future_evaluator}
 \title{Exercise Evaluator}
 \usage{
-local_evaluator(expr, envir, label, timelimit, ...)
-
-psock_evaluator(expr, envir, label, timelimit, ...)
+future_evaluator(expr, envir, label, timelimit, ...)
 }
 \arguments{
 \item{expr}{an (un-evaluated) expression to be evaluated.}
@@ -22,23 +19,17 @@ psock_evaluator(expr, envir, label, timelimit, ...)
 \item{...}{additional parameters for future extensions.}
 }
 \value{
-a list of functions, namely
-\itemize{
-\item \code{completed()} returns \code{TRUE} if the evaluator is finished, \code{FALSE} otherwise.
-\item \code{kill()} kill/interrupt the evaluator. This will be called when the time limit has passed.
-\item \code{result()} return the result from evaluating \code{expr}.
-\item \code{start()} start the evaluation of \code{expr}.
-}
+a \link[promises:promise]{promise} object, or anything that can be cast to a promise object with
+\link[promises:is.promise]{as.promise()}.
 }
 \description{
 Configure how exercises are evaluated.
-An exercise evaluator is a function taking the arguments described below and returning a list of functions.
+An exercise evaluator is a function taking the arguments described below and returning a
+promise object which will eventually evaluate the user's code.
 }
 \section{Functions}{
 \itemize{
-\item \code{local_evaluator}: evaluate the user code in the current R process.
-
-\item \code{psock_evaluator}: evaluate the user code in a separate R process, created with
-\code{\link[parallel:makeCluster]{parallel::makePSOCKcluster()}}.
+\item \code{future_evaluator}: evaluate user code in a \link[future:future]{future()} promise. See \code{\link[future:plan]{future::plan()}}
+for details on configuring where/how these promises are resolved.
 }}
 

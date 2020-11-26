@@ -57,8 +57,7 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
     abort("`solution` must be an expression")
   }
 
-  return(structure(list(label = get_chunk_label(),
-                        input_label = label,
+  return(structure(list(input_label = label,
                         hide_label = isTRUE(hide_label),
                         type = type,
                         title = prepare_title(title, static_title),
@@ -77,7 +76,7 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
 
 #' Create a Multiple-Choice Question
 #'
-#' Render a multiple- or single-choice question.
+#' Show a multiple-choice or single-choice question.
 #'
 #' @inheritParams text_question
 #' @param ... answer options created with [answer()].
@@ -104,7 +103,7 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
                         title_container = h6, static_title = NULL, label = "Select the correct answer(s).",
                         hide_label = FALSE, min_points = 0) {
   if (is.null(label)) {
-    abort("Every question must have a meaningful label")
+    abort("Every question must have a meaningful label.")
   }
 
   # Capture and validate answers.
@@ -112,6 +111,14 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
   answers <- list(...)
 
   total_nr_answers <- length(answers)
+
+  # Validate answer options
+  nr_always_show <- sum(vapply(answers, FUN.VALUE = logical(1L), function(answer) {
+    if (!inherits(answer, 'examinr_question_answer')) {
+      abort("Answer options must be created by `answer()`.")
+    }
+    return(answer$always_show)
+  }))
 
   # Generate the value to obfuscate, but persist order
   values <- with_seed(digest2int(label), {
@@ -121,56 +128,25 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
     answers[[i]]$value <- values[[i]]
   }
 
-  is_correct <- unlist(lapply(answers, function(answer) {
-    if (!inherits(answer, 'examinr_question_answer')) {
-      abort("Answer options must be created by `answer()`.")
-    }
-    answer$correct
-  }), recursive = FALSE, use.names = FALSE)
-
-  answers <- split(answers, factor(is_correct, levels = c(FALSE, TRUE), labels = c('incorrect', 'correct')))
-
-  if (length(answers[['correct']]) == 0L) {
-    abort("At least one correct answer must be provided.")
-  }
-
-  nr_always_show <- vapply(answers, FUN.VALUE = integer(1L), USE.NAMES = TRUE, function (ans) {
-    sum(vapply(ans, `[[`, 'always_show', FUN.VALUE = TRUE, USE.NAMES = FALSE))
-  })
-
-  nr_answers <- if (is.null(nr_answers)) {
+  nr_answers <- if (length(nr_answers) == 0L) {
     total_nr_answers
-  } else if (length(nr_answers) > 1L) {
-    if (nr_answers[[1L]] > length(answers$correct)) {
-      warn(sprintf("Requested more correct answers (%d) than available (%d). Showing only %d correct answers.",
-                   nr_answers[[1L]], length(answers$correct), length(answers$correct)))
-      nr_answers[[1L]] <- length(answers$correct)
-    }
-    if (nr_answers[[2L]] > length(answers$incorrect)) {
-      warn(sprintf("Requested more incorrect answers (%d) than available (%d). Showing only %d incorrect answers.",
-                   nr_answers[[2L]], length(answers$incorrect), length(answers$incorrect)))
-      nr_answers[[2L]] <- length(answers$correct)
-    }
-
-    if (nr_always_show[['correct']] > nr_answers[[1L]]) {
-      abort("Number of shown correct answers is less than the number of correct answers with `always_show=TRUE`.")
-    }
-    if (nr_always_show[['incorrect']] > nr_answers[[2L]]) {
-      abort("Number of shown incorrect answers is less than the number of incorrect answers with `always_show=TRUE`.")
-    }
-
-    names(nr_answers)[1:2] <- c('correct', 'incorrect')
-    nr_answers[1:2]
-  } else {
+  } else if (length(nr_answers) == 1L) {
     min(nr_answers, total_nr_answers)
+  } else if (length(nr_answers) == 2L) {
+    if (sum(nr_answers) > total_nr_answers) {
+      abort(sprintf("Requested more answers (%d) than available (%d).", sum(nr_answers), total_nr_answers))
+    }
+    names(nr_answers) <- c('cor', 'inc')
+  } else {
+    abort("`nr_answers` must be an integer vector with either one or two elements, or NULL.")
   }
 
-  if (sum(nr_answers) < 2L) {
-    abort("At least 2 answer options must be displayed.")
+  if (sum(nr_answers) < 1L) {
+    abort("At least 1 answer option must be displayed.")
   }
 
-  if (sum(nr_always_show) > sum(nr_answers)) {
-    abort("Number of shown answers is less than the number of answers with `always_show=TRUE`.")
+  if (nr_always_show > sum(nr_answers)) {
+    abort("Number of answers to show is less than the number of answers with `always_show=TRUE`.")
   }
 
   points_str <- format_points(points)
@@ -179,8 +155,7 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
     abort("`min_points` must be a single non-positive number or `NULL`.")
   }
 
-  return(structure(list(label = get_chunk_label(),
-                        input_label = label,
+  return(structure(list(input_label = label,
                         hide_label = isTRUE(hide_label),
                         title = prepare_title(title, static_title),
                         answers = answers,
@@ -210,27 +185,62 @@ prepare_title <- function (title, static_title) {
 }
 
 #' @param label answer text to show. Supports markdown formatting and inline code chunks of the form `` `r value` ``.
-#' @param correct if the answer is correct or not.
+#' @param correct an expression which, evaluated in the rendering environment, determines if the answer is correct
+#'   or not. Can also be a simple logical.
+#' @param correct_quoted is the expression given in `correct` quoted or not?
 #' @param always_show even if answer options are randomized, always show this answer.
 #' @param weight the weight of this answer, if selected. By default, correct answers have a weight of 1, and incorrect
-#'   answers have a weight of 0. A negative weight will subtract that proportion of available points from the user's
-#'   points (e.g., penalizing for selecting incorrect answer options).
+#'   answers have a weight of 0. See details for more information.
+#'   A negative weight will subtract that proportion of available points from the user's
+#'   points (e.g., to penalize for selecting incorrect answer options).
 #'   The sum of all displayed **positive** weights is standardized to sum to 1,
 #'   **but negative weights are not standardized.**
 #'
-#' @importFrom rlang warn
+#' @details
+#' The `weight` of an answer option determines how many points are awarded/subtracted for selecting this answer option.
+#' If `correct` is an expression and correctness of an answer option can only be determined at run-time, `weight`
+#' can be a numeric vector with two elements. The first element is the weight applied if the answer is wrong, the
+#' second element is the weight applied if the answer is correct.
 #'
+#' The sum of weights of all displayed correct answers is standardized to sum to 1 (i.e., users selecting
+#' all displayed correct answers will get all points), but negative weights are used as given.
+#' For example, if the weight of an incorrect answer option is set to -0.5 and the total number of points available
+#' for a question is 4, selecting this answer option will reduce the number of points awarded by 2.
+#'
+#'
+#' @importFrom rlang warn enexpr is_expression
 #' @export
 #' @rdname mc_question
-answer <- function (label, correct = FALSE, always_show = FALSE, weight = correct) {
-  correct <- isTRUE(correct)
-  if (correct && !isTRUE(weight > 0)) {
+answer <- function (label, correct = FALSE, always_show = FALSE, weight = c(0, 1), correct_quoted = FALSE) {
+  if (!isTRUE(correct_quoted)) {
+    correct <- enexpr(correct)
+  }
+
+  if (!is.numeric(weight) || length(weight) > 2L) {
+    abort("Argument `weight` must be a numeric vector with one or two elements.")
+  } else if (length(weight) == 1L) {
+    weight <- if (isFALSE(correct)) {
+      c(weight, 1)
+    } else {
+      c(0, weight)
+    }
+  } else {
+    weight <- c(0, 1)
+  }
+
+  if (!isTRUE(weight[[2L]] > 0)) {
     warn("Correct answers should not have a non-positive weight.")
-  } else if (!correct && isTRUE(weight < -1)) {
+  }
+
+  if (!isTRUE(weight[[1L]] >= -1)) {
     warn("A weight less than -1 subtracts more points than assigned to the question.")
   }
-  structure(list(label = enc2utf8(label), correct = correct, always_show = isTRUE(always_show),
-                 weight = as.numeric(weight[[1L]])),
+
+  if (!is_expression(correct)) {
+    abort("`correct` must be an expression or a logical constant.")
+  }
+
+  structure(list(label = enc2utf8(label), correct = correct, always_show = isTRUE(always_show), weight = weight),
             class = 'examinr_question_answer')
 }
 
@@ -247,6 +257,7 @@ answer <- function (label, correct = FALSE, always_show = FALSE, weight = correc
 #' @importFrom htmltools div HTML tags
 #' @importFrom rlang abort
 knit_print.examinr_question <- function (x, ...) {
+  x$label <- get_chunk_label()
   mark_chunk_static(x$label)
 
   # Don't print during the first pass
@@ -263,7 +274,6 @@ knit_print.examinr_question <- function (x, ...) {
   x$digits <- getOption('digits') %||% 6
 
   question_body_html <- render_question_body(x, section_ns)
-
   points_container <- tags$span(class = 'badge badge-secondary examinr-points', x$points_str)
 
   question_title <- if (string_is_html(x$title)) {
@@ -335,12 +345,6 @@ render_question_body.mcquestion <- function (question, ns, ...) {
   } else {
     radioButtons(ns(question$input_id), label = question$input_label, choices = c('N/A' = 'N/A'), selected = '')
   }
-
-  # Split the answer options into 'sample' (those to sample from) and 'always' (those to always show)
-  question$answers <- lapply(question$answers, function (ans) {
-    split(ans, factor(vapply(ans, `[[`, 'always_show', FUN.VALUE = logical(1L), USE.NAMES = FALSE),
-                      levels = c(FALSE, TRUE), labels = c('sample', 'always')))
-  })
 
   shiny_prerendered_chunk('server', sprintf('examinr:::render_mcquestion_server("%s", "%s")',
                                             serialize_object(question), ns(NULL)))

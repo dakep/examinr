@@ -22,6 +22,7 @@ exports.feedback = (function () {
   const userSelectorId = exports.utils.randomId('user-sel')
   let currentAttemptId
   let centerEl
+  let refreshContentEvents = 0
 
   function runAfterUpdate (input, func) {
     func()
@@ -30,9 +31,19 @@ exports.feedback = (function () {
     })
   }
 
+  function disableUi () {
+    exports.utils.toggleShim($('body'), true)
+    refreshContentEvents = 2
+    $(document).one('shiny:idle', function () {
+      if (--refreshContentEvents <= 0) {
+        exports.utils.toggleShim($('body'), false)
+      }
+    })
+  }
+
   function attemptChanged () {
     const sel = $(this)
-    exports.utils.toggleShim($('body'), true)
+    disableUi()
     // update the input value for the autocomplete input
     Shiny.setInputValue('__.examinr.__-attemptSel', sel.val())
 
@@ -46,7 +57,7 @@ exports.feedback = (function () {
 
   function userChanged () {
     const sel = $(this)
-    exports.utils.toggleShim($('body'), true)
+    disableUi()
     // update the input value for the autocomplete input
     Shiny.setInputValue('__.examinr.__-gradingUserSel', sel.val())
   }
@@ -82,7 +93,9 @@ exports.feedback = (function () {
    * Render feedback data
    */
   Shiny.addCustomMessageHandler('__.examinr.__-feedback', function (data) {
-    exports.utils.toggleShim($('body'), false)
+    if (--refreshContentEvents <= 0) {
+      exports.utils.toggleShim($('body'), false)
+    }
     exports.status.resetMessages()
 
     data.grading = (data.grading === true)
@@ -340,7 +353,7 @@ exports.feedback = (function () {
 
       if (feedback.points || feedback.points === 0) {
         const context = feedback.points <= 0 ? 'danger'
-          : (feedback.points >= feedback.maxPoints ? 'success' : 'secondary')
+          : (feedback.points >= feedback.maxPoints ? 'success' : 'info')
 
         badge.removeClass('badge-secondary badge-info badge-success badge-danger')
           .addClass('badge-' + context)
@@ -349,7 +362,7 @@ exports.feedback = (function () {
           .text(feedback.points)
       } else {
         badge.removeClass('badge-secondary badge-info badge-success badge-danger')
-          .addClass('badge-info')
+          .addClass('badge-secondary')
           .find('.examinr-points-awarded')
           .removeClass('lead')
           .html('&mdash;')
@@ -398,51 +411,54 @@ exports.feedback = (function () {
       feedback.solution = null
       renderDefaultFeedback(question, feedback, grading)
 
-      runAfterUpdate(question, function () {
-        // reset old feedback
-        question.find('.examinr-feedback-annotation').remove()
-        question.find('.shiny-input-container label').removeAttr('class')
+      question.find('.shiny-input-container').one('shiny:updateinput', function () {
+        window.console.log('Updating input for question ' + feedback.qid)
+        window.setTimeout(function () {
+          // reset old feedback
+          question.find('.examinr-feedback-annotation').remove()
+          question.find('.shiny-input-container label').removeAttr('class')
 
-        // display new feedback
-        const cbs = question.find('input[type=checkbox],input[type=radio]')
-        cbs.prop('disabled', true).prop('checked', false)
+          // display new feedback
+          const cbs = question.find('input[type=checkbox],input[type=radio]')
+          cbs.prop('disabled', true).prop('checked', false)
 
-        if (feedback.answer) {
-          feedback.answer.forEach(sel => {
-            if (sel.weight) {
-              const context = sel.weight > 0 ? 'success' : 'danger'
-              const weightStr = (sel.weight > 0 ? '+' : '&minus;') + numFormat.format(sel.weight)
-              cbs.filter('[value="' + sel.value + '"]')
-                .prop('checked', true)
-                .parent()
-                .append('<span class="examinr-feedback-annotation badge badge-pill badge-' + context + '">' +
+          if (feedback.answer) {
+            feedback.answer.forEach(sel => {
+              const cb = cbs.filter('[value="' + sel.value + '"]')
+              cb.prop('checked', true)
+              if (sel.weight) {
+                const context = sel.weight > 0 ? 'success' : 'danger'
+                const weightStr = (sel.weight > 0 ? '+' : '&minus;') + numFormat.format(sel.weight)
+                cb.parent().append('<span class="examinr-feedback-annotation badge badge-pill badge-' + context + '">' +
                   weightStr + '</span>')
-            }
-          })
-        }
-
-        if (solution) {
-          const correctValues = new Set(solution)
-
-          cbs.each(function () {
-            const cb = $(this)
-            const label = cb.parent()
-            if (cb.prop('checked')) {
-              if (correctValues.has(cb.val())) {
-                label.addClass('text-success').prepend(correctIcon)
-              } else {
-                label.addClass('text-danger').prepend(incorrectIcon)
               }
-            } else {
-              if (correctValues.has(cb.val())) {
-                label.addClass('text-danger').prepend(incorrectIcon)
+            })
+          }
+
+          if (solution) {
+            const correctValues = new Set(solution)
+
+            cbs.each(function () {
+              const cb = $(this)
+              const label = cb.parent()
+              if (cb.prop('checked')) {
+                if (correctValues.has(cb.val())) {
+                  label.addClass('text-success').prepend(correctIcon)
+                } else {
+                  label.addClass('text-danger').prepend(incorrectIcon)
+                }
               } else {
-                label.addClass('text-muted').prepend(correctIcon)
+                if (correctValues.has(cb.val())) {
+                  label.addClass('text-danger').prepend(incorrectIcon)
+                } else {
+                  label.addClass('text-muted').prepend(correctIcon)
+                }
               }
-            }
-          })
-        }
+            })
+          }
+        }, shinyRenderDelay)
       })
+      // runAfterUpdate(question, )
     }
   })
 

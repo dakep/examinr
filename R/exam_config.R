@@ -17,7 +17,7 @@
     seed <- sample.int(.Machine$integer.max, 1L)
     return(list(user_id = paste('dummy',  format(Sys.time(), '%Y%m%dT%H%M%S%z'), as.hexmode(seed), sep = '_')))
   },
-  exercise_evaluator = psock_evaluator,
+  exercise_evaluator = future_evaluator,
   storage_provider = .void_storage_provider(),
   seed_attempt = function (user, prev_attempts) {
     # by default, every attempt gets the same seed!
@@ -432,7 +432,7 @@ get_exercise_user_env <- function (exercise_label, session, attempt) {
 }
 
 #' @importFrom rlang abort cnd_message
-setup_exercise_evaluator <- function (expr, envir, label, timelimit) {
+setup_exercise_promise <- function (expr, envir, label, timelimit) {
   withCallingHandlers({
     force(expr)
     force(envir)
@@ -440,6 +440,6 @@ setup_exercise_evaluator <- function (expr, envir, label, timelimit) {
     force(timelimit)
     .exam_configuration$get('exercise_evaluator')(expr, envir, label, timelimit)
   }, error = function (e) {
-    abort(sprintf("Cannot setup exercise evaluator for exercise chunk %s: %s", label, cnd_message(e)))
+    abort(sprintf("Cannot setup exercise promise for exercise chunk %s: %s", label, cnd_message(e)))
   })
 }

@@ -1,4 +1,7 @@
 #' @importFrom shiny observeEvent observe invalidateLater isolate getDefaultReactiveDomain
+#' @importFrom promises then is.promising
+#' @importFrom magrittr `%>%`
+#' @importFrom rlang warn cnd_message
 exercise_chunk_server <- function (exercise_data) {
   exercise_data <- unserialize_object(exercise_data)
   session <- getDefaultReactiveDomain()
@@ -24,27 +27,19 @@ exercise_chunk_server <- function (exercise_data) {
       timelimit <- exercise_data$timelimit %||% 1  # ensure that there is a time limit set!
       endtime <- Sys.time() + timelimit
 
-      exercise_runner <- prepare_exercise_runner(input_data, exercise_data, session, timelimit)
-      exercise_runner$start()
-      delay <- 100
-      observe({
-        if (exercise_runner$completed()) {
-          session$output[[exercise_data$output_id]] <- render_exercise_result(exercise_runner$result())
-
-          if (!is.null(exercise_runner$kill)) {
-            exercise_runner$kill()
-          }
-        } else if (Sys.time() < endtime) {
-          invalidateLater(delay)
-          delay <<- min(2000, 1.3 * delay)
-        } else {
-          session$output[[exercise_data$output_id]] <- render_exercise_result(exercise_result_timeout())
-
-          if (!is.null(exercise_runner$kill)) {
-            exercise_runner$kill()
-          }
-        }
-      })
+      promise <- exercise_promise(input_data, exercise_data, session, timelimit)
+      if (!is.promising(promise)) {
+        warn(sprintf("Exercise evaluator for exercise %s does not yield a promise.", exercise_data$label))
+        session$output[[exercise_data$output_id]] <- render_exercise_result(exercise_result_error())
+      } else {
+        then(promise, onFulfilled = function (value) {
+          session$output[[exercise_data$output_id]] <- render_exercise_result(value)
+        }, onRejected = function (error) {
+          warn(sprintf("Exercise evaluator for exercise %s raises an error: %s", exercise_data$label),
+               cnd_message(error))
+          session$output[[exercise_data$output_id]] <- render_exercise_result(exercise_result_error())
+        })
+      }
     }
   })
 }
@@ -176,7 +171,7 @@ check_exercise_code <- function (input, exercise_data) {
   return(NULL)
 }
 
-prepare_exercise_runner <- function (input_data, exercise_data, session, timelimit) {
+exercise_promise <- function (input_data, exercise_data, session, timelimit) {
   eval_exercise_env <- new.env(parent = baseenv())
   eval_exercise_env$label <- exercise_data$label
   eval_exercise_env$rendering_env <- get_exercise_user_env(exercise_data$label, session)
@@ -187,7 +182,7 @@ prepare_exercise_runner <- function (input_data, exercise_data, session, timelim
 
   # Construct the expression which will turn the user code into a html result.
   expr <- quote(examinr::evaluate_exercise(code, support_code, options, status_messages, rendering_env, label))
-  setup_exercise_evaluator(expr, eval_exercise_env, exercise_data$label, timelimit)
+  setup_exercise_promise(expr, eval_exercise_env, exercise_data$label, timelimit)
 }
 
 #' Evaluate Exercise
@@ -227,6 +222,19 @@ evaluate_exercise <- function (user_code, support_code, chunk_options, status_me
   set_status_messages(status_messages)
 
   parent.env(envir) <- globalenv()
+
+  # Render help pages as simple text. This isn't optimal, but better than no output.
+  opts <- options(help_type = 'text',
+                  pager = function  (files, header, title, delete.file) {
+                    if (isTRUE(delete.file)) {
+                      on.exit(unlink(files, force = TRUE))
+                    }
+                    cont <- vapply(files, FUN.VALUE = character(1L), function (fname) {
+                      paste(readLines(fname, encoding = 'UTF-8'), collapse = '\n')
+                    })
+                    cat(paste(cont, collapse = '\n'))
+                  })
+  on.exit(options(opts), add = TRUE)
 
   output_html <- render(tmpfile, output_format = out, quiet = TRUE, envir = envir)
   on.exit(unlink(output_html, force = TRUE), add = TRUE)
