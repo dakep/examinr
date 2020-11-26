@@ -41,7 +41,7 @@ module.exports = function (grunt) {
           path.join(inputDir, 'feedback.js'),
           path.join(inputDir, 'exercises.js'),
           path.join(inputDir, 'autocomplete.js'),
-          path.join(inputDir, 'sections.js'),
+          path.join(inputDir, 'section_navigation.js'),
           path.join(inputDir, 'grading.js'),
           path.join(inputDir, 'ace-monochrome.js'),
           path.join(inputDir, 'lib', 'bootstrap', 'js', 'util.js'),
@@ -115,12 +115,12 @@ module.exports = function (grunt) {
     }
   }
 
-  grunt.loadNpmTasks('grunt-babel')
   grunt.loadNpmTasks('grunt-contrib-clean')
   grunt.loadNpmTasks('grunt-contrib-concat')
-  grunt.loadNpmTasks('grunt-contrib-uglify')
+  grunt.loadNpmTasks('grunt-babel')
   grunt.loadNpmTasks('grunt-sass')
   grunt.loadNpmTasks('@lodder/grunt-postcss')
+  grunt.loadNpmTasks('grunt-contrib-uglify')
 
   // Configure babel only *after* grunt-concat is done
   grunt.task.registerTask('configureBabel', 'Configures babel options', function () {

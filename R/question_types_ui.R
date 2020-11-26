@@ -29,14 +29,16 @@
 #'   The expression is evaluated in the environment returned by the data provider set up via [exam_config()].
 #'   See below for details on how to auto-grade questions of type _numeric_.
 #' @param solution_quoted is the `solution` expression quoted?
+#' @param mandatory is this question mandatory for submitting the section? If `TRUE`, a user can only navigate to the
+#'   next section if the question is answered.
 #'
 #' @export
 #' @importFrom htmltools h6
 #' @importFrom rlang abort enexpr is_expression
 text_question <- function (title, points = 1, type = c('textarea', 'text', 'numeric'), width = '100%', height = NULL,
                            placeholder = NULL, title_container = h6, static_title = NULL, accuracy = 1e-3,
-                           solution = NULL, solution_quoted = FALSE,
-                           label = "Type your answer below.", hide_label = FALSE) {
+                           solution = NULL, solution_quoted = FALSE, label = "Type your answer below.",
+                           hide_label = FALSE, mandatory = FALSE) {
 
   points_str <- format_points(points)
 
@@ -65,10 +67,10 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
                         title_container = title_container,
                         accuracy = accuracy,
                         points_str = points_str,
+                        mandatory = isTRUE(mandatory),
                         solution_expr = solution,
                         points = points,
-                        container_class = paste('examinr-q-textquestion', paste('examinr-q', type, sep = '-'),
-                                                sep = ' '),
+                        container_classes = c('examinr-q-textquestion', paste('examinr-q', type, sep = '-')),
                         width = width,
                         height = height),
                    class = c('textquestion', 'examinr_question')))
@@ -89,6 +91,8 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
 #' @param random_answer_order should the order of answers be randomized? Randomization is unique for every user.
 #' @param min_points if `points` multiplied by the the sum of the weights of all selected answer options is negative,
 #'   where to cut off negative points. If `NULL`, there is no lower bound.
+#' @param mandatory is this question mandatory for submitting the section? If `TRUE`, a user can only navigate to the
+#'   next section if the question is answered.
 #'
 #' @importFrom ellipsis check_dots_unnamed
 #' @importFrom knitr opts_current
@@ -101,7 +105,7 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
 #' @export
 mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_order = TRUE, mc = TRUE,
                         title_container = h6, static_title = NULL, label = "Select the correct answer(s).",
-                        hide_label = FALSE, min_points = 0) {
+                        hide_label = FALSE, min_points = 0, mandatory = FALSE) {
   if (is.null(label)) {
     abort("Every question must have a meaningful label.")
   }
@@ -161,6 +165,7 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
                         answers = answers,
                         nr_answers = nr_answers,
                         points = points,
+                        mandatory = isTRUE(mandatory),
                         min_points = min_points,
                         points_str = points_str,
                         nr_always_show = nr_always_show,
@@ -285,11 +290,17 @@ knit_print.examinr_question <- function (x, ...) {
     htmlOutput(private_ns('title'))
   }
 
-  if (is.null(x$container_class)) {
-    x$container_class <- paste('examinr-q', setdiff(class(x), 'examinr_question'), sep = '-', collapse = ' ')
+  if (length(x$container_classes) == 0L) {
+    x$container_classes <- paste('examinr-q', setdiff(class(x), 'examinr_question'), sep = '-')
   }
 
-  ui <- div(class = paste('card examinr-question', x$container_class, sep = ' '), role = 'group',
+  if (x$mandatory) {
+    x$container_classes <- c(x$container_classes, 'examinr-mandatory-question')
+  }
+
+
+  ui <- div(class = paste(c('card', 'examinr-question', x$container_classes), collapse = ' '),
+            role = 'group',
             `data-questionlabel` = x$label,
             `data-maxpoints` = x$points,
             trigger_mathjax(x$title_container(question_title, points_container, class = 'card-header')),

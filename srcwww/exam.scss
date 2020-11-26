@@ -36,6 +36,14 @@ main.container {
 .examinr-question {
   margin: map-get($spacers, 2) 0 map-get($spacers, 4);
 
+  &.examinr-mandatory-error {
+    border: 1.5 * $border-width solid theme-color('danger');
+
+    .card-footer {
+      @include alert-variant(theme-color-level('danger', $alert-bg-level), theme-color-level('danger', $alert-border-level), theme-color-level('danger', $alert-color-level));
+    }
+  }
+
   h6.card-header {
     font-weight: normal;
 

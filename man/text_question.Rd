@@ -17,7 +17,8 @@ text_question(
   solution = NULL,
   solution_quoted = FALSE,
   label = "Type your answer below.",
-  hide_label = FALSE
+  hide_label = FALSE,
+  mandatory = FALSE
 )
 }
 \arguments{
@@ -52,6 +53,9 @@ See below for details on how to auto-grade questions of type \emph{numeric}.}
 \item{label}{a label to help screen readers describe the purpose of the input element.}
 
 \item{hide_label}{hide the label from non-screen readers.}
+
+\item{mandatory}{is this question mandatory for submitting the section? If \code{TRUE}, a user can only navigate to the
+next section if the question is answered.}
 
 \item{markdown_html()}{numeric accuracy for grading inputs with \code{type="numeric"}.}
 }

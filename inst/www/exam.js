@@ -708,8 +708,9 @@ exports.feedback = function () {
   var refreshContentEvents = 0;
 
   function runAfterUpdate(input, func) {
-    func();
+    var callbackTimer = window.setTimeout(func, shinyRenderDelay);
     input.one('shiny:updateinput', function () {
+      window.clearTimeout(callbackTimer);
       window.setTimeout(func, shinyRenderDelay);
     });
   }
@@ -1030,52 +1031,49 @@ exports.feedback = function () {
       var solution = feedback.solution;
       feedback.solution = null;
       renderDefaultFeedback(question, feedback, grading);
-      question.find('.shiny-input-container').one('shiny:updateinput', function () {
-        window.console.log('Updating input for question ' + feedback.qid);
-        window.setTimeout(function () {
-          // reset old feedback
-          question.find('.examinr-feedback-annotation').remove();
-          question.find('.shiny-input-container label').removeAttr('class'); // display new feedback
+      runAfterUpdate(question, function () {
+        // reset old feedback
+        question.find('.examinr-feedback-annotation').remove();
+        question.find('.shiny-input-container label').removeAttr('class'); // display new feedback
 
-          var cbs = question.find('input[type=checkbox],input[type=radio]');
-          cbs.prop('disabled', true).prop('checked', false);
+        var cbs = question.find('input[type=checkbox],input[type=radio]');
+        cbs.prop('disabled', true).prop('checked', false);
 
-          if (feedback.answer) {
-            feedback.answer.forEach(function (sel) {
-              var cb = cbs.filter('[value="' + sel.value + '"]');
-              cb.prop('checked', true);
+        if (feedback.answer) {
+          feedback.answer.forEach(function (sel) {
+            var cb = cbs.filter('[value="' + sel.value + '"]');
+            cb.prop('checked', true);
 
-              if (sel.weight) {
-                var context = sel.weight > 0 ? 'success' : 'danger';
-                var weightStr = (sel.weight > 0 ? '+' : '&minus;') + numFormat.format(sel.weight);
-                cb.parent().append('<span class="examinr-feedback-annotation badge badge-pill badge-' + context + '">' + weightStr + '</span>');
-              }
-            });
-          }
+            if (sel.weight) {
+              var context = sel.weight > 0 ? 'success' : 'danger';
+              var weightStr = (sel.weight > 0 ? '+' : '&minus;') + numFormat.format(sel.weight);
+              cb.parent().append('<span class="examinr-feedback-annotation badge badge-pill badge-' + context + '">' + weightStr + '</span>');
+            }
+          });
+        }
 
-          if (solution) {
-            var correctValues = new Set(solution);
-            cbs.each(function () {
-              var cb = $(this);
-              var label = cb.parent();
+        if (solution) {
+          var correctValues = new Set(solution);
+          cbs.each(function () {
+            var cb = $(this);
+            var label = cb.parent();
 
-              if (cb.prop('checked')) {
-                if (correctValues.has(cb.val())) {
-                  label.addClass('text-success').prepend(correctIcon);
-                } else {
-                  label.addClass('text-danger').prepend(incorrectIcon);
-                }
+            if (cb.prop('checked')) {
+              if (correctValues.has(cb.val())) {
+                label.addClass('text-success').prepend(correctIcon);
               } else {
-                if (correctValues.has(cb.val())) {
-                  label.addClass('text-danger').prepend(incorrectIcon);
-                } else {
-                  label.addClass('text-muted').prepend(correctIcon);
-                }
+                label.addClass('text-danger').prepend(incorrectIcon);
               }
-            });
-          }
-        }, shinyRenderDelay);
-      }); // runAfterUpdate(question, )
+            } else {
+              if (correctValues.has(cb.val())) {
+                label.addClass('text-danger').prepend(incorrectIcon);
+              } else {
+                label.addClass('text-muted').prepend(correctIcon);
+              }
+            }
+          });
+        }
+      });
     }
   }); // Default feedback renderer for built-in exercise questions.
 
@@ -1611,11 +1609,52 @@ exports.sections = function () {
   });
   $(function () {
     var sectionsConfig = JSON.parse($('script.examinr-sections-config').remove().text() || '{}');
-    actualSections = $('section.level1'); // Add the correct label to each section
-
+    actualSections = $('section.level1');
     actualSections.each(function () {
-      var el = $(this);
-      exports.accessibility.ariaLabelledBy(el, el.children('h1'));
+      var el = $(this); // Add the correct label to each section
+
+      exports.accessibility.ariaLabelledBy(el, el.children('h1')); // Intercept section navigation to check for mandatory questions being answers.
+
+      var mandatoryQuestions = el.find('.examinr-question.examinr-mandatory-question');
+
+      if (mandatoryQuestions.length > 0) {
+        el.find('.examinr-section-next').click(function (event) {
+          // Reset style
+          mandatoryQuestions.removeClass('examinr-mandatory-error');
+          mandatoryQuestions.find('.examinr-mandatory-message').remove();
+          var missing = mandatoryQuestions.filter(function () {
+            var okay = true;
+            var q = $(this);
+
+            if (q.filter('.examinr-q-textquestion').length > 0) {
+              q.find('.shiny-input-container input').each(function () {
+                var val = $(this).val();
+                okay = val && val.length > 0 || val === 0;
+                return okay;
+              });
+            } else if (q.filter('.examinr-q-mcquestion')) {
+              okay = q.find('.shiny-bound-input input[value!="N/A"]:checked').length > 0;
+            }
+
+            return !okay;
+          });
+
+          if (missing.length > 0) {
+            window.console.log('Prevent section navigation!');
+            missing.addClass('examinr-mandatory-error');
+
+            if (missing.find('.card-footer').length === 0) {
+              missing.append('<div class="card-footer examinr-mandatory-message" role="alert">' + exports.status.getMessage('sections').mandatoryError + '</div>');
+            } else {
+              missing.find('.card-footer').append('<div class="examinr-mandatory-message" role="alert">' + '<hr class="m-3" />' + exports.status.getMessage('sections').mandatoryError + '</div>');
+            }
+
+            missing.get(0).scrollIntoView();
+            event.stopImmediatePropagation();
+            return false;
+          }
+        });
+      }
     });
     $('.examinr-section-next').click(function () {
       exports.utils.toggleShim($('body'), true);

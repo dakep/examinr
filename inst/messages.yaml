@@ -10,6 +10,8 @@ progress:
 sections:
   # The default label for submitting the exam (or individual sections if the exam is progressive)
   nextButtonLabel: "Submit answers"
+  # The error message displayed underneath mandatory questions which have not been answered by the user.
+  mandatoryError: "This question is mandatory and must be answered before submitting the section."
 
 attemptTimeout:
   # This error is displayed once the attempt time limit has been reached.

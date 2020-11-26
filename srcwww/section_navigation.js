@@ -61,10 +61,52 @@ exports.sections = (function () {
     const sectionsConfig = JSON.parse($('script.examinr-sections-config').remove().text() || '{}')
 
     actualSections = $('section.level1')
-    // Add the correct label to each section
     actualSections.each(function () {
       const el = $(this)
+      // Add the correct label to each section
       exports.accessibility.ariaLabelledBy(el, el.children('h1'))
+
+      // Intercept section navigation to check for mandatory questions being answers.
+      const mandatoryQuestions = el.find('.examinr-question.examinr-mandatory-question')
+      if (mandatoryQuestions.length > 0) {
+        el.find('.examinr-section-next').click(function (event) {
+          // Reset style
+          mandatoryQuestions.removeClass('examinr-mandatory-error')
+          mandatoryQuestions.find('.examinr-mandatory-message').remove()
+
+          const missing = mandatoryQuestions.filter(function () {
+            let okay = true
+            const q = $(this)
+            if (q.filter('.examinr-q-textquestion').length > 0) {
+              q.find('.shiny-input-container input').each(function () {
+                const val = $(this).val()
+                okay = ((val && val.length > 0) || (val === 0))
+                return okay
+              })
+            } else if (q.filter('.examinr-q-mcquestion')) {
+              okay = (q.find('.shiny-bound-input input[value!="N/A"]:checked').length > 0)
+            }
+            return !okay
+          })
+          if (missing.length > 0) {
+            window.console.log('Prevent section navigation!')
+            missing.addClass('examinr-mandatory-error')
+            if (missing.find('.card-footer').length === 0) {
+              missing.append('<div class="card-footer examinr-mandatory-message" role="alert">' +
+                  exports.status.getMessage('sections').mandatoryError +
+                '</div>')
+            } else {
+              missing.find('.card-footer').append('<div class="examinr-mandatory-message" role="alert">' +
+                  '<hr class="m-3" />' +
+                  exports.status.getMessage('sections').mandatoryError +
+                '</div>')
+            }
+            missing.get(0).scrollIntoView()
+            event.stopImmediatePropagation()
+            return false
+          }
+        })
+      }
     })
 
     $('.examinr-section-next').click(function () {

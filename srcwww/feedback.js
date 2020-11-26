@@ -25,8 +25,9 @@ exports.feedback = (function () {
   let refreshContentEvents = 0
 
   function runAfterUpdate (input, func) {
-    func()
+    const callbackTimer = window.setTimeout(func, shinyRenderDelay)
     input.one('shiny:updateinput', function () {
+      window.clearTimeout(callbackTimer)
       window.setTimeout(func, shinyRenderDelay)
     })
   }
@@ -411,54 +412,50 @@ exports.feedback = (function () {
       feedback.solution = null
       renderDefaultFeedback(question, feedback, grading)
 
-      question.find('.shiny-input-container').one('shiny:updateinput', function () {
-        window.console.log('Updating input for question ' + feedback.qid)
-        window.setTimeout(function () {
-          // reset old feedback
-          question.find('.examinr-feedback-annotation').remove()
-          question.find('.shiny-input-container label').removeAttr('class')
+      runAfterUpdate(question, function () {
+        // reset old feedback
+        question.find('.examinr-feedback-annotation').remove()
+        question.find('.shiny-input-container label').removeAttr('class')
 
-          // display new feedback
-          const cbs = question.find('input[type=checkbox],input[type=radio]')
-          cbs.prop('disabled', true).prop('checked', false)
+        // display new feedback
+        const cbs = question.find('input[type=checkbox],input[type=radio]')
+        cbs.prop('disabled', true).prop('checked', false)
 
-          if (feedback.answer) {
-            feedback.answer.forEach(sel => {
-              const cb = cbs.filter('[value="' + sel.value + '"]')
-              cb.prop('checked', true)
-              if (sel.weight) {
-                const context = sel.weight > 0 ? 'success' : 'danger'
-                const weightStr = (sel.weight > 0 ? '+' : '&minus;') + numFormat.format(sel.weight)
-                cb.parent().append('<span class="examinr-feedback-annotation badge badge-pill badge-' + context + '">' +
-                  weightStr + '</span>')
-              }
-            })
-          }
+        if (feedback.answer) {
+          feedback.answer.forEach(sel => {
+            const cb = cbs.filter('[value="' + sel.value + '"]')
+            cb.prop('checked', true)
+            if (sel.weight) {
+              const context = sel.weight > 0 ? 'success' : 'danger'
+              const weightStr = (sel.weight > 0 ? '+' : '&minus;') + numFormat.format(sel.weight)
+              cb.parent().append('<span class="examinr-feedback-annotation badge badge-pill badge-' + context + '">' +
+                weightStr + '</span>')
+            }
+          })
+        }
 
-          if (solution) {
-            const correctValues = new Set(solution)
+        if (solution) {
+          const correctValues = new Set(solution)
 
-            cbs.each(function () {
-              const cb = $(this)
-              const label = cb.parent()
-              if (cb.prop('checked')) {
-                if (correctValues.has(cb.val())) {
-                  label.addClass('text-success').prepend(correctIcon)
-                } else {
-                  label.addClass('text-danger').prepend(incorrectIcon)
-                }
+          cbs.each(function () {
+            const cb = $(this)
+            const label = cb.parent()
+            if (cb.prop('checked')) {
+              if (correctValues.has(cb.val())) {
+                label.addClass('text-success').prepend(correctIcon)
               } else {
-                if (correctValues.has(cb.val())) {
-                  label.addClass('text-danger').prepend(incorrectIcon)
-                } else {
-                  label.addClass('text-muted').prepend(correctIcon)
-                }
+                label.addClass('text-danger').prepend(incorrectIcon)
               }
-            })
-          }
-        }, shinyRenderDelay)
+            } else {
+              if (correctValues.has(cb.val())) {
+                label.addClass('text-danger').prepend(incorrectIcon)
+              } else {
+                label.addClass('text-muted').prepend(correctIcon)
+              }
+            }
+          })
+        }
       })
-      // runAfterUpdate(question, )
     }
   })
 

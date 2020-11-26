@@ -16,7 +16,8 @@ mc_question(
   static_title = NULL,
   label = "Select the correct answer(s).",
   hide_label = FALSE,
-  min_points = 0
+  min_points = 0,
+  mandatory = FALSE
 )
 
 answer(
@@ -56,6 +57,9 @@ title dynamically on the server.}
 
 \item{min_points}{if \code{points} multiplied by the the sum of the weights of all selected answer options is negative,
 where to cut off negative points. If \code{NULL}, there is no lower bound.}
+
+\item{mandatory}{is this question mandatory for submitting the section? If \code{TRUE}, a user can only navigate to the
+next section if the question is answered.}
 
 \item{correct}{an expression which, evaluated in the rendering environment, determines if the answer is correct
 or not. Can also be a simple logical.}

@@ -200,6 +200,7 @@ exercise_promise <- function (input_data, exercise_data, session, timelimit) {
 #'
 #' @importFrom stringr str_detect
 #' @importFrom rmarkdown html_fragment render
+#' @importFrom tools Rd2txt_options
 #' @export
 evaluate_exercise <- function (user_code, support_code, chunk_options, status_messages, envir, label) {
   tmpfile <- tempfile(fileext = '.Rmd')
@@ -235,6 +236,10 @@ evaluate_exercise <- function (user_code, support_code, chunk_options, status_me
                     cat(paste(cont, collapse = '\n'))
                   })
   on.exit(options(opts), add = TRUE)
+
+  rd2txt_opts <- Rd2txt_options()
+  Rd2txt_options(underline_titles = FALSE, width = 80, extraIndent = 2, sectionIndent = 4, sectionExtra = 2)
+  on.exit(Rd2txt_options(rd2txt_opts), add = TRUE)
 
   output_html <- render(tmpfile, output_format = out, quiet = TRUE, envir = envir)
   on.exit(unlink(output_html, force = TRUE), add = TRUE)

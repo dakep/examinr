@@ -64,7 +64,7 @@ render_textquestion_server <- function (question, ns) {
                             error = function (w) { return(NA_real_) })
 
         # compare answer
-        earned_points <- if (isTRUE(abs(correct_num_answer - num_val) <= question$tolerance)) {
+        earned_points <- if (isTRUE(abs(correct_num_answer - num_val) <= question$accuracy)) {
           question$points
         } else {
           0
@@ -110,10 +110,12 @@ render_mcquestion_server <- function (question, ns) {
         # Register the auto-grader if the attempt is active
         if (isTRUE(get_attempt_status(session))) {
           weights <- vapply(answers, FUN.VALUE = numeric(1L), `[[`, 'weight')
+          # standardize positive weights
+          weights[weights > 0] <- weights[weights > 0] / sum(weights[weights > 0])
           names(weights) <- values
 
           ag_env <- new.env(parent = getNamespace('examinr'))
-          ag_env$weights <- question$points * c(weights[weights > 0] / sum(weights[weights > 0]), weights[weights <= 0])
+          ag_env$weights <- question$points * weights
           ag_env$feedback <- new_question_feedback(max_points = question$points, points = 0,
                                                    solution = as.list(names(ag_env$weights[weights > 0])))
           ag_env$min_points <- question$min_points
