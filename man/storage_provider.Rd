@@ -43,7 +43,7 @@ on the make-up of this list.}
 
 Create a new attempt with the given seed and start time.
 The function should return a unique identifier for the attempt.
-In case of an error, the function should return \code{NULL}.
+In case of an error, the function should return \code{FALSE}.
 }
 
 \subsection{\code{finish_attempt(attempt_id, finished_at, ...)}}{

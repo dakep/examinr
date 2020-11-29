@@ -29,7 +29,7 @@ render_textquestion_server <- function (question, ns) {
 
     register_autograder(ns(question$input_id), envir = ag_env, function (input_value, session) {
       # compute the solution
-      rendering_env <- get_rendering_env()
+      rendering_env <- get_rendering_env(session)
       solution <- tryCatch(eval(question$solution_expr, envir = rendering_env),
                            error = function (e) {
                              warn(sprintf("Cannot compute solution to question %s: %s",

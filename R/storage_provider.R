@@ -35,7 +35,7 @@
 #' ## `create_attempt(user, exam_id, exam_version, seed, started_at, ...)`
 #' Create a new attempt with the given seed and start time.
 #' The function should return a unique identifier for the attempt.
-#' In case of an error, the function should return `NULL`.
+#' In case of an error, the function should return `FALSE`.
 #'
 #' ## `finish_attempt(attempt_id, finished_at, ...)`
 #' Mark the attempt as finished.
@@ -95,13 +95,13 @@ NULL
 
 .void_storage_provider <- function () {
   return(list(
-    create_attempt = function(user, exam_id, exam_version, seed, started_at, ...) { NULL },
-    finish_attempt = function(attempt_id, finished_at, ...) { FALSE },
-    grade_attempt = function(attempt_id, points, ...) { FALSE },
-    get_attempts = function (user, exam_id, exam_version, ...) { list() },
-    get_last_section = function (attempt_id, ...) { NULL },
-    get_section_data = function(attempt_id, section, ...) { list() },
-    save_section_data = function(attempt_id, section, section_data, ...) { FALSE }))
+    create_attempt = function (...) { uuid::UUIDgenerate() },
+    finish_attempt = function (...) { TRUE },
+    grade_attempt = function (...) { TRUE },
+    get_attempts = function (...) { list() },
+    get_last_section = function (...) { NULL },
+    get_section_data = function (...) { list() },
+    save_section_data = function (...) { FALSE }))
 }
 
 #' DBI-Backed Exam Storage

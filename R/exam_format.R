@@ -117,6 +117,10 @@ exam_document <- function (id = 'exam', version = '0.1', use_cdn = FALSE, render
     if (!identical(tolower(file_ext(input)), 'rmd')) {
       return(NULL)
     }
+    # Detach data from the data provider.
+    for (env_name in knit_meta('examinr_data_provider_env') %||% list()) {
+      detach(env_name, character.only = TRUE)
+    }
     # Using the information collected in the first pass, create a new Rmd file and knit it again.
     # Collect stats from the first run
     first_pass_stats <- list(

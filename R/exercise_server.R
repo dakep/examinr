@@ -174,7 +174,7 @@ check_exercise_code <- function (input, exercise_data) {
 exercise_promise <- function (input_data, exercise_data, session, timelimit) {
   eval_exercise_env <- new.env(parent = baseenv())
   eval_exercise_env$label <- exercise_data$label
-  eval_exercise_env$rendering_env <- get_exercise_user_env(exercise_data$label, session)
+  eval_exercise_env$rendering_env <- get_exercise_user_env(exercise_data$label, session = session)
   eval_exercise_env$support_code <- exercise_data$support_code
   eval_exercise_env$code <- input_data$code
   eval_exercise_env$options <- exercise_data$chunk_options

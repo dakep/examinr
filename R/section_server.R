@@ -7,7 +7,7 @@ section_chunk_server <- function (metadata, content) {
   global_domain <- getDefaultReactiveDomain()
   moduleServer(metadata$chunk_ns, function (input, output, session) {
     observe_section_change(section_id = metadata$id, {
-      output$out <- renderUI(trigger_mathjax(render_markdown_as_html(content, env = get_rendering_env())))
+      output$out <- renderUI(trigger_mathjax(render_markdown_as_html(content, env = get_rendering_env(session))))
     }, domain = session)
   })
 }

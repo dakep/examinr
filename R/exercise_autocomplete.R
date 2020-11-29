@@ -6,7 +6,7 @@ prepare_exercise_autocomplete <- function (exercise_label, support_code) {
   # Reproduce all code before the user code
   support_code <- unserialize_object(support_code)
   # 1. Generate the exercise data
-  exercise_env <- get_exercise_user_env(exercise_label, attempt = NULL)
+  exercise_env <- get_exercise_user_env(exercise_label, attempt = NULL, session = NULL)
   parent.env(exercise_env) <- globalenv()
 
   # 2. Run the setup code (if necessary)
