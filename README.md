@@ -3,11 +3,12 @@
 
 <!-- begin badges -->
 
+<!-- [![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/examinr)](https://CRAN.R-project.org/package=examinr) -->
+
 ![Lifecycle:
 maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)
 ![CRAN Status: not yet
 released](https://img.shields.io/badge/CRAN-not%20yet%20released-red.svg)
-<!-- [![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/examinr)](https://CRAN.R-project.org/package=examinr) -->
 [![Build
 Status](https://travis-ci.com/dakep/examinr.svg?branch=main)](https://travis-ci.com/dakep/examinr)
 <!-- end badges -->
