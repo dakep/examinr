@@ -9,9 +9,9 @@ knitr::opts_chunk$set(collapse = TRUE, comment = '#>')
 
 <!-- begin badges -->
 
+<!-- [![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/examinr)](https://CRAN.R-project.org/package=examinr) -->
 ![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)
 ![CRAN Status: not yet released](https://img.shields.io/badge/CRAN-not%20yet%20released-red.svg)
-<!-- [![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/examinr)](https://CRAN.R-project.org/package=examinr) -->
 ```{r, results='asis', echo=FALSE, eval=TRUE}
 branch_name <- Sys.getenv('GIT_BRANCH', '')
 if (nchar(branch_name) == 0L) {
