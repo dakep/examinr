@@ -13,7 +13,7 @@
 #'   (`"static"`). If rendered on the server, the section content will only be sent to the user's browser
 #'   when the section is displayed. This ensures users do not see the section content before they are supposed to.
 #' @param max_attempts maximum number of attempts allowed. This can be overridden for individual users by
-#'   [configure_attemptss()]. Can also be `Inf` to allow for unlimited number of attempts (the default).
+#'   [configure_attempts()]. Can also be `Inf` to allow for unlimited number of attempts (the default).
 #' @param timelimit the time limit for a single attempt either as a single number in minutes or as _HH:MM_.
 #'   This can be overridden for individual users with [configure_attempts()].
 #'   Can also be `Inf` to give users unlimited time (the default).

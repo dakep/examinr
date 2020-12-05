@@ -57,7 +57,7 @@ case the order is randomized using the seed from the attempt, or \emph{fixed}, i
 document is kept.}
 
 \item{max_attempts}{maximum number of attempts allowed. This can be overridden for individual users by
-\code{\link[=configure_attemptss]{configure_attemptss()}}. Can also be \code{Inf} to allow for unlimited number of attempts (the default).}
+\code{\link[=configure_attempts]{configure_attempts()}}. Can also be \code{Inf} to allow for unlimited number of attempts (the default).}
 
 \item{timelimit}{the time limit for a single attempt either as a single number in minutes or as \emph{HH:MM}.
 This can be overridden for individual users with \code{\link[=configure_attempts]{configure_attempts()}}.
