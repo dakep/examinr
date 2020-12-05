@@ -3,8 +3,8 @@ cache: packages
 r:
 - release
 warnings_are_errors: true
+before_cache: Rscript -e 'remotes::install_cran("textshaping"); remotes::install_cran("pkgdown")'
 r_packages:
-- pkgdown
 - rmarkdown
 
 env:
