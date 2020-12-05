@@ -5,8 +5,11 @@ Version: 0.1.0
 Authors@R: person("David", "Kepplinger", , "david.kepplinger@gmail.com",
         role = c("aut", "cre"))
 Description: Create online exams in R as interactive shiny documents.
-  Supports different question types, including coding exercises, and
-  strategies to deter cheating.
+  Supports multiple types of questions, coding exercises, randomization,
+  and online grading.
+URL: https://dakep.github.io/examinr/,
+     https://github.com/dakep/examinr
+BugReports: https://github.com/dakep/examinr/issues
 License: MIT + file LICENSE
 Imports:
   rmarkdown (>= 2.0),
