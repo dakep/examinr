@@ -33,3 +33,8 @@ For example, a section with title \emph{# Section 1: Multiple Choice Questions} 
 \code{"Section 1: Multiple Choice Questions"}.
 Note that pandoc heading identifiers (anything in \code{{}} at the end of the section title) are omitted from the name.
 }
+\seealso{
+Other exam configuration: 
+\code{\link{exam_config}()}
+}
+\concept{exam configuration}

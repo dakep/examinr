@@ -8,6 +8,9 @@ knitr::opts_chunk$set(collapse = TRUE, comment = '#>')
 # examinr R package
 
 <!-- begin badges -->
+
+![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)
+![CRAN Status: not yet released](https://img.shields.io/badge/CRAN-not%20yet%20released-red.svg)
 <!-- [![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/examinr)](https://CRAN.R-project.org/package=examinr) -->
 ```{r, results='asis', echo=FALSE, eval=TRUE}
 branch_name <- Sys.getenv('GIT_BRANCH', '')
@@ -21,10 +24,21 @@ cat(sprintf('[![Build Status](https://travis-ci.com/dakep/examinr.svg?branch=%s)
 ```
 <!-- end badges -->
 
-Create gradable exams from R Markdown documents in the form of interactive Shiny documents.
-Users can attempt exams one or more times, and each attempt uses a specific random seed to generate the question text and answers.
+Create gradable exams as interactive Shiny documents from R Markdown documents.
+Learners can attempt an exam one or more times, and each attempt uses specific random seed to generate the question text and answers.
 
-## Features
+For a full list of features and to learn how to create your own exams, visit the documentation at https://dakep.github.io/examinr.
+
+## Installation
+
+The package is still in development and not yet available on CRAN.
+You can install it via
+
+```r
+devtools::install_github("dakep/examinr")
+```
+
+## Highlights
 
 - Questions and text are rendered on-demand for each attempt:
   * Allows for user- and attempt-specific content (e.g., randomized values in questions and answers)
@@ -45,36 +59,18 @@ Users can attempt exams one or more times, and each attempt uses a specific rand
 - Interfaces for grading (for instructors) and for accessing feedback (for users).
 - High-contrast theme and screen-reader friendly output
 
-### Randomized exams
-
-Exams written with examinr can display personalized text, questions, and answer options by using standard R Markdown syntax.
-
-
-
-### Accessibility
-
-Every exam has an high-contrast theme and the page uses screen-reader friendly markup.
-
-If you find accessibility issues with examinr which are not yet reported, please create an [issues](https://github.com/dakep/examinr/issues) or, even better, a [pull request](https://github.com/dakep/examinr/pulls).
-
 ## Missing features
 
-The package is still in a beta phase and some features are not yet available, most notably the following:
+The package is still in a development phase and some features are not yet available, most notably the following:
 
 - No authentication provider is available which requires users to log in on the exam page before accessing the exam.
   This may be useful in situations where RStudio Connect is not available or where users don't have a user on the RStudio Connect installation
 - Reloading the page clears all input.
 - Only one input per text question. Allowing more than one input (e.g., for the lower and upper bounds of confidence intervals) is in the works.
-- Rendering of help pages is not very user-friendly.
+- Rendering of help pages is not very nice.
 - No auto-grading of code exercises.
 
 If you are looking for specific features which are not yet supported by examinr and not yet requested, please create an [issues](https://github.com/dakep/examinr/issues) or, even better, a [pull request](https://github.com/dakep/examinr/pulls).
-
-## Caveats
-
-- Every R code chunk which should **not** be evaluated in the user's session, must have option `exam.static = TRUE` set.
-  This option cannot be set globally for all code chunks.
-- Exercise code chunks are defined via chunk option `exercise=TRUE` and support all options listed in [exercise_options()].
 
 ## Acknowledgments
 

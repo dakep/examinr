@@ -1,4 +1,5 @@
 #' @include state_frame.R
+#' @importFrom yaml read_yaml
 .status_messages <- state_frame(yaml::read_yaml(system.file('messages.yaml', package = 'examinr', mustWork = TRUE),
                                                 eval.expr = FALSE))
 
@@ -9,7 +10,9 @@
 #'
 #' Note that `status_message_template()` should not be called from within an exam document. Rather, generate the
 #' template once, modify as necessary, and use in the exam document by specifying the file name in the [exam_document()]
-#' or by calling `use_status_messages()`
+#' or by calling `status_messages()`
+#'
+#' Calling `status_messages()` without arguments invisibly returns the currently set status messages.
 #'
 #' @param file path to the messages file. For `status_message_template()`, this is where the template is saved
 #'  (if `NULL`, only returns the default messages). For `status_messages()`, the file to read the status messages
@@ -22,6 +25,7 @@
 #'
 #' @importFrom yaml read_yaml
 #' @importFrom rlang warn
+#' @family localization
 #' @export
 status_message_template <- function (file) {
   if (isTRUE(getOption('knitr.in.progress'))) {
@@ -45,6 +49,10 @@ status_message_template <- function (file) {
 #' @importFrom knitr opts_current
 #' @export
 status_messages <- function (file, messages) {
+  if (missing(file) && missing(messages)) {
+    return(invisible(get_status_message()))
+  }
+
   if (!is_knitr_context('setup')) {
     abort("`status_messages()` must be called in a context='setup' chunk.")
   }

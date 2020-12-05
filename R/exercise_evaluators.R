@@ -12,6 +12,7 @@
 #' @return a [promise][promises::promise()] object, or anything that can be cast to a promise object with
 #'   [as.promise()][promises::as.promise()].
 #'
+#' @family exercise configuration
 #' @name exercise_evaluator
 NULL
 

@@ -106,10 +106,11 @@ initialize_sections_server <- function (session, user_sections, exam_metadata) {
 
 ## Initialize the session
 #' @importFrom rlang abort
+#' @importFrom shiny reactiveValues
 initialize_section_state <- function (session, sections, current_section = TRUE) {
   session_env <- get_session_env(session)
   session_env$sections <- sections
-  session_env$last_section_id <- sections[[length(sections) - 1L]]$id
+  session_env$last_section_id <- sections[[max(2L, length(sections)) - 1L]]$id
   if (!is.null(session_env$section_state)) {
     abort("Section state already initialized")
   }

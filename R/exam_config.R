@@ -148,7 +148,7 @@
 #' \describe{
 #' \item{`id`}{a character string (UUID) uniquely identifying the attempt.}
 #' \item{`user`}{a user object as returned by the authentication provider.}
-#' \item{`seed`}{an integer associated with the attempt for intializing the random number generator.}
+#' \item{`seed`}{an integer associated with the attempt for initializing the random number generator.}
 #' \item{`started_at`}{the UTC time the attempt was first started (as [POSIXct][DateTimeClasses]).}
 #' }
 #'
@@ -169,6 +169,7 @@
 #'
 #' @importFrom rlang missing_arg abort
 #' @importFrom knitr opts_current
+#' @family exam configuration
 #' @export
 exam_config <- function (auth_provider, storage_provider, exercise_data_provider, exercise_evaluator, seed_attempt,
                          points_format, cache_data = FALSE) {
@@ -201,7 +202,8 @@ exam_config <- function (auth_provider, storage_provider, exercise_data_provider
     seed_attempt = seed_attempt)
 }
 
-#' @describeIn exam_config
+#' @rdname exam_config
+#'
 #' @param fun a data provider function which generates the user-specific (e.g., randomized) data for
 #'   the sections. See section _Data provider_ for details.
 #' @importFrom knitr opts_knit

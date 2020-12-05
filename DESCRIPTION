@@ -15,7 +15,6 @@ Imports:
   withr,
   digest,
   rlang,
-  withr,
   jsonlite,
   knitr (>= 1.23),
   commonmark,
@@ -26,7 +25,8 @@ Imports:
   stringi,
   base64enc,
   promises,
-  future
+  future,
+  yaml
 Suggests:
   DBI,
   testthat

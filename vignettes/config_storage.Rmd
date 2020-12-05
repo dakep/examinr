@@ -1,0 +1,326 @@
+---
+title: "Storage configuration"
+desc: >
+  Learn how to configure the exam data storage.
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Storage configuration}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", error = TRUE, warning = TRUE)
+esc <- function(code) {
+  sprintf('`r %s`', rlang::enexprs(code))
+}
+begin_rmd_block <- function(header = 'r') {
+  sprintf('```{%s}', header)
+}
+end_rmd_block <- function(header) {
+  '```'
+}
+```
+
+Exam data needs to be stored somewhere.
+Examinr does not make any assumption on how or where your data will be stored.
+You must set the storage provider in the exam configuration via `exam_config(storage_provider=)`.
+
+## Security and Privacy
+
+Please note that examinr stores sensitive information through the storage provider.
+It is your responsibility to know and understand the privacy legislation governing the data in your jurisdiction.
+The `dbi_storage_provider()` provides a simple workaround by [hashing the user id](#user-id-hashing), but this adds another step for you when exporting grades (matching user ids to hashed user ids).
+
+It is recommended that you securely store the data using encryption, but this generally requires more knowledge about the database system in use.
+
+## DBI Storage Provider
+
+With `dbi_storage_provider()`, examinr supports [DBI](https://dbi.r-dbi.org/)-backed storage out of the box.
+You can leverage this storage provider by calling `exam_config(storage_provider = dbi_storage_provider(...))`.
+You are responsible for the initial setup of the database and establishing a connection with the database, which is passed on to `dbi_storage_provider()`.
+In addition to the connection object, the `dbi_storage_provider()` needs to be told the name of the database tables for storing attempts data and section data (i.e., users' answers).
+
+The built-in storage provider assumes the following two database tables are read- and writable:
+
+#### Attempts table
+
+Field               SQL data type       Storage requirements
+----------------    ----------------    -----------------------------------------------------------------------------------
+`attempt_id`        CHAR (or UUID)      36 characters (on database systems which support a UUID type, it should be stored as such)
+`user_id`           CHAR                either 64 characters (if hashing is enabled), or variable length (depending on the authentication provider)
+`exam_id`           CHAR                variable length                
+`exam_version`      CHAR                variable length
+`started_at`        TIMESTAMP           in UTC
+`seed`              INTEGER             a signed integer of 4 bytes
+`finished_at`       TIMESTAMP           in UTC
+`user_obj`          CHAR                variable length (must be able to hold a serialized R object of arbitrary size)
+`points`            CHAR                variable length (must be able to hold a serialized R object of arbitrary size)
+
+
+Some database systems (e.g., PostgreSQL) have native support for a UUID type which should be preferred over character data for the `attempts_id` field.
+The `attempt_id` field should be unique and as such can be used as primary key on the table.
+The table is mainly queried for a given `user_id`, `exam_id` and `exam_version`.
+Therefore, it makes sense to add an index (*not unique!*) spanning these 3 fields to speed up the queries.
+
+Both `user_obj` and `points` are serialized R objects and can thus be of arbitrary size.
+The database should not make any assumption on the size of these fields.
+Internally, examinr serializes the R objects with `serialize()` and stores the base64 encoded character string.
+
+An example table definition for PostgreSQL may look like
+
+```sql
+CREATE TABLE attempts (
+  attempt_id   uuid              PRIMARY KEY,
+  user_id      character varying NOT NULL,
+  exam_id      character varying NOT NULL,
+  exam_version character varying NOT NULL,
+  started_at   timestamp         NOT NULL DEFAULT current_timestamp,
+  seed         integer           NOT NULL,
+  user_obj     text              NOT NULL,
+  finished_at  timestamp,
+  points       text
+);
+
+CREATE INDEX attempts_index ON attempts (user_id, exam_id, exam_version);
+```
+
+#### Section data table
+
+Field               SQL data type       Storage requirements
+----------------    ----------------    -----------------------------------------------------------------------------------
+`attempt_id`        CHAR (or UUID)      same as for `attempt_id` of the attempts table
+`section`           CHAR                variable length                
+`saved_at  `        TIMESTAMP           in UTC
+`section_data`      CHAR                variable length (must be able to hold a serialized R object of arbitrary size)
+
+This definition does not have a natural candidate for a primary key, so it is up to you and your database system what kind of primary key you want to use.
+
+The `attempt_id` field is a reference to the attempt stored in the attempts table.
+The table is mainly queried for a given `attempt_id` and `section`.
+Therefore, it makes sense to add an index (*not unique!*) spanning these two fields to speed up the queries.
+
+An example table definition for PostgreSQL may look like:
+
+```sql
+CREATE TABLE section_data (
+  id           serial            PRIMARY KEY,
+  attempt_id   uuid              NOT NULL REFERENCES attempts (attempt)
+                                          ON DELETE CASCADE ON UPDATE CASCADE,
+  section      character varying NOT NULL,
+  saved_at     timestamp         NOT NULL DEFAULT current_timestamp,
+  section_data text
+);
+
+CREATE INDEX section_data_index ON section_data (attempt_d, section);
+```
+
+#### User ID hashing
+
+User IDs can often be used for identifying individuals and in turn their personal information.
+In many jurisdictions you must ensure that this information is properly protected.
+If you don't have a database with transparent encryption, it is sensible to store a hashed variant of the user id instead of the actual value.
+The `dbi_storage_provider()` by default hashes the user id using `digest::hmac(key, user_id, algo = "sha256")` where `key` is by default the string `{exam_id}_{exam_version}`.
+While this ensures the data cannot be traced back to the actual user id by unauthorized third parties, it also prevents you from associating the data (in particular the grading information) with the actual user.
+
+Currently, it is your responsibility to match the hashed user id's back to the actual users by computing the HMAC of the known user ids and comparing to the hashed user ids in the grading data.
+
+
+### Example usages
+
+#### Ephemeral database for testing
+If you don't have access to a database server and want to test an examinr exam, an ephemeral in-memory SQLite database is very useful.
+This database only exists as long as the R server process lives.
+It can only be used by a single process at a time and as such is not suited for actual exams.
+For this example you need the _RSQLite_ package.
+
+In the server-start code you have to set up the database and configure the storage provider:
+
+```r
+#! context="server-start"
+library(RSQLite)
+# Create an ephemeral in-memory RSQLite database
+db_con <- dbConnect(SQLite(), ":memory:")
+
+# Create the attempts table (SQLite doesn't have a UUID type)
+dbExecute(db_con, 'CREATE TABLE attempts (
+  attempt_id   varchar(36) PRIMARY KEY,
+  user_id      varchar(64) NOT NULL,
+  exam_id      varchar(64) NOT NULL,
+  exam_version varchar(64) NOT NULL,
+  user_obj     text        NOT NULL,
+  seed         integer     NOT NULL,
+  started_at   timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  finished_at  timestamp,
+  points       text
+)')
+# Create an index on the attempts table
+dbExecute(db_con, 'CREATE INDEX attempts_index ON attempts (user_id, exam_id, exam_version)')
+
+# Create the section data table
+dbExecute(db_con, 'CREATE TABLE section_data (
+  id           integer      PRIMARY KEY,
+  attempt_id   varchar(36)  NOT NULL,
+  section      varchar(64)  NOT NULL,
+  saved_at     timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  section_data text
+)')
+# Create an index on the section data table
+dbExecute(db_con, 'CREATE INDEX section_data_index ON section_data (attempt_id, section)')
+
+# Disconnect from the DB when shiny stops (this also destroys the ephemeral database!)
+shiny::onStop(function () { dbDisconnect(db_con) })
+
+# Use this database as storage for the exam
+exam_config(storage_provider = dbi_storage_provider(db_con, 'attempts', 'section_data'))
+```
+
+#### PostgreSQL database
+
+If you have access to a PostgreSQL database it can be used via the _RPostgres_ package.
+For easy handling of dropped connections, using a pool of database connections via the _pool_ package is generally recommended.
+First, the database needs to be set up and the tables created according to the table definitions above.
+The pool is then created in a _server-start_ context and passed on to `dbi_storage_provider()`.
+
+```r
+#! context="server-start"
+library(pool)
+
+# Create a pool of connections to your PostgreSQL database
+db_pool <- dbPool(drv = RPostgres::Postgres(),
+                  dbname = "{database name}",
+                  host = "{database host}",
+                  username = "{username}",
+                  password = "{password}",
+                  minSize = 1,
+                  maxSize = 2)
+
+# Disconnect from the DB when shiny stops (this also destroys the ephemeral database!)
+shiny::onStop(function () { poolClose(db_pool) })
+
+# Use this database as storage for the exam
+exam_config(storage_provider = dbi_storage_provider(db_pool, 'attempts', 'section_data'))
+```
+
+Note that you won't need a large pool of connections as each Shiny process can only use one connection at a time anyways.
+The pool is mostly useful for automatically handling dropped connections.
+
+## Writing your own storage provider
+
+If the DBI-backed storage provider does not suit your needs, you can write your own storage provider and configure it via `exam_config(storage_provider=)`
+A storage provider is a list of functions invoked by examinr to read and write all exam data.
+
+The list of functions must include all of the following:
+
+#### `create_attempt(user, exam_id, exam_version, seed, started_at, ...)`
+
+This function is invoked when a user tries to start a new attempt.
+The function must return a unique identifier for the attempt, or `FALSE` in case of an error.
+
+Argument         Description
+--------------   ---------------------------------------------------------------------------------------
+`user`           user object as returned by the [authentication provider](config_access.html#authentication-provider)
+`exam_id`        exam identifier (scalar character)
+`exam_version`   version string associated with the exam (scalar character)
+`seed`           integer used to seed the attempt (scalar integer)
+`started_at`     the date-time the attempt was started, including timezone (object of type `POSIXct`)
+`...`            currently not used
+
+
+#### `finish_attempt(attempt_id, finished_at, ...)`
+
+This function should mark an attempt as "finished" and is invoked when a user finishes an attempt (or the time elapsed).
+The function should return `TRUE` if the data is saved successfully and `FALSE` in case of an error.
+
+Argument         Description
+--------------   ---------------------------------------------------------------------------------------
+`attempt_id`     the attempt identifier (as returned by `create_attempt()`)
+`finished_at`    the date-time the attempt was finished, including timezone (object of type `POSIXct`)
+`...`            currently not used
+
+
+#### `grade_attempt(attempt_id, points, ...)`
+
+Grade the given attempt, assigning the given `points` object to the attempt.
+The function should return `TRUE` if the points are saved successfully and `FALSE` in case of an error.
+
+Argument         Description
+--------------   ---------------------------------------------------------------------------------------
+`attempt_id`     the attempt identifier (as returned by `create_attempt()`)
+`points`         an R list object which holds all grading information for the attempt
+`...`            currently not used
+
+
+#### `get_attempts(user, exam_id, exam_version, ...)`
+
+Query all attempts filtered by the given arguments.
+The argument `user` may be `NULL`, in which case the function should return the attempts for *all* users.
+The function must return a list of attempt objects (of the form described below), or `NULL` in case of an error.
+
+Argument         Description
+--------------   ---------------------------------------------------------------------------------------
+`user`           user object as returned by the [authentication provider](config_access.html#authentication-provider)
+`exam_id`        exam identifier (scalar character)
+`exam_version`   version string associated with the exam (scalar character)
+`...`            currently not used
+
+The function must return a list of attempt objects.
+An attempt object is a list containing the following information
+
+Element        Description
+---------      -------------------------------------
+`id`           attempt identifier
+`user`         user object associated with this attempt (as given to `create_attempt()`)
+`started_at`   time (as `POSIXct` object in the **system's timezone**) the attempt was started
+`finished_at`  time (as `POSIXct` object in the **system's timezone**) the attempt was finished (may be `NULL` if the attempt is not yet finished)
+`points`       R list object as given to `grade_attempt()` (may be `NULL` if the attempt is not yet graded)
+
+
+#### `save_section_data(attempt_id, section, section_data, ...)`
+
+Save section data for the given attempt.
+The function should return `TRUE` if the data is saved successfully and `FALSE` in case of an error.
+
+Argument         Description
+--------------   ---------------------------------------------------------------------------------------
+`attempt_id`     the attempt identifier (as returned by `create_attempt()`)
+`section`        section identifier
+`section_data`   an R list object with section-specific data
+`...`            currently not used
+
+
+#### `get_section_data(attempt_id, section, ...)`
+
+Query the *most recently saved* section data for the given attempt.
+If `section` is `NULL`, the function should not filter by section, but return the latest data for all sections.
+The function must return a list of section data objects (of the form described below), or `NULL` in case of an error.
+
+Argument         Description
+--------------   ---------------------------------------------------------------------------------------
+`attempt_id`     the attempt identifier (as returned by `create_attempt()`)
+`section`        section identifier
+`...`            currently not used
+
+The function must return a list of section data objects.
+A section data object is a list containing the following information.
+
+Element        Description
+---------      -------------------------------------
+`section`      section identifier
+`timestamp`    time (as `POSIXct` object in the **system's timezone**) when the data was saved
+`section_data` an R list object with section-specific data, exactly as given to `save_section_data()`
+
+
+#### `get_last_section(attempt_id, ...)`
+
+Get the identifier of the section for which the most recent data is available (i.e., the section the attempt was showing last).
+The function should return a character string with the section identifier of the section for which data was saved
+most recently.
+In case of an error, or if there is no data available for the given filter, the function should return `NULL`.
+
+
+Argument         Description
+--------------   ---------------------------------------------------------------------------------------
+`attempt_id`     the attempt identifier (as returned by `create_attempt()`)
+`...`            currently not used
+

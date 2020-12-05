@@ -8,4 +8,7 @@
 ^\.eslintrc\.json$
 ^srcwww$
 ^tools$
+^pkgdown$
+^docs$
+^tools$
 ^node_modules$

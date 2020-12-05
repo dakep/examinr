@@ -57,55 +57,60 @@ exports.sections = (function () {
     }
   })
 
+  function checkMandatory (event) {
+    // Find mandatory questions (either in the current section only, or in the entire document)
+    const mandatoryQuestions = event.data.context.find('.examinr-question.examinr-mandatory-question')
+
+    // Reset style
+    mandatoryQuestions.removeClass('examinr-mandatory-error')
+    mandatoryQuestions.find('.examinr-mandatory-message').remove()
+
+    const missing = mandatoryQuestions.filter(function () {
+      let okay = true
+      const q = $(this)
+      if (q.filter('.examinr-q-textquestion').length > 0) {
+        q.find('.shiny-input-container input').each(function () {
+          const val = $(this).val()
+          okay = ((val && val.length > 0) || (val === 0))
+          return okay
+        })
+      } else if (q.filter('.examinr-q-mcquestion')) {
+        okay = (q.find('.shiny-bound-input input[value!="N/A"]:checked').length > 0)
+      }
+      return !okay
+    })
+    if (missing.length > 0) {
+      missing.addClass('examinr-mandatory-error')
+      if (missing.find('.card-footer').length === 0) {
+        missing.append('<div class="card-footer examinr-mandatory-message" role="alert">' +
+            exports.status.getMessage('sections').mandatoryError +
+          '</div>')
+      } else {
+        missing.find('.card-footer').append('<div class="examinr-mandatory-message" role="alert">' +
+            '<hr class="m-3" />' +
+            exports.status.getMessage('sections').mandatoryError +
+          '</div>')
+      }
+      missing.get(0).scrollIntoView()
+      event.stopImmediatePropagation()
+      return false
+    }
+  }
+
   $(function () {
     const sectionsConfig = JSON.parse($('script.examinr-sections-config').remove().text() || '{}')
 
     actualSections = $('section.level1')
     actualSections.each(function () {
-      const el = $(this)
+      const section = $(this)
       // Add the correct label to each section
-      exports.accessibility.ariaLabelledBy(el, el.children('h1'))
+      exports.accessibility.ariaLabelledBy(section, section.children('h1'))
 
       // Intercept section navigation to check for mandatory questions being answers.
-      const mandatoryQuestions = el.find('.examinr-question.examinr-mandatory-question')
-      if (mandatoryQuestions.length > 0) {
-        el.find('.examinr-section-next').click(function (event) {
-          // Reset style
-          mandatoryQuestions.removeClass('examinr-mandatory-error')
-          mandatoryQuestions.find('.examinr-mandatory-message').remove()
-
-          const missing = mandatoryQuestions.filter(function () {
-            let okay = true
-            const q = $(this)
-            if (q.filter('.examinr-q-textquestion').length > 0) {
-              q.find('.shiny-input-container input').each(function () {
-                const val = $(this).val()
-                okay = ((val && val.length > 0) || (val === 0))
-                return okay
-              })
-            } else if (q.filter('.examinr-q-mcquestion')) {
-              okay = (q.find('.shiny-bound-input input[value!="N/A"]:checked').length > 0)
-            }
-            return !okay
-          })
-          if (missing.length > 0) {
-            window.console.log('Prevent section navigation!')
-            missing.addClass('examinr-mandatory-error')
-            if (missing.find('.card-footer').length === 0) {
-              missing.append('<div class="card-footer examinr-mandatory-message" role="alert">' +
-                  exports.status.getMessage('sections').mandatoryError +
-                '</div>')
-            } else {
-              missing.find('.card-footer').append('<div class="examinr-mandatory-message" role="alert">' +
-                  '<hr class="m-3" />' +
-                  exports.status.getMessage('sections').mandatoryError +
-                '</div>')
-            }
-            missing.get(0).scrollIntoView()
-            event.stopImmediatePropagation()
-            return false
-          }
-        })
+      if (sectionsConfig.progressive && section.find('.examinr-question.examinr-mandatory-question').length > 0) {
+        section.find('.examinr-section-next').click({ context: section }, checkMandatory)
+      } else if (!sectionsConfig.progressive) {
+        section.find('.examinr-section-next').click({ context: $('main') }, checkMandatory)
       }
     })
 
@@ -118,12 +123,14 @@ exports.sections = (function () {
       $('.examinr-section-next').hide()
       exports.accessibility.ariaLabelledBy($('main'), $('h1.title'))
 
-      // hide the last section (used for final remarks)
+      // Hide the last section (used for final remarks)
       if (sectionsConfig.hideLastSection) {
         actualSections.last().hide()
         actualSections = actualSections.slice(0, -1)
-        actualSections.last().find('.examinr-section-next').show()
       }
+
+      // Show the button in the last visible section
+      actualSections.last().find('.examinr-section-next').show()
     } else {
       // progressive exams: hide all sections
       actualSections.hide()

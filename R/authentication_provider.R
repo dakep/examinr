@@ -35,6 +35,7 @@
 #' })
 #'
 #' @name authentication_provider
+#' @family access configuration
 NULL
 
 #' RStudio Connect Authentication Provider
@@ -42,7 +43,7 @@ NULL
 #' Simple [authentication provider][authentication_provider] using the current user authenticated with RStudio Connect.
 #' The `user_id` is the user's username and grading permission are determined by the user's group membership.
 #'
-#' @param grading_group users who are members of any of these groups will have grading permissions.
+#' @param grading_groups users who are members of any of these groups will have grading permissions.
 #'
 #' @return an authentication provider to use in [exam_config()].
 #'
@@ -53,6 +54,7 @@ NULL
 #' exam_config(auth_provider = auth_prov)
 #'
 #' @export
+#' @family access configuration
 rsconnect_auth <- function (grading_groups = NULL) {
   return(function (session) {
     if (is.null(session$user)) {

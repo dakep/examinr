@@ -14,6 +14,8 @@ opts_hook_possible_exercise_initial_pass <- function (options, ...) {
     }
     mark_chunk_static(options$label)
 
+    knit_meta_add(list(structure(options$label, class = 'examinr_question_label')))
+
     # Collect the support chunks
     support_code <- list(setup = extract_support_code(options$exercise.setup),
                          solution = extract_support_code(options$exercise.solution))
@@ -33,10 +35,10 @@ opts_hook_possible_exercise_initial_pass <- function (options, ...) {
       # First check if the chunk is a globally set support chunk
       options$label
     } else {
-      filter_expr <- expr(all_labels(isTRUE(exercise) &&
-                                       (identical(exercise.setup, !!(options$label)) ||
-                                          identical(exercise.solution, !!(options$label)))))
-      eval(filter_expr)
+      # Combining the two expressions into one does not work.
+      filter_expr_setup <- expr(all_labels(isTRUE(exercise) && identical(exercise.setup, !!(options$label))))
+      filter_expr_solution <- expr(all_labels(isTRUE(exercise) && identical(exercise.solution, !!(options$label))))
+      c(eval(filter_expr_setup), eval(filter_expr_solution))
     }
 
     if (length(associated_exercises) > 0L) {
@@ -93,6 +95,7 @@ knit_hook_exercise <- function (before, options, envir, ...) {
 
   if (before) {
     label <- get_chunk_label(options)
+
     section_ns <- NS(opts_chunk$get('examinr.section_id') %||% random_ui_id('unknown_section'))
     points <- options$exercise.points %||% 1
     points_str <- format_points(points)

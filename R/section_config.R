@@ -24,6 +24,7 @@
 #'
 #' @importFrom rlang is_missing abort
 #' @importFrom knitr opts_knit knit_meta_add
+#' @family exam configuration
 #' @export
 section_config <- function (section, next_button_label, fix_order) {
   section <- normalize_string(section)

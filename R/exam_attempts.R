@@ -26,6 +26,7 @@
 #'
 #' @importFrom rlang abort warn
 #' @importFrom knitr opts_knit
+#' @family access configuration
 #' @export
 configure_attempts <- function (user_ids, opens, closes, max_attempts, timelimit, grace_period) {
   if (!is_knitr_context('server-start')) {
@@ -37,16 +38,25 @@ configure_attempts <- function (user_ids, opens, closes, max_attempts, timelimit
   }
 
   settings <- parse_attempt_settings(opens, closes, max_attempts, timelimit, grace_period)
+  # Retain only the non-NULL settings
+  settings <- settings[!vapply(settings, is.null, FUN.VALUE = logical(1L))]
+  if (length(settings) > 0L) {
+    # Verify user settings against global configuration
+    lapply(names(settings), warn_enabled_for_some, settings = settings, global = .attempts_config$get('global'))
 
-  # Verify user settings against global configuration
-  lapply(names(settings), warn_enabled_for_some, settings = settings, global = .attempts_config$get('global'))
-
-  # Don't persist attempts configuration in initial pass
-  if (!isTRUE(opts_knit$get('examinr.initial_pass'))) {
-    # Merge new overrides with existing overrides
-    user_overrides <- .attempts_config$get('overrides')
-    user_overrides[user_ids] <- rep(list(settings), length(user_ids))
-    .attempts_config$set(overrides = user_overrides)
+    # Don't persist attempts configuration in initial pass
+    if (!isTRUE(opts_knit$get('examinr.initial_pass'))) {
+      # Merge new overrides with existing overrides
+      user_overrides <- .attempts_config$get('overrides')
+      for (user_id in user_ids) {
+        if (is.null(user_overrides[[user_id]])) {
+          user_overrides[[user_id]] <- settings
+        } else {
+          user_overrides[[user_id]][names(settings)] <- settings
+        }
+      }
+      .attempts_config$set(overrides = user_overrides)
+    }
   }
 
   return(invisible(settings))
@@ -85,7 +95,7 @@ register_attempts_config <- function (config) {
 #' @importFrom stringr str_detect
 #' @importFrom rlang abort
 parse_attempt_settings <- function (opens, closes, max_attempts, timelimit, grace_period) {
-  if (is_missing(max_attempts) || is.null(max_attempts) || all(is.na(timelimit))) {
+  if (is_missing(max_attempts) || is.null(max_attempts) || all(is.na(max_attempts))) {
     max_attempts <- NULL
   } else {
     withCallingHandlers({
@@ -334,6 +344,7 @@ initialize_attempt <- function (session, exam_id, exam_version) {
 }
 
 #' @importFrom rlang abort
+#' @importFrom shiny reactiveValues
 initialize_attempt_state <- function (session, status, attempt) {
   session_env <- get_session_env(session)
   if (is.null(session_env$attempt_state)) {

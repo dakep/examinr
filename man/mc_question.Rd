@@ -12,12 +12,13 @@ mc_question(
   nr_answers = 5,
   random_answer_order = TRUE,
   mc = TRUE,
-  title_container = h6,
-  static_title = NULL,
   label = "Select the correct answer(s).",
   hide_label = FALSE,
   min_points = 0,
-  mandatory = FALSE
+  mandatory = FALSE,
+  id = NULL,
+  title_container = h6,
+  static_title = NULL
 )
 
 answer(
@@ -45,12 +46,6 @@ If \code{NULL}, all answer options are shown. If a vector of length two, the fir
 
 \item{mc}{show as multiple choice, i.e., allow the user to select more than one answer.}
 
-\item{title_container}{a function to generate an HTML element to contain the question title.}
-
-\item{static_title}{if \code{NULL}, the title will be rendered statically if it doesn't contain inline R code, otherwise
-it will be rendered dynamically. If \code{TRUE}, always render the title statically. If \code{FALSE}, always render the
-title dynamically on the server.}
-
 \item{label}{answer text to show. Supports markdown formatting and inline code chunks of the form \code{`r value`}.}
 
 \item{hide_label}{hide the label from non-screen readers.}
@@ -60,6 +55,15 @@ where to cut off negative points. If \code{NULL}, there is no lower bound.}
 
 \item{mandatory}{is this question mandatory for submitting the section? If \code{TRUE}, a user can only navigate to the
 next section if the question is answered.}
+
+\item{id}{question identifier to be used instead of the code chunk label. Must only contain
+characters \code{a-z}, \code{A-Z}, \code{0-9}, dash (\code{-}), or underscore (\verb{_}).}
+
+\item{title_container}{a function to generate an HTML element to contain the question title.}
+
+\item{static_title}{if \code{NULL}, the title will be rendered statically if it doesn't contain inline R code, otherwise
+it will be rendered dynamically. If \code{TRUE}, always render the title statically. If \code{FALSE}, always render the
+title dynamically on the server.}
 
 \item{correct}{an expression which, evaluated in the rendering environment, determines if the answer is correct
 or not. Can also be a simple logical.}
@@ -89,3 +93,8 @@ all displayed correct answers will get all points), but negative weights are use
 For example, if the weight of an incorrect answer option is set to -0.5 and the total number of points available
 for a question is 4, selecting this answer option will reduce the number of points awarded by 2.
 }
+\seealso{
+Other exam question types: 
+\code{\link{text_question}()}
+}
+\concept{exam question types}

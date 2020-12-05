@@ -2,6 +2,9 @@
 % Please edit documentation in R/question_types_ui.R
 \name{text_question}
 \alias{text_question}
+\alias{comp_abs}
+\alias{comp_rel}
+\alias{comp_digits}
 \title{Create a Question With Text Input}
 \usage{
 text_question(
@@ -11,15 +14,22 @@ text_question(
   width = "100\%",
   height = NULL,
   placeholder = NULL,
-  title_container = h6,
-  static_title = NULL,
-  accuracy = 0.001,
   solution = NULL,
   solution_quoted = FALSE,
+  comp = comp_digits(3, 1),
   label = "Type your answer below.",
   hide_label = FALSE,
-  mandatory = FALSE
+  mandatory = FALSE,
+  id = NULL,
+  title_container = h6,
+  static_title = NULL
 )
+
+comp_abs(tol)
+
+comp_rel(tol)
+
+comp_digits(digits, pm = 1)
 }
 \arguments{
 \item{title}{question title. Markdown is supported and by default the title will be rendered dynamically if it
@@ -38,17 +48,14 @@ Will be shown next to the question text, formatted using the \code{points_format
 \item{placeholder}{A character string giving the user a hint as to what can be entered into the control.
 Internet Explorer 8 and 9 do not support this option.}
 
-\item{title_container}{a function to generate an HTML element to contain the question title.}
-
-\item{static_title}{if \code{NULL}, the title will be rendered statically if it doesn't contain inline R code, otherwise
-it will be rendered dynamically. If \code{TRUE}, always render the title statically. If \code{FALSE}, always render the
-title dynamically on the server.}
-
 \item{solution}{an expression to compute the solution to the answer.
 The expression is evaluated in the environment returned by the data provider set up via \code{\link[=exam_config]{exam_config()}}.
 See below for details on how to auto-grade questions of type \emph{numeric}.}
 
 \item{solution_quoted}{is the \code{solution} expression quoted?}
+
+\item{comp}{function comparing the user's input with the correct answer. Must be a function taking two
+named arguments: \code{input} (the user's input value) and \code{answer} (the correct answer).}
 
 \item{label}{a label to help screen readers describe the purpose of the input element.}
 
@@ -57,7 +64,21 @@ See below for details on how to auto-grade questions of type \emph{numeric}.}
 \item{mandatory}{is this question mandatory for submitting the section? If \code{TRUE}, a user can only navigate to the
 next section if the question is answered.}
 
-\item{markdown_html()}{numeric accuracy for grading inputs with \code{type="numeric"}.}
+\item{id}{question identifier to be used instead of the code chunk label. Must only contain
+characters \code{a-z}, \code{A-Z}, \code{0-9}, dash (\code{-}), or underscore (\verb{_}).}
+
+\item{title_container}{a function to generate an HTML element to contain the question title.}
+
+\item{static_title}{if \code{NULL}, the title will be rendered statically if it doesn't contain inline R code, otherwise
+it will be rendered dynamically. If \code{TRUE}, always render the title statically. If \code{FALSE}, always render the
+title dynamically on the server.}
+
+\item{tol}{absolute tolerance (for \code{comp_abs()}) or relative tolerance (for \code{comp_rel()}).}
+
+\item{digits}{number of digits relevant for comparison (significant digits if the correct answer is less than 1 in
+absolute value).}
+
+\item{pm}{amount by how much the last (significant) digit may vary between the user's input and the correct answer.}
 }
 \description{
 Render a question which asks the user to input a value. Questions of \emph{numeric} support auto-grading.
@@ -67,5 +88,26 @@ The solution is computed by evaluating the expression given in \code{solution} i
 The expression must yield either a single character string or, if the question is of type \emph{numeric}, a numeric value.
 The result of the expression is rendered with \link[commonmark:commonmark]{commonmark}.
 To auto-grade \emph{numeric} questions, the \code{solution} expression can yield a numeric value or a character value with
-attribute \code{answer}. This number is compared against the user's answer (with tolerance \code{accuracy}).
+attribute \code{answer}. This number is compared against the user's answer using the function provided via \code{comp}.
 }
+\section{Functions}{
+\itemize{
+\item \code{comp_abs}: compare the user input and the correct answer in absolute terms
+(returns \code{abs(input - answer) < tol}).
+
+\item \code{comp_rel}: compare the user input and the correct answer in relative terms
+(returns \code{abs(input / answer - 1) < tol}).
+
+\item \code{comp_digits}: allow the last digit vary by +/- \code{pm}. For answers greater than 1 (in absolute value),
+\code{digits} is the number of digits after the decimal point and an absolute tolerance of
+of \code{tol = pm * 10^-digits} is used.
+For answers less than 1, \code{digits} is the number of significant digits and an
+absolute tolerance of \code{tol = pm * 10^(-shift)} is used (\code{shift} is taken such that
+the last sign. digit can vary by +/- \code{pm}). Returns \code{abs(input - answer) < tol}).
+}}
+
+\seealso{
+Other exam question types: 
+\code{\link{mc_question}()}
+}
+\concept{exam question types}

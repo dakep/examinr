@@ -52,3 +52,9 @@ If the configuration seems to conflict with the global configuration, a warning 
 Conflicts are if the global configuration does specify an option, but the user-specific
 override explicitly disables an option (e.g., a global time-limit, but no time-limit for some users).
 }
+\seealso{
+Other access configuration: 
+\code{\link{authentication_provider}},
+\code{\link{rsconnect_auth}()}
+}
+\concept{access configuration}

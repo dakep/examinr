@@ -1,6 +1,5 @@
 #' @importFrom shiny observeEvent observe invalidateLater isolate getDefaultReactiveDomain
 #' @importFrom promises then is.promising
-#' @importFrom magrittr `%>%`
 #' @importFrom rlang warn cnd_message
 exercise_chunk_server <- function (exercise_data) {
   exercise_data <- unserialize_object(exercise_data)
@@ -198,7 +197,7 @@ exercise_promise <- function (input_data, exercise_data, session, timelimit) {
 #'
 #' @keywords internal
 #'
-#' @importFrom stringr str_detect
+#' @importFrom stringr str_detect str_starts fixed
 #' @importFrom rmarkdown html_fragment render
 #' @importFrom tools Rd2txt_options
 #' @export
@@ -240,6 +239,13 @@ evaluate_exercise <- function (user_code, support_code, chunk_options, status_me
   rd2txt_opts <- Rd2txt_options()
   Rd2txt_options(underline_titles = FALSE, width = 80, extraIndent = 2, sectionIndent = 4, sectionExtra = 2)
   on.exit(Rd2txt_options(rd2txt_opts), add = TRUE)
+
+  # Sanitize the system environment: only keep required and R-related env variables
+  envvars <- Sys.getenv()
+  keep_envvars <- names(envvars) %in% c('PATH', 'LANG', 'TAR', 'TMPDIR', 'USER', 'UID', 'GID', 'LC') |
+    str_starts(names(envvars), fixed('R_'))
+  Sys.unsetenv(names(envvars)[!keep_envvars])
+  on.exit(do.call(Sys.setenv, as.list(envvars)), add = TRUE)
 
   output_html <- render(tmpfile, output_format = out, quiet = TRUE, envir = envir)
   on.exit(unlink(output_html, force = TRUE), add = TRUE)

@@ -67,9 +67,9 @@ The function must return a list of attempts. Each list object must contain the f
 \describe{
 \item{\code{id}}{the identifier associated with this attempt.}
 \item{\code{user}}{the user object associated with this attempt.}
-\item{\code{started}}{the time (as \link[base:DateTimeClasses]{POSIXct} object in the system's timezone) the attempt
+\item{\code{started_at}}{the time (as \link[base:DateTimeClasses]{POSIXct} object in the system's timezone) the attempt
 was started.}
-\item{\code{finished}}{the time (as \link[base:DateTimeClasses]{POSIXct} object in the system's timezone) the attempt
+\item{\code{finished_at}}{the time (as \link[base:DateTimeClasses]{POSIXct} object in the system's timezone) the attempt
 was finished, or \code{NULL} if it has not been finished.}
 \item{\code{points}}{the R list object as given to \code{grade_attempt()}, or \code{NULL} if the attempt is not yet graded.}
 }
@@ -112,3 +112,8 @@ In case of an error, or if there is no data available for the given filter, the 
 }
 }
 
+\seealso{
+Other storage configuration: 
+\code{\link{dbi_storage_provider}()}
+}
+\concept{storage configuration}

@@ -28,5 +28,8 @@ A template with the default status messages can be saved as a YAML text file wit
 \details{
 Note that \code{status_message_template()} should not be called from within an exam document. Rather, generate the
 template once, modify as necessary, and use in the exam document by specifying the file name in the \code{\link[=exam_document]{exam_document()}}
-or by calling \code{use_status_messages()}
+or by calling \code{status_messages()}
+
+Calling \code{status_messages()} without arguments invisibly returns the currently set status messages.
 }
+\concept{localization}

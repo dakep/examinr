@@ -7,7 +7,7 @@
 rsconnect_auth(grading_groups = NULL)
 }
 \arguments{
-\item{grading_group}{users who are members of any of these groups will have grading permissions.}
+\item{grading_groups}{users who are members of any of these groups will have grading permissions.}
 }
 \value{
 an authentication provider to use in \code{\link[=exam_config]{exam_config()}}.
@@ -23,3 +23,9 @@ auth_prov <- rsconnect_auth(c('instructor', 'assistant'))
 exam_config(auth_provider = auth_prov)
 
 }
+\seealso{
+Other access configuration: 
+\code{\link{authentication_provider}},
+\code{\link{configure_attempts}()}
+}
+\concept{access configuration}

@@ -53,9 +53,9 @@
 #' \describe{
 #'  \item{`id`}{the identifier associated with this attempt.}
 #'  \item{`user`}{the user object associated with this attempt.}
-#'  \item{`started`}{the time (as [POSIXct][base::DateTimeClasses] object in the system's timezone) the attempt
+#'  \item{`started_at`}{the time (as [POSIXct][base::DateTimeClasses] object in the system's timezone) the attempt
 #'    was started.}
-#'  \item{`finished`}{the time (as [POSIXct][base::DateTimeClasses] object in the system's timezone) the attempt
+#'  \item{`finished_at`}{the time (as [POSIXct][base::DateTimeClasses] object in the system's timezone) the attempt
 #'    was finished, or `NULL` if it has not been finished.}
 #'  \item{`points`}{the R list object as given to `grade_attempt()`, or `NULL` if the attempt is not yet graded.}
 #' }
@@ -91,17 +91,48 @@
 #' In case of an error, or if there is no data available for the given filter, the function should return `NULL`.
 #'
 #' @name storage_provider
+#' @family storage configuration
 NULL
 
+#' @importFrom rlang warn
+#' @importFrom uuid UUIDgenerate
 .void_storage_provider <- function () {
   return(list(
-    create_attempt = function (...) { uuid::UUIDgenerate() },
-    finish_attempt = function (...) { TRUE },
-    grade_attempt = function (...) { TRUE },
-    get_attempts = function (...) { list() },
-    get_last_section = function (...) { NULL },
-    get_section_data = function (...) { list() },
-    save_section_data = function (...) { FALSE }))
+    create_attempt = function (...) {
+      warn("No storage provider configured. Data is not saved.", .frequency = 'regularly',
+           .frequency_id = 'examinr_void_storage_provider_write_warning')
+      UUIDgenerate()
+    },
+    finish_attempt = function (...) {
+      warn("No storage provider configured. Data is not saved.", .frequency = 'regularly',
+           .frequency_id = 'examinr_void_storage_provider_write_warning')
+      TRUE
+    },
+    grade_attempt = function (...) {
+      warn("No storage provider configured. Data is not saved.", .frequency = 'regularly',
+           .frequency_id = 'examinr_void_storage_provider_write_warning')
+      TRUE
+    },
+    get_attempts = function (...) {
+      warn("No storage provider configured. Data cannot be retrieved.", .frequency = 'regularly',
+           .frequency_id = 'examinr_void_storage_provider_read_warning')
+      list()
+    },
+    get_last_section = function (...) {
+      warn("No storage provider configured. Data cannot be retrieved.", .frequency = 'regularly',
+           .frequency_id = 'examinr_void_storage_provider_read_warning')
+      NULL
+    },
+    get_section_data = function (...) {
+      warn("No storage provider configured. Data cannot be retrieved.", .frequency = 'regularly',
+           .frequency_id = 'examinr_void_storage_provider_read_warning')
+      list()
+    },
+    save_section_data = function (...) {
+      warn("No storage provider configured. Data is not saved.", .frequency = 'regularly',
+           .frequency_id = 'examinr_void_storage_provider_write_warning')
+      TRUE
+    }))
 }
 
 #' DBI-Backed Exam Storage
@@ -120,6 +151,7 @@ NULL
 #' \item{`exam_version`}{stored as character data. Ensure it can hold enough characters for the exam version strings
 #'                       used in your exams.}
 #' \item{`started_at`}{the UTC time at which the attempt was started.}
+#' \item{`seed`}{the integer used to seed the RNG for this attempt.}
 #' \item{`finished_at`}{the UTC time at which the attempt was finished.}
 #' \item{`user_obj`}{the user object (_less the identifier_) as returned by the authentication provider stored as character
 #'                   data of arbitrary length.}
@@ -177,6 +209,7 @@ NULL
 #' @importFrom digest digest hmac
 #' @importFrom rlang abort warn cnd_message
 #' @importFrom uuid UUIDgenerate
+#' @family storage configuration
 #' @export
 dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash_user = FALSE, hash_key = TRUE) {
   if (!requireNamespace('DBI', quietly = TRUE)) {

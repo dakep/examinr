@@ -74,6 +74,10 @@ main.container {
     @include sr-only();
   }
 
+  .shiny-input-container > label {
+    margin-bottom: map-get($spacers, 3);
+  }
+
   &.examinr-q-mcquestion {
     .shiny-input-checkboxgroup,
     .shiny-input-radiogroup {

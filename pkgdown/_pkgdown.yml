@@ -1,0 +1,34 @@
+url: https://dakep.github.io/examinr
+template:
+  params:
+    bootswatch: cosmo
+reference:
+- title: Questions
+  desc: Create questions of different types.
+  contents:
+  - has_concept("exam question types")
+- title: Exam format configurations
+  desc: Configure exam randomization, presentation, and navigation.
+  contents:
+  - exam_document
+  - has_concept("exam configuration")
+- subtitle: Exercises
+  desc: Configurations for coding exercises.
+  contents:
+  - has_concept("exercise configuration")
+- subtitle: Storage
+  desc: Configure where and how exam data is stored.
+  contents:
+  - has_concept("storage configuration")
+- subtitle: Access
+  desc: Configure who has when access to the exam.
+  contents:
+  - has_concept("access configuration")
+- subtitle: Localization
+  desc: Localize messages.
+  contents:
+  - has_concept("localization")
+- title: Advanced customization
+  desc: Helper functions for advanced customizations.
+  contents:
+  - exercise_result

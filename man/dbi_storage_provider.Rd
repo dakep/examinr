@@ -42,6 +42,7 @@ hashing is used.}
 \item{\code{exam_version}}{stored as character data. Ensure it can hold enough characters for the exam version strings
 used in your exams.}
 \item{\code{started_at}}{the UTC time at which the attempt was started.}
+\item{\code{seed}}{the integer used to seed the RNG for this attempt.}
 \item{\code{finished_at}}{the UTC time at which the attempt was finished.}
 \item{\code{user_obj}}{the user object (\emph{less the identifier}) as returned by the authentication provider stored as character
 data of arbitrary length.}
@@ -83,3 +84,8 @@ CREATE INDEX section_data_index ON section_data
   (attempt_d, section);
 }
 }
+\seealso{
+Other storage configuration: 
+\code{\link{storage_provider}}
+}
+\concept{storage configuration}

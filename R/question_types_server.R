@@ -17,7 +17,7 @@ question_title_server <- function (question, ns_str, section_id) {
 }
 
 #' @importFrom shiny NS observeEvent getDefaultReactiveDomain
-#' @importFrom rlang warn
+#' @importFrom rlang warn new_function
 render_textquestion_server <- function (question, ns) {
   question <- unserialize_object(question)
   ns <- NS(ns)
@@ -64,11 +64,14 @@ render_textquestion_server <- function (question, ns) {
                             error = function (w) { return(NA_real_) })
 
         # compare answer
-        earned_points <- if (isTRUE(abs(correct_num_answer - num_val) <= question$accuracy)) {
-          question$points
-        } else {
-          0
-        }
+        comp_fun <- new_function(list(input = 0, answer = 0), question$comp, env = baseenv())
+        is_answer_correct <- tryCatch(isTRUE(comp_fun(num_val, correct_num_answer)),
+                                      error = function (e) {
+                                        warn(sprintf("Comparison function for answer %s raises error: %s",
+                                                     questino$label, cnd_message(e)))
+                                        return(FALSE)
+                                      })
+        earned_points <- is_answer_correct * question$points
       }
       return(new_question_feedback(max_points = question$points, points = earned_points, solution = solution))
     })

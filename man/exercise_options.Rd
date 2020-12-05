@@ -7,7 +7,6 @@
 exercise_options(
   title,
   button,
-  button_context,
   timelimit,
   lines,
   autocomplete,
@@ -20,18 +19,15 @@ exercise_options(
 )
 }
 \arguments{
-\item{title}{title of the exercise. Default: \emph{Coding question.}}
+\item{title}{title of the exercise. Default: \emph{exercise.panelTitle} from \code{\link[=status_messages]{status_messages()}}.}
 
-\item{button}{label of the run exercise button. Default: \emph{Run code.}}
-
-\item{button_context}{the bootstrap contextual class applied to the button. Default: \emph{default}. See
-\url{https://getbootstrap.com/docs/3.3/css/#buttons-options} for a list of supported context classes.}
+\item{button}{label of the run exercise button. Default: \emph{exercise.buttonLabel} from \code{\link[=status_messages]{status_messages()}}.}
 
 \item{timelimit}{time limit for the code to run (in seconds). Default: 5.}
 
 \item{lines}{the minimum number of lines in the code editor. Default: 5.}
 
-\item{autocomplete}{enable or disable auto-completion in the code editor. Default: \code{FALSE}.}
+\item{autocomplete}{enable or disable auto-completion in the code editor. Default: \code{TRUE}.}
 
 \item{df_print}{method used for printing data frames created by the user code. Default to use the same
 as the R-markdown document, but can be changed if needed. See argument \code{df_print} in
@@ -41,14 +37,20 @@ as the R-markdown document, but can be changed if needed. See argument \code{df_
 
 \item{setup}{the name of an R code chunk which is evaluated before the user code.}
 
-\item{solution}{the name of an R code chunk which gives the solution to the exerise code chunk.
+\item{solution}{the name of an R code chunk which gives the solution to the exercise code chunk.
 This really only makes sense if set on a per-chunk basis.}
 
 \item{checker}{a function (or the name of a function) which checks the R code in the exercise chunk.}
 
-\item{label}{a label to help screen readers describe the purpose of the input element.}
+\item{label}{a label to help screen readers describe the purpose of the input element.
+Default: \emph{exercise.label} from \code{\link[=status_messages]{status_messages()}}.}
 }
 \description{
 Global options for exercise chunks. Each of these options can be overwritten in the individual exercise chunks by
 specifying the \code{exercise.xyz} chunk option (\code{xyz} is one of the parameter names below).
 }
+\seealso{
+Other exercise configuration: 
+\code{\link{exercise_evaluator}}
+}
+\concept{exercise configuration}

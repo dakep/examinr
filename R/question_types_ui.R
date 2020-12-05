@@ -6,39 +6,43 @@
 #' The expression must yield either a single character string or, if the question is of type _numeric_, a numeric value.
 #' The result of the expression is rendered with [commonmark][commonmark::markdown_html()].
 #' To auto-grade _numeric_ questions, the `solution` expression can yield a numeric value or a character value with
-#' attribute `answer`. This number is compared against the user's answer (with tolerance `accuracy`).
+#' attribute `answer`. This number is compared against the user's answer using the function provided via `comp`.
 #'
 #' @param title question title. Markdown is supported and by default the title will be rendered dynamically if it
 #'   contains inline R code.
 #' @param points total number of points for the question. Set to `NULL` to not give any points for the question.
 #'   Will be shown next to the question text, formatted using the `points_format` given in [exam_config()].
 #' @param type can be one of `textarea` (default), `text` or `numeric`.
+#' @param solution an expression to compute the solution to the answer.
+#'   The expression is evaluated in the environment returned by the data provider set up via [exam_config()].
+#'   See below for details on how to auto-grade questions of type _numeric_.
+#' @param comp function comparing the user's input with the correct answer. Must be a function taking two
+#'   named arguments: `input` (the user's input value) and `answer` (the correct answer).
+#' @param solution_quoted is the `solution` expression quoted?
 #' @param width the width of the input, e.g., '300px' or '100%'; see [shiny::validateCssUnit()].
 #' @param height the height of the input, e.g., '300px' or '100%'; see [shiny::validateCssUnit()]. Only relevant for
 #'  `type="textarea"`.
 #' @param placeholder A character string giving the user a hint as to what can be entered into the control.
 #'   Internet Explorer 8 and 9 do not support this option.
-#' @param markdown_html() numeric accuracy for grading inputs with `type="numeric"`.
 #' @param label a label to help screen readers describe the purpose of the input element.
 #' @param hide_label hide the label from non-screen readers.
 #' @param title_container a function to generate an HTML element to contain the question title.
 #' @param static_title if `NULL`, the title will be rendered statically if it doesn't contain inline R code, otherwise
 #'   it will be rendered dynamically. If `TRUE`, always render the title statically. If `FALSE`, always render the
 #'   title dynamically on the server.
-#' @param solution an expression to compute the solution to the answer.
-#'   The expression is evaluated in the environment returned by the data provider set up via [exam_config()].
-#'   See below for details on how to auto-grade questions of type _numeric_.
-#' @param solution_quoted is the `solution` expression quoted?
 #' @param mandatory is this question mandatory for submitting the section? If `TRUE`, a user can only navigate to the
 #'   next section if the question is answered.
+#' @param id question identifier to be used instead of the code chunk label. Must only contain
+#'   characters `a-z`, `A-Z`, `0-9`, dash (`-`), or underscore (`_`).
 #'
+#' @family exam question types
 #' @export
 #' @importFrom htmltools h6
-#' @importFrom rlang abort enexpr is_expression
+#' @importFrom rlang abort enexpr is_expression is_function fn_body new_function
 text_question <- function (title, points = 1, type = c('textarea', 'text', 'numeric'), width = '100%', height = NULL,
-                           placeholder = NULL, title_container = h6, static_title = NULL, accuracy = 1e-3,
-                           solution = NULL, solution_quoted = FALSE, label = "Type your answer below.",
-                           hide_label = FALSE, mandatory = FALSE) {
+                           placeholder = NULL, solution = NULL, solution_quoted = FALSE, comp = comp_digits(3, 1),
+                           label = "Type your answer below.", hide_label = FALSE, mandatory = FALSE, id = NULL,
+                           title_container = h6, static_title = NULL) {
 
   points_str <- format_points(points)
 
@@ -46,10 +50,6 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
     abort("Every question must have a meaningful label")
   }
   type <- match.arg(type)
-
-  if (!is.numeric(accuracy) || length(accuracy) == 0L || anyNA(accuracy) || !isTRUE(accuracy >= 0)) {
-    abort("`accuracy` must be a non-negative number.")
-  }
 
   if (!isTRUE(solution_quoted)) {
     solution <- enexpr(solution)
@@ -59,13 +59,35 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
     abort("`solution` must be an expression")
   }
 
+  if (length(id) > 0L) {
+    id <- as.character(id[[1L]])
+    if (str_detect(id, '[^a-zA-Z0-9_-]')) {
+      abort("Question id contains invalid characters")
+    }
+  }
+
+  # Extract body from comparison function
+  if (is_function(comp)) {
+    comp <- fn_body(comp)
+  } else if (!is_expression(comp)) {
+    abort("`comp` must be a function taking two arguments: `input` and `answer`.")
+  }
+
+  # Test comparison function
+  comp_fun <- new_function(list(input = 0, answer = 0), comp, env = baseenv())
+  withCallingHandlers(comp_fun(0, 0),
+                      error = function (e) {
+                        abort("`comp` must be a function taking two arguments: `input` and `answer`.")
+                      })
+
   return(structure(list(input_label = label,
+                        label = id,
                         hide_label = isTRUE(hide_label),
                         type = type,
                         title = prepare_title(title, static_title),
                         placeholder = placeholder,
                         title_container = title_container,
-                        accuracy = accuracy,
+                        comp_expr = comp,
                         points_str = points_str,
                         mandatory = isTRUE(mandatory),
                         solution_expr = solution,
@@ -76,12 +98,50 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
                    class = c('textquestion', 'examinr_question')))
 }
 
+#' @describeIn text_question compare the user input and the correct answer in absolute terms
+#'                           (returns `abs(input - answer) < tol`).
+#' @param tol absolute tolerance (for `comp_abs()`) or relative tolerance (for `comp_rel()`).
+#' @importFrom rlang expr
+#' @export
+comp_abs <- function (tol) {
+  expr(abs(input - answer) <= !!tol)
+}
+
+#' @describeIn text_question compare the user input and the correct answer in relative terms
+#'                           (returns `abs(input / answer - 1) < tol`).
+#' @importFrom rlang expr
+#' @export
+comp_rel <- function (tol) {
+  expr(abs(input / answer - 1) <= !!tol)
+}
+
+#' @describeIn text_question allow the last digit vary by +/- `pm`. For answers greater than 1 (in absolute value),
+#'                           `digits` is the number of digits after the decimal point and an absolute tolerance of
+#'                           of `tol = pm * 10^-digits` is used.
+#'                           For answers less than 1, `digits` is the number of significant digits and an
+#'                           absolute tolerance of `tol = pm * 10^(-shift)` is used (`shift` is taken such that
+#'                           the last sign. digit can vary by +/- `pm`). Returns `abs(input - answer) < tol`).
+#' @param digits number of digits relevant for comparison (significant digits if the correct answer is less than 1 in
+#'   absolute value).
+#' @param pm amount by how much the last (significant) digit may vary between the user's input and the correct answer.
+#' @export
+comp_digits <- function (digits, pm = 1) {
+  # use substitute instead of rlang::expr to avoid capturing the srcref
+  substitute({
+    tol <- if (abs(answer) > 1) {
+      pm * 10^(-digits)
+    } else {
+      shift <- floor(log10(as.numeric(formatC(abs(answer), digits = digits, format = "fg")))) - 2
+      pm * 10^shift
+    }
+    abs(input - answer) <= tol
+  }, list(digits = digits, pm = pm))
+}
+
 #' Create a Multiple-Choice Question
 #'
 #' Show a multiple-choice or single-choice question.
 #'
-#' @inheritParams text_question
-#' @param ... answer options created with [answer()].
 #' @param nr_answers maximum number of answers to display. At least one correct answer will always be shown.
 #'   If `NULL`, all answer options are shown. If a vector of length two, the first number specifies the number of
 #'   *correct* answers to be shown and the second number specifies the number of *incorrect* answers to be shown.
@@ -91,8 +151,8 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
 #' @param random_answer_order should the order of answers be randomized? Randomization is unique for every user.
 #' @param min_points if `points` multiplied by the the sum of the weights of all selected answer options is negative,
 #'   where to cut off negative points. If `NULL`, there is no lower bound.
-#' @param mandatory is this question mandatory for submitting the section? If `TRUE`, a user can only navigate to the
-#'   next section if the question is answered.
+#' @inheritParams text_question
+#' @param ... answer options created with [answer()].
 #'
 #' @importFrom ellipsis check_dots_unnamed
 #' @importFrom knitr opts_current
@@ -102,10 +162,11 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
 #' @importFrom stringr str_detect
 #' @importFrom withr with_seed
 #'
+#' @family exam question types
 #' @export
 mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_order = TRUE, mc = TRUE,
-                        title_container = h6, static_title = NULL, label = "Select the correct answer(s).",
-                        hide_label = FALSE, min_points = 0, mandatory = FALSE) {
+                        label = "Select the correct answer(s).", hide_label = FALSE, min_points = 0,
+                        mandatory = FALSE, id = NULL, title_container = h6, static_title = NULL) {
   if (is.null(label)) {
     abort("Every question must have a meaningful label.")
   }
@@ -159,7 +220,15 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
     abort("`min_points` must be a single non-positive number or `NULL`.")
   }
 
+  if (length(id) > 0L) {
+    id <- as.character(id[[1L]])
+    if (str_detect(id, '[^a-zA-Z0-9_-]')) {
+      abort("Question id contains invalid characters")
+    }
+  }
+
   return(structure(list(input_label = label,
+                        label = id,
                         hide_label = isTRUE(hide_label),
                         title = prepare_title(title, static_title),
                         answers = answers,
@@ -262,8 +331,14 @@ answer <- function (label, correct = FALSE, always_show = FALSE, weight = c(0, 1
 #' @importFrom htmltools div HTML tags
 #' @importFrom rlang abort
 knit_print.examinr_question <- function (x, ...) {
-  x$label <- get_chunk_label()
-  mark_chunk_static(x$label)
+  chunk_label <- get_chunk_label()
+  if (is.null(x$label)) {
+    x$label <- chunk_label
+  }
+
+  knit_meta_add(list(structure(x$label, class = 'examinr_question_label')))
+
+  mark_chunk_static(chunk_label)
 
   # Don't print during the first pass
   if (isTRUE(opts_knit$get('examinr.initial_pass'))) {
@@ -328,7 +403,6 @@ render_question_body.textquestion <- function (question, ns, ...) {
     args$height <- question$height
   } else if (question$type == 'numeric') {
     args$placeholder <- NULL
-    args <- c(args, question$numeric_args)
   }
 
   input_fun <- switch(question$type,

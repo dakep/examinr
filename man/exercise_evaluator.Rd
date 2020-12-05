@@ -33,3 +33,8 @@ promise object which will eventually evaluate the user's code.
 for details on configuring where/how these promises are resolved.
 }}
 
+\seealso{
+Other exercise configuration: 
+\code{\link{exercise_options}()}
+}
+\concept{exercise configuration}
