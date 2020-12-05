@@ -1,0 +1,15 @@
+pandoc: '2.2'
+pkgdown: 1.6.1
+pkgdown_sha: ~
+articles:
+  config_access: config_access.html
+  config_storage: config_storage.html
+  examinr: examinr.html
+  exercises: exercises.html
+  question_types: question_types.html
+  randomized_exam: randomized_exam.html
+last_built: 2020-12-05T21:26Z
+urls:
+  reference: https://dakep.github.io/examinr/reference
+  article: https://dakep.github.io/examinr/articles
+
