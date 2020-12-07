@@ -66,6 +66,9 @@
       <a href="../articles/exercises.html">Coding exercises</a>
     </li>
     <li>
+      <a href="../articles/grading.html">Grading exams</a>
+    </li>
+    <li>
       <a href="../articles/question_types.html">Question types</a>
     </li>
     <li>
@@ -210,6 +213,7 @@
 <h2 class="hasAnchor">
 <a href="#grading-exams" class="anchor"></a>Grading exams</h2>
 <p>If your exam contains only auto-gradable questions, you don’t have to do much. But if you need to manually grade the exam, examinr has a grading interface which you and anybody you designate can access.</p>
+<p>The grading interface is accessed by pointing your browser to the exam’s URL, adding <code>display=feedback</code> to the search query. For example, if the exam is accessible via <code>https://127.0.0.1:28213/myexam.Rmd</code>, the grading interface would be at <code>https://127.0.0.1:28213/myexam.Rmd?display=feedback</code>. See the companion vignettes on <a href="grading.html">grading</a> for more details about the grading interface.</p>
 <p>For the simple exam above, the grading interface looks like</p>
 <div class="figure">
 <img src="figures/examinr/grading.png" alt="Grading interface." style="width:85.0%"><p class="caption">Grading interface.</p>
@@ -218,7 +222,7 @@
 <div id="feedback-to-learners" class="section level2">
 <h2 class="hasAnchor">
 <a href="#feedback-to-learners" class="anchor"></a>Feedback to learners</h2>
-<p>You can also give learners access to feedback on the exam:</p>
+<p>You can also give learners access to feedback on the exam. The feedback is accessible at the same URL as the grading interface, i.e., by adding a <code>display=feedback</code> to the search query. No worries, the learners will not have access to the grading interface, but will only see the feedback, as in:</p>
 <div class="figure">
 <img src="figures/examinr/feedback.png" alt="Feedback as shown to the learner." style="width:85.0%"><p class="caption">Feedback as shown to the learner.</p>
 </div>

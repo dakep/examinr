@@ -6,9 +6,10 @@ articles:
   config_storage: config_storage.html
   examinr: examinr.html
   exercises: exercises.html
+  grading: grading.html
   question_types: question_types.html
   randomized_exam: randomized_exam.html
-last_built: 2020-12-07T02:15Z
+last_built: 2020-12-07T03:41Z
 urls:
   reference: https://dakep.github.io/examinr/reference
   article: https://dakep.github.io/examinr/articles
