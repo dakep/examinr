@@ -285,7 +285,7 @@ knit_print.examinr_exam_init <- function (x, ...) {
 }
 
 ## Initialize a new exam session
-#' @importFrom shiny parseQueryString getDefaultReactiveDomain
+#' @importFrom shiny parseQueryString getDefaultReactiveDomain reactiveValuesToList
 initialize_exam_server <- function (config) {
   config <- unserialize_object(config)
   session <- getDefaultReactiveDomain()
@@ -294,13 +294,27 @@ initialize_exam_server <- function (config) {
     abort("shiny session not available")
   }
 
-  # Login user ...
-
   query <- parseQueryString(isolate(session$clientData$url_search))
 
   if (identical(query$display, 'feedback')) {
     initialize_feedback(session, config$exam_metadata, config$sections)
   } else {
+    isolate(with(reactiveValuesToList(session$clientData), {
+      feedback_url <- sprintf('%s//%s', url_protocol, url_hostname)
+      if (!identical(url_port, 80) || !identical(url_port, 443)) {
+        feedback_url <- paste(feedback_url, url_port, sep = ':')
+      }
+      if (nzchar(url_pathname)) {
+        feedback_url <- paste(feedback_url, url_pathname, sep = '/')
+      }
+      feedback_url <- if (nzchar(url_search)) {
+        sprintf('%s%s&display=feedback', feedback_url, url_search)
+      } else {
+        paste(feedback_url, 'display=feedback', sep = '?')
+      }
+      signal_feedback_url(feedback_url)
+    }))
+
     initialize_attempt(session, exam_id = config$exam_metadata$id, exam_version = config$exam_metadata$version)
     initialize_sections_server(session, config$sections, config$exam_metadata)
   }

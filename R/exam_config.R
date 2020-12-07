@@ -22,7 +22,8 @@
   seed_attempt = function (user, prev_attempts) {
     # by default, every attempt gets the same seed!
     digest2int(user$user_id)
-  }
+  },
+  feedback_urls_printed = character(0L)
 ))
 
 #' Exam Configuration
@@ -482,4 +483,11 @@ setup_exercise_promise <- function (expr, envir, label, timelimit) {
   }, error = function (e) {
     abort(sprintf("Cannot setup exercise promise for exercise chunk %s: %s", label, cnd_message(e)))
   })
+}
+
+signal_feedback_url <- function (url) {
+  if (!isTRUE(url %in% .exam_configuration$get('feedback_urls_printed'))) {
+    cat("Exam feedback available under", url, "\n", file = stderr())
+    .exam_configuration$append(feedback_urls_printed = url)
+  }
 }

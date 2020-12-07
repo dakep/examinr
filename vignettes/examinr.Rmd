@@ -142,6 +142,10 @@ See the companion vignettes on [question types](question_types.html) and on [exe
 If your exam contains only auto-gradable questions, you don't have to do much.
 But if you need to manually grade the exam, examinr has a grading interface which you and anybody you designate can access.
 
+The grading interface is accessed by pointing your browser to the exam's URL, adding `display=feedback` to the search query.
+For example, if the exam is accessible via `https://127.0.0.1:28213/myexam.Rmd`, the grading interface would be at `https://127.0.0.1:28213/myexam.Rmd?display=feedback`.
+See the companion vignettes on [grading](grading.html) for more details about the grading interface.
+
 For the simple exam above, the grading interface looks like
 
 ![Grading interface.](figures/examinr/grading.png){width=85%}
@@ -149,7 +153,9 @@ For the simple exam above, the grading interface looks like
 
 ## Feedback to learners
 
-You can also give learners access to feedback on the exam:
+You can also give learners access to feedback on the exam.
+The feedback is accessible at the same URL as the grading interface, i.e., by adding a `display=feedback` to the search query.
+No worries, the learners will not have access to the grading interface, but will only see the feedback, as in:
 
 ![Feedback as shown to the learner.](figures/examinr/feedback.png){width=85%}
 
