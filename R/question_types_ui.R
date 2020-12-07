@@ -104,7 +104,7 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
 #' @importFrom rlang expr
 #' @export
 comp_abs <- function (tol) {
-  expr(abs(input - answer) <= !!tol)
+  substitute(abs(input - answer) <= tol)
 }
 
 #' @describeIn text_question compare the user input and the correct answer in relative terms
@@ -112,7 +112,7 @@ comp_abs <- function (tol) {
 #' @importFrom rlang expr
 #' @export
 comp_rel <- function (tol) {
-  expr(abs(input / answer - 1) <= !!tol)
+  substitute(abs(input / answer - 1) <= tol)
 }
 
 #' @describeIn text_question allow the last digit vary by +/- `pm`. For answers greater than 1 (in absolute value),
@@ -131,11 +131,11 @@ comp_digits <- function (digits, pm = 1) {
     tol <- if (abs(answer) > 1) {
       pm * 10^(-digits)
     } else {
-      shift <- floor(log10(as.numeric(formatC(abs(answer), digits = digits, format = "fg")))) - 2
+      shift <- floor(log10(signif(abs(answer), digits = digits))) - 2
       pm * 10^shift
     }
     abs(input - answer) <= tol
-  }, list(digits = digits, pm = pm))
+  })
 }
 
 #' Create a Multiple-Choice Question

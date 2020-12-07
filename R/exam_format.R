@@ -63,7 +63,7 @@
 #' @importFrom tools file_path_sans_ext file_ext
 #'
 #' @export
-exam_document <- function (id, version = '0.1', use_cdn = FALSE, render = c('server', 'static'),
+exam_document <- function (id = 'exam', version = '0.1', use_cdn = FALSE, render = c('server', 'static'),
                            progressive = FALSE, order = c('random', 'fixed'), max_attempts = Inf, timelimit = Inf,
                            opens = NA, closes = NA, feedback = NA, grace_period = 120, self_contained = TRUE,
                            fig_width = 7, fig_height = 5, fig_retina = 2, fig_caption = TRUE, keep_md = FALSE,
@@ -73,7 +73,7 @@ exam_document <- function (id, version = '0.1', use_cdn = FALSE, render = c('ser
   attempts_config <- set_attempts_config_from_metadata(opens = opens, closes = closes, max_attempts = max_attempts,
                                                        timelimit = timelimit, grace_period = grace_period)
 
-  if (missing(id)) {
+  if (length(id) == 0L) {
     abort("Exam documents must have an id!")
   }
 

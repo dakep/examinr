@@ -1,5 +1,5 @@
 ## Initialize feedback display
-#' @importFrom shiny observe getDefaultReactiveDomain
+#' @importFrom shiny observe getDefaultReactiveDomain observeEvent
 #' @importFrom rlang abort warn
 initialize_feedback <- function (session, exam_metadata, sections) {
   session_env <- get_session_env(session)
@@ -9,9 +9,8 @@ initialize_feedback <- function (session, exam_metadata, sections) {
   session_env$feedback_attempts <- reactiveVal(list(), 'feedback_attempts')
   session_env$feedback_all_users <- NULL
   session_env$feedback_grading <- isTRUE(user$grading)
+  session_env$feedback_grading_download <- NULL
   session_env$feedback_points_cache <- list()
-
-  # Determine current user
 
   # Initialize section state (display all sections at once)
   initialize_section_state(session, sections, TRUE)
@@ -51,6 +50,10 @@ initialize_feedback <- function (session, exam_metadata, sections) {
         all_attempts[[which.min(user_attempts_finished)]]
       }
       initialize_attempt_state(session, 'feedback', selected_attempt)
+
+      # Register grades download endpoint
+      session_env$feedback_grading_download <- session$registerDataObj('examinr-grades', exam_metadata,
+                                                                       grades_download_handler)
 
       observe({
         # Observe changes in the selected user
@@ -206,6 +209,7 @@ send_feedback <- function (attempt, all_attempts, session) {
   # send feedback to client
   send_message('feedback', session = session, message = list(
     grading = session_env$feedback_grading,
+    gradesDownloadUrl = session_env$feedback_grading_download,
     users = user_ids,
     attempt = attempt,
     allAttempts = all_attempts,
@@ -235,4 +239,65 @@ ordered_attempts <- function (user, exam_metadata, only_finished = TRUE) {
   names(prev_attempts) <- vapply(prev_attempts, FUN.VALUE = character(1L), `[[`, 'id')
 
   return(prev_attempts)
+}
+
+#' @importFrom rlang warn cnd_message
+grades_download_handler <- function (exam_metadata, req) {
+  if (identical(req$REQUEST_METHOD, 'GET')) {
+    tryCatch({
+      all_attempts <- sp_get_attempts(user = NULL, exam_id = exam_metadata$id, exam_version = exam_metadata$version)
+      fname <- sprintf("grades_%s_%s_%s.csv", exam_metadata$id, exam_metadata$version,
+                       strftime(Sys.time(), format = '%Y%m%dT%H%M%S%Z'))
+
+      grades <- lapply(all_attempts, function (at) {
+        if (!is.null(at$finished_at) && length(at$points) > 0L) {
+          list(user_id = rep.int(at$user$user_id, length(at$points)),
+               attempt = rep.int(at$id, length(at$points)),
+               submitted = rep.int(strftime(at$finished_at, '%Y%m%dT%H%M%S%z'), length(at$points)),
+               question = names(at$points),
+               points = vapply(at$points, `[[`, 'points', FUN.VALUE = numeric(1L), USE.NAMES = FALSE),
+               max_points = vapply(at$points, `[[`, 'max_points', FUN.VALUE = numeric(1L), USE.NAMES = FALSE))
+        } else {
+          NULL
+        }
+      })
+      grades <- grades[!vapply(grades, is.null, logical(1L), USE.NAMES = FALSE)]
+
+      user_id <- unlist(lapply(grades, `[[`, 'user_id'), recursive = FALSE, use.names = FALSE)
+
+      grades_df <- data.frame(
+        exam = rep.int(exam_metadata$id, length(user_id)),
+        exam_version = rep.int(exam_metadata$version, length(user_id)),
+        user_id = user_id,
+        attempt = unlist(lapply(grades, `[[`, 'attempt'), recursive = FALSE, use.names = FALSE),
+        question = unlist(lapply(grades, `[[`, 'question'), recursive = FALSE, use.names = FALSE),
+        submitted = unlist(lapply(grades, `[[`, 'submitted'), recursive = FALSE, use.names = FALSE),
+        points = unlist(lapply(grades, `[[`, 'points'), recursive = FALSE, use.names = FALSE),
+        points_available = unlist(lapply(grades, `[[`, 'max_points'), recursive = FALSE, use.names = FALSE),
+        stringsAsFactors = FALSE
+      )
+
+      # Use an anonymous file for writing the CSV
+      csv_fh <- file()
+      on.exit(close(csv_fh))
+      write.csv(grades_df, file = csv_fh, row.names = FALSE, fileEncoding = 'UTF-8')
+      fcontent <- paste(readLines(csv_fh, encoding = 'UTF-8'), '', collapse = '', sep = '\n')
+
+      structure(list(status = 200L, content = fcontent,
+                     headers = list('Cache-Control' = 'no-store; max-age=0',
+                                    'Content-Disposition' = sprintf('attachment; filename="%s"', fname)),
+                     content_type = "text/csv; charset=UTF-8"),
+                class = 'httpResponse')
+    }, error = function (e) {
+      warn(paste("Cannot download grades: ", cnd_message(e)))
+      return(structure(list(status = 500L, content = 'Grades unavailable.',
+                            headers = list('Cache-Control' = 'no-store; max-age=0'),
+                            content_type = "text/plain; charset=UTF-8"),
+                       class = 'httpResponse'))
+    })
+  } else {
+    structure(list(status = 405L, content = "Method not allowed",
+                        content_type = "text/plain; charset=UTF-8"),
+                   class = 'httpResponse')
+  }
 }

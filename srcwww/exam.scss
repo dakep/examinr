@@ -134,21 +134,27 @@ div.sourceCode {
   .col-right,
   .col-center {
     @include make-col-ready();
-  }
-
-  .col-left {
-    @include make-col(3);
     text-align: left;
+    margin: map-get($spacers, 1) 0;
   }
 
-  .col-right {
-    @include make-col(3);
-    text-align: right;
-  }
+  @include media-breakpoint-up("md") {
+    .col-left {
+      @include make-col(3, 11);
+      margin: 0;
+    }
 
-  .col-center {
-    @include make-col(6);
-    text-align: center;
+    .col-right {
+      @include make-col(3, 11);
+      text-align: right;
+      margin: 0;
+    }
+
+    .col-center {
+      @include make-col(5, 11);
+      text-align: center;
+      margin: 0;
+    }
   }
 
   .btn-high-contrast {

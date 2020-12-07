@@ -14,7 +14,11 @@ exports.sections = (function () {
     if (section) {
       if (section.feedback === true) {
         // Redirect to the feedback
-        window.location.search = '?display=feedback'
+        if (window.location.search) {
+          window.location.search = window.location.search + '&display=feedback'
+        } else {
+          window.location.search = '?display=feedback'
+        }
       }
 
       if (currentSectionEl && currentSectionEl.length > 0) {

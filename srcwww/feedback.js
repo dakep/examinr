@@ -20,6 +20,24 @@ exports.feedback = (function () {
   const saveFeedbackDelay = 250
   const attemptSelectorId = exports.utils.randomId('attempt-sel')
   const userSelectorId = exports.utils.randomId('user-sel')
+  const userSelectGroup = $('<div class="input-group input-group-sm">' +
+    '<div class="input-group-prepend">' +
+      '<button class="btn examinr-feedback-user-prev btn-secondary" type="button">' +
+        '<span aria-hidden="true">&lt;</span>' +
+        '<span class="sr-only">Previous student</span>' +
+      '</button>' +
+      '<label class="input-group-text sr-only" for="' + userSelectorId + '">' +
+        'User' +
+      '</label>' +
+    '</div>' +
+    '<select class="custom-select" id="' + userSelectorId + '" disabled></select>' +
+    '<div class="input-group-append">' +
+      '<button class="btn examinr-feedback-user-next btn-secondary" type="button">' +
+        '<span aria-hidden="true">&gt;</span>' +
+        '<span class="sr-only">Next Student</span>' +
+      '</button>' +
+    '</div>' +
+  '</div>')
   let currentAttemptId
   let centerEl
   let refreshContentEvents = 0
@@ -61,6 +79,35 @@ exports.feedback = (function () {
     disableUi()
     // update the input value for the autocomplete input
     Shiny.setInputValue('__.examinr.__-gradingUserSel', sel.val())
+    toggleUserNavigationButtons()
+  }
+
+  function toggleUserNavigationButtons () {
+    const nextUsers = findNextUsers()
+    userSelectGroup.find('.examinr-feedback-user-prev').prop('disabled', !nextUsers[0])
+    userSelectGroup.find('.examinr-feedback-user-next').prop('disabled', !nextUsers[1])
+  }
+
+  function findNextUsers (userSel) {
+    if (!userSel) {
+      userSel = $('#' + userSelectorId)
+    }
+    const currentOption = userSel.children(':selected')
+    return [currentOption.prev('option').val(), currentOption.next('option').val()]
+  }
+
+  function gotoNextUser (event) {
+    const userSel = $('#' + userSelectorId)
+    const nextUsers = findNextUsers(userSel)
+    let which = -1
+    if (event.type === 'click') {
+      const btnText = $(this).text()
+      which = btnText.startsWith('<') ? 0 : (btnText.startsWith('>') ? 1 : -1)
+    }
+
+    if (which >= 0) {
+      userSel.val(nextUsers[which]).trigger('change')
+    }
   }
 
   function updateAttemptSelector (attempts, current) {
@@ -105,7 +152,7 @@ exports.feedback = (function () {
       $('main').show()
       exports.sections.showAll()
 
-      exports.status.append('<div class="input-group input-group-sm">' +
+      const rightInputGroup = exports.status.append('<div class="input-group input-group-sm">' +
             '<div class="input-group-prepend">' +
               '<label class="input-group-text" for="' + attemptSelectorId + '">' +
                 exports.status.getMessage('feedback').attemptLabel +
@@ -113,46 +160,45 @@ exports.feedback = (function () {
             '</div>' +
             '<select class="custom-select" id="' + attemptSelectorId + '"></select>' +
           '</div>', 'right')
-        .children('#' + attemptSelectorId)
-        .change(attemptChanged)
+
+      rightInputGroup.children('#' + attemptSelectorId).change(attemptChanged)
 
       if (data.grading) {
-        centerEl = exports.status.append('<div class="input-group input-group-sm">' +
-            '<div class="input-group-prepend">' +
-              '<button class="btn btn-secondary" type="button">' +
-                '<span aria-hidden="true">&lt;</span>' +
-                '<span class="sr-only">Previous student</span>' +
-              '</button>' +
-              '<label class="input-group-text" for="' + userSelectorId + '">' +
-                'User' +
-              '</label>' +
-            '</div>' +
-            '<select class="custom-select" id="' + userSelectorId + '" disabled></select>' +
-            '<div class="input-group-append">' +
-              '<button class="btn btn-secondary" type="button">' +
-                '<span aria-hidden="true">&gt;</span>' +
-                '<span class="sr-only">Next Student</span>' +
-              '</button>' +
-            '</div>' +
-          '</div>')
+        // add user select dropdown
+        centerEl = exports.status.append(userSelectGroup)
 
         if (data.users && data.users.length > 0) {
-          const userSel = centerEl.children('#' + userSelectorId)
+          const userSel = userSelectGroup.children('#' + userSelectorId)
           userSel.prop('disabled', false)
             .change(userChanged)
             .append(data.users.map(user => (
               '<option value="' + user.id + '">' + (user.displayName || user.id) + '</option>'
             )).join(''))
+
+          // enable prev/next buttons
+          userSelectGroup.find('button').click(gotoNextUser)
+        }
+
+        // add download button
+        if (data.gradesDownloadUrl) {
+          rightInputGroup.append(
+            '<a class="btn btn-sm btn-outline-primary ml-2" href="' + data.gradesDownloadUrl + '" target="_blank" download="">' +
+              '<span class="sr-only">Download grades</span>' +
+              '<svg aria-hidden="true" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 0a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 4.095 0 5.555 0 7.318 0 9.366 1.708 11 3.781 11H7.5V5.5a.5.5 0 0 1 1 0V11h4.188C14.502 11 16 9.57 16 7.773c0-1.636-1.242-2.969-2.834-3.194C12.923 1.999 10.69 0 8 0zm-.354 15.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 14.293V11h-1v3.293l-2.146-2.147a.5.5 0 0 0-.708.708l3 3z"/></svg>' +
+            '</a>')
         }
       } else {
         centerEl = exports.status.append('<span></span>')
       }
     }
+
     updateAttemptSelector(data.allAttempts, data.attempt)
+
     if (data.attempt) {
       currentAttemptId = data.attempt.id
       if (data.attempt.userId) {
-        centerEl.find('select').val(data.attempt.userId)
+        userSelectGroup.children('select').val(data.attempt.userId)
+        toggleUserNavigationButtons()
       }
     }
 

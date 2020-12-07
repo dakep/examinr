@@ -68,7 +68,7 @@ render_textquestion_server <- function (question, ns) {
         is_answer_correct <- tryCatch(isTRUE(comp_fun(num_val, correct_num_answer)),
                                       error = function (e) {
                                         warn(sprintf("Comparison function for answer %s raises error: %s",
-                                                     questino$label, cnd_message(e)))
+                                                     question$label, cnd_message(e)))
                                         return(FALSE)
                                       })
         earned_points <- is_answer_correct * question$points
@@ -99,7 +99,7 @@ render_mcquestion_server <- function (question, ns) {
       rendering_env <- get_rendering_env(session)
 
       # Determine the correct and incorrect answers
-      answers <- sample_answers(question, current_attempt$seed, rendering_env)
+      answers <- sample_answers(question, current_attempt$seed, rendering_env, current_attempt$id)
 
       if (length(answers) > 0L) {
         # Extract the values and render the labels for the displayed answer options.
@@ -117,11 +117,14 @@ render_mcquestion_server <- function (question, ns) {
           weights[weights > 0] <- weights[weights > 0] / sum(weights[weights > 0])
           names(weights) <- values
 
+          # let R CMD CHECK know the object `min_points` is accessible in the auto-grader
+          min_points <- question$min_points
+
           ag_env <- new.env(parent = getNamespace('examinr'))
           ag_env$weights <- question$points * weights
           ag_env$feedback <- new_question_feedback(max_points = question$points, points = 0,
                                                    solution = as.list(names(ag_env$weights[weights > 0])))
-          ag_env$min_points <- question$min_points
+          ag_env$min_points <- min_points
 
           register_autograder(session$ns(question$input_id), function (input_value, session) {
             if (!is.null(input_value) && length(input_value) > 0L && !anyNA(input_value)) {
@@ -151,7 +154,7 @@ render_mcquestion_server <- function (question, ns) {
   })
 }
 
-sample_answers <- function (question, seed, rendering_env) {
+sample_answers <- function (question, seed, rendering_env, attempt_id) {
   # Determine the correct and incorrect answers
   answers <- lapply(question$answers, function (ans) {
     ans$correct <- tryCatch(isTRUE(eval(ans$correct, envir = rendering_env)),
@@ -217,11 +220,11 @@ sample_answers <- function (question, seed, rendering_env) {
 
       if (!isTRUE(displayed_cor_answers == question$nr_answers[['cor']])) {
         warn(sprintf("Cannot display as many correct answers as requested (%d) for question %s in attempt %s.",
-                     question$nr_answers[['cor']], question$label, current_attempt$id))
+                     question$nr_answers[['cor']], question$label, attempt_id))
       }
       if (!isTRUE(displayed_inc_answers == question$nr_answers[['inc']])) {
         warn(sprintf("Cannot display as many incorrect answers as requested (%d) for question %s in attempt %s.",
-                     question$nr_answers[['inc']], question$label, current_attempt$id))
+                     question$nr_answers[['inc']], question$label, attempt_id))
       }
     }
 

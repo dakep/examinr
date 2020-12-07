@@ -5,7 +5,7 @@
 \title{Exam Output Format}
 \usage{
 exam_document(
-  id,
+  id = "exam",
   version = "0.1",
   use_cdn = FALSE,
   render = c("server", "static"),

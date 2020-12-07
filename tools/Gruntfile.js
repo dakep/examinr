@@ -32,7 +32,6 @@ module.exports = function (grunt) {
       },
       examinr: {
         src: [
-          // path.join(inputDir, 'lib', 'idb-keyval', 'idb-keyval-iife.js'),
           path.join(inputDir, '_header.js'),
           path.join(inputDir, 'utils.js'),
           path.join(inputDir, 'accessibility.js'),
@@ -102,8 +101,6 @@ module.exports = function (grunt) {
             ' *! Includes the twbs/bootstrap library version 4.5.3 (https:///www.getbootstrap.com):\n' +
             ' *!   (c) 2011-2020 Twitter, Inc | License: MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)\n' +
             ' *!   (c) 2011-2020 The Bootstrap Authors (https://github.com/twbs/bootstrap/graphs/contributors) | License: MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)\n' +
-            ' *! Includes the idb-keyval library version 3.2.0 (https://github.com/jakearchibald/idb-keyval):\n' +
-            ' *!   (c) 2016 Jake Archibald | License: Apache 2.0 (https://github.com/jakearchibald/idb-keyval/blob/master/LICENCE)\n' +
             ' */\n',
           sourceMap: { includeSources: true },
           sourceMapIn: path.join(outputDir, 'exam.js.map'),

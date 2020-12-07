@@ -229,6 +229,7 @@ data_provider <- function (fun, cache_data = FALSE) {
     knit_meta_add(list(structure(env_name, class = 'examinr_data_provider_env')))
 
     # Attach data returned by the data provider to the search path for knitting.
+    # This will be removed after knitting in the post_knit handler
     attach(data_env, name = env_name, warn.conflicts = FALSE)
   } else {
     # Set the data provider for the exam configuration.

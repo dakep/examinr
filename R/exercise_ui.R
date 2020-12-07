@@ -36,8 +36,10 @@ opts_hook_possible_exercise_initial_pass <- function (options, ...) {
       options$label
     } else {
       # Combining the two expressions into one does not work.
-      filter_expr_setup <- expr(all_labels(isTRUE(exercise) && identical(exercise.setup, !!(options$label))))
-      filter_expr_solution <- expr(all_labels(isTRUE(exercise) && identical(exercise.solution, !!(options$label))))
+      filter_expr_setup <- substitute(all_labels(isTRUE(exercise) && identical(exercise.setup, label)),
+                                      list(label = options$label))
+      filter_expr_solution <- substitute(all_labels(isTRUE(exercise) && identical(exercise.solution, label)),
+                                         list(label = options$label))
       c(eval(filter_expr_setup), eval(filter_expr_solution))
     }
 

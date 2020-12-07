@@ -176,7 +176,7 @@ get_chunk_label <- function (options, required = TRUE) {
   return(label)
 }
 
-#' @importFrom htmltools tagList HTML tags tagAppendAttributes tagHasAttribute
+#' @importFrom htmltools tagList HTML tags tagAppendAttributes tagHasAttribute tagGetAttribute
 trigger_mathjax <- function(tag, ...) {
   if (nargs() == 1L && is.list(tag)) {
     is_dummy <- 'false'
@@ -258,8 +258,10 @@ register_autograder <- function (input_id, fun, envir = TRUE, session = getDefau
 
 ## Register a simple autograder returning the feedback template
 register_static_autograder <- function (input_id, max_points, ..., session) {
+  # let R CMD check know that `feedback` is available
+  feedback <- new_question_feedback(max_points, ...)
   ag_env <- new.env(parent = getNamespace('examinr'))
-  ag_env$feedback <- new_question_feedback(max_points, ...)
+  ag_env$feedback <- feedback
   register_autograder(input_id, function (...) { return(feedback) }, envir = ag_env, session = session)
 }
 
