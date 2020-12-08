@@ -216,6 +216,15 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
     abort("DBI package is required for this storage provider.")
   }
 
+  conn_is_pool <- FALSE
+
+  if (inherits(conn, 'Pool')) {
+    if (!requireNamespace('pool', quietly = TRUE)) {
+      abort("Connection object is from a pool, but the pool package cannot be loaded.")
+    }
+    conn_is_pool <- TRUE
+  }
+
   if (!isTRUE(hash_key) && !is.null(hash_key) && !is.raw(hash_key)) {
     tryCatch({
       hash_key <- as.character(hash_key)
@@ -246,7 +255,11 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
   # Check if tables exist
   attempts_table <- DBI::dbQuoteIdentifier(conn, attempts_table)
   section_data_table <- DBI::dbQuoteIdentifier(conn, section_data_table)
-  tryCatch(local({
+
+  local(tryCatch({
+    if (conn_is_pool) {
+      conn <- pool::poolCheckout(conn)
+    }
     DBI::dbBegin(conn)
 
     attempt_id <- UUIDgenerate()
@@ -254,14 +267,12 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
       attempts_insert_sql <- sprintf('INSERT INTO %s (attempt_id, user_id, exam_id, exam_version, started_at,
                                                       finished_at, seed, user_obj, points)
                                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8, $9)', attempts_table)
-      stmt <- DBI::dbSendStatement(conn, attempts_insert_sql, immediate = FALSE)
       test_user_id <- get_user_id(list(user_id = 'user'), 'exam id string', '0.0.0')
-      DBI::dbBind(stmt, list(attempt_id, test_user_id, 'exam id string', '0.0.0.0', as.numeric(Sys.time()),
-                             as.numeric(Sys.time()) + 1, 1L, serialize_object(list('user object')),
-                             serialize_object(list('points'))))
-      DBI::dbGetRowsAffected(stmt)
-    }, finally = {
-      DBI::dbClearResult(stmt)
+
+      DBI::dbExecute(conn, attempts_insert_sql, immediate = FALSE, params = list(
+        attempt_id, test_user_id, 'exam id string', '0.0.0.0', as.numeric(Sys.time()),
+        as.numeric(Sys.time()) + 1, 1L, serialize_object(list('user object')),
+        serialize_object(list('points'))))
     }, error = function (e) {
       abort(paste('Table ', attempts_table, ' does not seem to exist or is not writable (error: ',
                   cnd_message(e), ')', sep = ''))
@@ -270,21 +281,20 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
     tryCatch({
       test_insert_sql <- sprintf('INSERT INTO %s (attempt_id, section, saved_at, section_data)
                                  VALUES ($1,$2,$3,$4)', section_data_table)
-      stmt <- DBI::dbSendStatement(conn, test_insert_sql, immediate = FALSE)
-      DBI::dbBind(stmt, list(attempt_id, 'section', as.numeric(Sys.time()), serialize_object(list('section data'))))
-      DBI::dbGetRowsAffected(stmt)
-    }, finally = {
-      DBI::dbClearResult(stmt)
+      DBI::dbExecute(conn, test_insert_sql, immediate = FALSE, params = list(
+        attempt_id, 'section', as.numeric(Sys.time()), serialize_object(list('section data'))))
     }, error = function (e) {
       abort(paste('Table ', section_data_table, ' does not seem to exist or is not writable (error: ',
                   cnd_message(e), ')', sep = ''))
     })
-  }), finally = {
+  }, finally = {
     tryCatch(DBI::dbRollback(conn), error = function (...) {}, warning = function (...) {})
-  })
+    if (conn_is_pool) {
+      pool::poolReturn(conn)
+    }
+  }))
 
   ## Storage functions
-
   return(list(
     # Start a new attempt
     create_attempt = function (user, exam_id, exam_version, seed, started_at, ...) {
@@ -293,61 +303,73 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
 
       attempt_id <- UUIDgenerate()
       tryCatch({
+        if (conn_is_pool) {
+          conn <- pool::poolCheckout(conn)
+        }
         DBI::dbBegin(conn)
         insert_stmt <- sprintf('INSERT INTO %s (attempt_id, user_id, exam_id, exam_version, started_at, seed, user_obj)
                                 VALUES ($1,$2,$3,$4,$5,$6,$7)', attempts_table)
-        stmt <- DBI::dbSendStatement(conn, insert_stmt, immediate = FALSE)
-        DBI::dbBind(stmt, list(attempt_id, user_id, as.character(exam_id), as.character(exam_version),
-                               as.numeric(started_at), as.integer(seed), serialize_object(user)))
 
-        affected_rows <- DBI::dbGetRowsAffected(stmt)
-        DBI::dbClearResult(stmt)
+        DBI::dbExecute(conn, insert_stmt, immediate = FALSE, params = list(
+          attempt_id, user_id, as.character(exam_id), as.character(exam_version),
+          as.numeric(started_at), as.integer(seed), serialize_object(user)))
 
         DBI::dbCommit(conn)
         attempt_id
       }, error = function (e) {
-        tryCatch(DBI::dbClearResult(stmt), error = function (...) {}, warning = function (...) {})
         tryCatch(DBI::dbRollback(conn), error = function (...) {}, warning = function (...) {})
         warn(paste("Cannot start new attempt:", cnd_message(e)))
         return(NULL)
+      }, finally = {
+        if (conn_is_pool) {
+          pool::poolReturn(conn)
+        }
       })
     },
 
     # Finish an attempt
     finish_attempt = function (attempt_id, finished_at, ...) {
       tryCatch({
+        if (conn_is_pool) {
+          conn <- pool::poolCheckout(conn)
+        }
         DBI::dbBegin(conn)
         update_sql <- sprintf('UPDATE %s SET finished_at = $1 WHERE attempt_id = $2', attempts_table)
-        stmt <- DBI::dbSendStatement(conn, update_sql, immediate = FALSE)
-        DBI::dbBind(stmt, list(as.numeric(finished_at), attempt_id))
-        affected_rows <- DBI::dbGetRowsAffected(stmt)
-        DBI::dbClearResult(stmt)
+        affected_rows <- DBI::dbExecute(conn, update_sql, immediate = FALSE, params = list(
+          as.numeric(finished_at), attempt_id))
         DBI::dbCommit(conn)
         isTRUE(affected_rows == 1L)
       }, error = function (e) {
-        tryCatch(DBI::dbClearResult(stmt), error = function (...) {}, warning = function (...) {})
         tryCatch(DBI::dbRollback(conn), error = function (...) {}, warning = function (...) {})
         warn(paste("Cannot finish attempt:", cnd_message(e)))
         return(FALSE)
+      }, finally = {
+        if (conn_is_pool) {
+          pool::poolReturn(conn)
+        }
       })
     },
 
     # Grade an attempt
     grade_attempt = function (attempt_id, points, ...) {
       tryCatch({
+        if (conn_is_pool) {
+          conn <- pool::poolCheckout(conn)
+        }
         DBI::dbBegin(conn)
         update_sql <- sprintf('UPDATE %s SET points = $1 WHERE attempt_id = $2', attempts_table)
-        stmt <- DBI::dbSendStatement(conn, update_sql, immediate = FALSE)
-        DBI::dbBind(stmt, list(serialize_object(points), attempt_id))
-        affected_rows <- DBI::dbGetRowsAffected(stmt)
-        DBI::dbClearResult(stmt)
+        affected_rows <- DBI::dbExecute(conn, update_sql, immediate = FALSE, params = list(
+          serialize_object(points), attempt_id))
         DBI::dbCommit(conn)
         isTRUE(affected_rows == 1L)
       }, error = function (e) {
-        tryCatch(DBI::dbClearResult(stmt), error = function (...) {}, warning = function (...) {})
         tryCatch(DBI::dbRollback(conn), error = function (...) {}, warning = function (...) {})
         warn(paste("Cannot grade attempt:", cnd_message(e)))
         return(FALSE)
+      }, finally = {
+        if (conn_is_pool) {
+          pool::poolReturn(conn)
+        }
       })
     },
 
@@ -365,10 +387,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
                               FROM
                                 %s
                               WHERE %s', attempts_table, filter_sql)
-        stmt <- DBI::dbSendStatement(conn, query_sql, immediate = FALSE)
-        DBI::dbBind(stmt, filter_data)
-        db_tbl <- DBI::dbFetch(stmt)
-        DBI::dbClearResult(stmt)
+        db_tbl <- DBI::dbGetQuery(conn, query_sql, immediate = FALSE, params = filter_data)
 
         if (nrow(db_tbl) > 0L) {
           lapply(seq_len(nrow(db_tbl)), function (i) {
@@ -387,7 +406,6 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
           list()
         }
       }, error = function (e) {
-        tryCatch(DBI::dbClearResult(stmt), error = function (...) {}, warning = function (...) {})
         warn(paste("Cannot query attempts:", cnd_message(e)))
         return(list())
       })
@@ -402,19 +420,13 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
                               WHERE attempt_id = $4
                               ORDER BY saved_at DESC
                               LIMIT 1', section_data_table)
-        stmt <- DBI::dbSendQuery(conn, read_stmt, immediate = FALSE)
-
-        DBI::dbBind(stmt, list(attempt_id))
-        db_tbl <- DBI::dbFetch(stmt, n = 1L)
-        DBI::dbClearResult(stmt)
-
+        db_tbl <- DBI::dbGetQuery(conn, read_stmt, immediate = FALSE, params = list(attempt_id), n = 1L)
         if (nrow(db_tbl) > 0L) {
           db_tbl$section[[1L]]
         } else {
           NULL
         }
       }, error = function (e) {
-        tryCatch(DBI::dbClearResult(stmt), error = function (...) {}, warning = function (...) {})
         warn(paste("Cannot find last section:", cnd_message(e)))
         return(NULL)
       })
@@ -439,11 +451,8 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
                                 GROUP BY attempt_id, section) ft
                               ON(t.attempt_id = ft.attempt_id AND t.section = ft.section AND t.saved_at = ft.saved_at)
                               WHERE %s', section_data_table, section_data_table, filter_sql)
-        stmt <- DBI::dbSendQuery(conn, read_stmt, immediate = FALSE)
-        DBI::dbBind(stmt, filter_data)
-        db_tbl <- DBI::dbFetch(stmt)
-        DBI::dbClearResult(stmt)
 
+        db_tbl <- DBI::dbGetQuery(conn, read_stmt, immediate = FALSE, params = filter_data)
         if (nrow(db_tbl) > 0L) {
           lapply(seq_len(nrow(db_tbl)), function (i) {
             list(section = db_tbl$section[[i]],
@@ -454,7 +463,6 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
           list()
         }
       }, error = function (e) {
-        tryCatch(DBI::dbClearResult(stmt), error = function (...) {}, warning = function (...) {})
         warn(paste("Cannot read section data:", cnd_message(e)))
         return(list())
       })
@@ -463,15 +471,14 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
     # Save section data
     save_section_data = function (attempt_id, section, section_data, ...) {
       tryCatch({
+        if (conn_is_pool) {
+          conn <- pool::poolCheckout(conn)
+        }
         DBI::dbBegin(conn)
         insert_stmt <- sprintf('INSERT INTO %s (attempt_id, section, saved_at, section_data)
                                  VALUES ($1,$2,$3,$4)', section_data_table)
-        stmt <- DBI::dbSendStatement(conn, insert_stmt, immediate = FALSE)
-        DBI::dbBind(stmt, list(attempt_id, as.character(section), as.numeric(Sys.time()),
-                               serialize_object(section_data)))
-
-        affected_rows <- DBI::dbGetRowsAffected(stmt)
-        DBI::dbClearResult(stmt)
+        affected_rows <- DBI::dbExecute(conn, insert_stmt, immediate = FALSE, params = list(
+          attempt_id, as.character(section), as.numeric(Sys.time()), serialize_object(section_data)))
         DBI::dbCommit(conn)
         isTRUE(affected_rows == 1L)
       }, error = function (e) {
@@ -479,6 +486,10 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
         tryCatch(DBI::dbRollback(conn), error = function (...) {}, warning = function (...) {})
         warn(paste("Cannot save section data:", cnd_message(e)))
         return(FALSE)
+      }, finally = {
+        if (conn_is_pool) {
+          pool::poolReturn(conn)
+        }
       })
     }
   ))

@@ -33,13 +33,38 @@ For instance, if the exam is available under `http://127.0.0.1:8181/exam.Rmd`, t
 If the user accessing this page does not have grading permissions, the user will see only their individual feedback (if the feedback has been made public already).
 Only users with grading permissions are able to access the grading interface.
 
-
 ## Using the grading interface
 
-![Grading interface.](figures/grading/overview.png){width=90%}
+![Grading interface.](figures/grading/overview.png){width=75%}
 
-At the top of the grading interface are two controls to select the learner (center) and the learner's attempt (right).
-The button at the top right is to export the grades for all learners as CSV file.
+At the top of the grading interface is the control bar for selecting the learner (center) and the learner's attempt:
 
+![Control bar.](figures/grading/control_bar.png){width=100%}
 
+Attempts are identified and ordered by the time they have been finished (i.e., the last section was submitted).
+By default, the learner's latest finished attempt is selected.
+You can also select un-finished attempts
+Selecting the learner/attempt will re-render the page in the state as shown to the learner for this attempt, and update the solutions according to the realized values.
+The button on the far right exports grades for all learners.
+[See below](#exporting-grades) for details on the export.
+
+### Grading a question
+
+![Question in the grading interface.](figures/grading/question.png){width=100%}
+
+You can set the number of points awarded to the learner for their answer using the input at the top right corner of every question.
+You can add an individual comment, only visible to this learner, by clicking on the "+" button next to the points:
+
+![Adding an individual comment to a question.](figures/grading/question_comment.png){width=100%}
+
+The comment can be removed by clicking on the "&times;" button.
+Points and comments are automatically saved as soon as they entered.
+
+### Exporting grades
+
+Grades for all learners and attempts are exported by clicking on the download button at the far right of the control bar.
+
+ exam     exam_version    user_id         attempt           question                      submitted                                           points         points_available
+-------  --------------  ------------   -------------   ----------------    ----------------------------------------------------------  ----------------  ------------------------------------------
+exam id   exam version    learner id     attempt id      question label      date-time of submission (`NA` for un-finished attempts)     points awarded    total points available for the question
 

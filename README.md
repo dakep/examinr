@@ -56,19 +56,17 @@ devtools::install_github("dakep/examinr")
     (for users).
   - High-contrast theme and screen-reader friendly output
 
-## Missing features
+## Features to be added
 
-The package is still in a development phase and some features are not
-yet available, most notably the following:
+The package is still in a development phase and some features are not yet available, most notably the following:
 
   - No authentication provider is available which requires users to log
     in on the exam page before accessing the exam. This may be useful in
     situations where RStudio Connect is not available or where users
     don’t have a user on the RStudio Connect installation
   - Reloading the page clears all input.
-  - Only one input per text question. Allowing more than one input
-    (e.g., for the lower and upper bounds of confidence intervals) is in
-    the works.
+  - Only one input per text question.
+  - No file upload questions.
   - Rendering of help pages is not very nice.
   - No auto-grading of code exercises.
 

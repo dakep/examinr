@@ -4,7 +4,7 @@ desc: >
   Learn how to write exams with examinr.
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Writing exams with examir}
+  %\VignetteIndexEntry{Writing exams with examinr}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

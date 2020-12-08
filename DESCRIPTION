@@ -32,6 +32,7 @@ Imports:
   yaml
 Suggests:
   DBI,
+  pool,
   testthat
 Collate:
     'authentication_provider.R'

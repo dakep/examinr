@@ -64,11 +64,11 @@ The attempt configuration consists of the following options
 
 Option          Description                                                                                               Default value
 ----------      -------------------------------------------------------------------------------------------------------   ----------------
-`opens`         date-time when the exam "opens", i.e., becomes available to users                                        `NA`
-`closes`        date-time when the exam "closes", i.e., becomes unavailable to users                                     `NA`
-`max_attempts`  number of attempts a user is afforded                                                                    `Inf`
-`timelimit`     time a user can take for a single attempt                                                                `Inf`
-`grace_period`  seconds a user has to submit an unfinished attempt after the time limit has passed or the exam closed    `NA`
+`opens`         date-time when the exam "opens", i.e., becomes available to users                                          `NA`
+`closes`        date-time when the exam "closes", i.e., becomes unavailable to users                                       `NA`
+`max_attempts`  number of attempts a user is afforded                                                                      `Inf`
+`timelimit`     time a user can take for a single attempt                                                                  `Inf`
+`grace_period`  seconds a user has to submit an unfinished attempt after the time limit has passed or the exam closed      `NA`
 
 
 The default attempt configuration (i.e., the configuration applying to all users unless overridden) is set in the YAML front matter of the exam document via options passed on to the output format `exam_document()`, e.g.:

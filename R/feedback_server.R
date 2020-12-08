@@ -250,10 +250,15 @@ grades_download_handler <- function (exam_metadata, req) {
                        strftime(Sys.time(), format = '%Y%m%dT%H%M%S%Z'))
 
       grades <- lapply(all_attempts, function (at) {
-        if (!is.null(at$finished_at) && length(at$points) > 0L) {
+        if (length(at$points) > 0L) {
+          submitted <- if (is.null(at$finished_at)) {
+            NA_character_
+          } else {
+            strftime(at$finished_at, '%Y%m%dT%H%M%S%z')
+          }
           list(user_id = rep.int(at$user$user_id, length(at$points)),
                attempt = rep.int(at$id, length(at$points)),
-               submitted = rep.int(strftime(at$finished_at, '%Y%m%dT%H%M%S%z'), length(at$points)),
+               submitted = rep.int(submitted, length(at$points)),
                question = names(at$points),
                points = vapply(at$points, `[[`, 'points', FUN.VALUE = numeric(1L), USE.NAMES = FALSE),
                max_points = vapply(at$points, `[[`, 'max_points', FUN.VALUE = numeric(1L), USE.NAMES = FALSE))

@@ -2,6 +2,32 @@ url: https://dakep.github.io/examinr
 template:
   params:
     bootswatch: cosmo
+
+navbar:
+  components:
+    home: ~
+    articles:
+     text: Articles
+     menu:
+     - text: Content
+     - text: Randomization
+       href: articles/randomized_exam.html
+     - text: Question types
+       href: articles/question_types.html
+     - text: Coding exercises
+       href: articles/exercises.html
+     - text: -------
+     - text: Grading
+       href: articles/grading.html
+     - text: Deploying
+       href: articles/deployment.html
+     - text: -------
+     - text: Configuration
+     - text: Controlling access to exams
+       href: articles/config_access.html
+     - text: Storage configuration
+       href: articles/config_storage.html
+
 reference:
 - title: Questions
   desc: Create questions of different types.

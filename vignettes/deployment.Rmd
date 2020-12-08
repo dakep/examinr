@@ -1,0 +1,112 @@
+---
+title: "Deploying exams"
+desc: >
+  Learn how to deploy exams to a Shiny server.
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Deploying exams}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", error = TRUE, warning = TRUE)
+esc <- function(code) {
+  sprintf('`r %s`', rlang::enexprs(code))
+}
+begin_rmd_block <- function(header = 'r') {
+  sprintf('```{%s}', header)
+}
+end_rmd_block <- function(header) {
+  '```'
+}
+```
+
+Exams can be easily developed and debugged locally, but to make them available to your learners, you must deploy the exam to a Shiny server.
+Deploying the exam requires you to think, at least a little bit, about some of the more technical details of the server infrastructure.
+
+## Security considerations
+
+As explained also in the [companion vignette on coding exercises](exercises.html), coding exercise allow learners to run arbitrary R code on the server.
+This is a big security issue, as learners may
+
+* access confidential information,
+* inject harmful code and take over the server,
+* disrupt the exam for everyone.
+
+You need to take precautions to limit the access learners get to the server when running exercise code.
+Most importantly, the user running the shiny process should have as restrictive permissions on the server as possible.
+See the documentation for your shiny server to find out how to set the user running the shiny app process.
+The default `future_evaluator()` sanitizes the environment variables available to the R process, but the R process still has the same privileges as the shiny app process.
+You are strongly encouraged to use [RAppArmor](https://cran.r-project.org/package=RAppArmor) to restrict the permissions of the R process executing the learners' code.
+
+## Database connection
+
+If you don't have much experience with server administration, setting up the database to store the exam data may be the most intriguing challenge for deploying exams.
+If you have only a small number of learners (< 20), you can choose to use a local SQLite database via the [RSQLite package](https://cran.r-project.org/package=RSQLite).
+
+An SQLite database, which is basically a single file, can be easily set up from within R and you don't need any other software on the server.
+You must create a separate SQLite database for each exam.
+
+**Important:** if you use RStudio Connect, Shiny Server Pro, or any other Shiny server where you can configure how many processes an app can use, you must limit it to **only 1 process**.
+SQLite databases don't support concurrent access.
+You can, however, use multiple processes to evaluate coding exercises, if you use them in your exam.
+
+For larger numbers of learners, there is unfortunately no way around configuring a more potent storage provider.
+
+Setting up the required SQLite database can be done from within R, executed on the server.
+Note that the path to the database file (in the code chunk below _/var/run/examinr-my_first_exam.sqlite_ must be writable by the user creating the database and the user running the shiny process:
+
+```r
+library(RSQLite)
+# Create an SQLite database for the exam "my_first_exam"
+db_con <- dbConnect(RSQLite::SQLite(), "/var/run/examinr-my_first_exam.sqlite")
+
+# Create the attempts table (SQLite doesn't have a UUID type)
+dbExecute(db_con, 'CREATE TABLE attempts (
+  attempt_id   varchar(36) PRIMARY KEY,
+  user_id      varchar(64) NOT NULL,
+  exam_id      varchar(64) NOT NULL,
+  exam_version varchar(64) NOT NULL,
+  user_obj     text        NOT NULL,
+  seed         integer     NOT NULL,
+  started_at   timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  finished_at  timestamp,
+  points       text
+)')
+# Create an index on the attempts table
+dbExecute(db_con, 'CREATE INDEX attempts_index ON attempts (user_id, exam_id, exam_version)')
+
+# Create the section data table
+dbExecute(db_con, 'CREATE TABLE section_data (
+  id           integer      PRIMARY KEY,
+  attempt_id   varchar(36)  NOT NULL,
+  section      varchar(64)  NOT NULL,
+  saved_at     timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  section_data text
+)')
+# Create an index on the section data table
+dbExecute(db_con, 'CREATE INDEX section_data_index ON section_data (attempt_id, section)')
+```
+
+This must be done for every exam, such that you have one database file per exam.
+
+In your exam document, you would configure the `dbi_storage_provider()` as follows:
+
+```r
+#! context="server-start"
+library(pool)
+
+# Create a pool of connections to your SQLite database.
+# Important: minSize and maxSize must be 1, as SQLite does not support more than one connection!
+db_pool <- dbPool(drv = RSQLite::SQLite(),
+                  dbname = "/var/run/examinr-my_first_exam.sqlite",
+                  minSize = 1,
+                  maxSize = 1)
+
+# Close all connections in the pool shiny stops
+shiny::onStop(function () { poolClose(db_pool) })
+
+# Use this database as storage for the exam
+exam_config(storage_provider = dbi_storage_provider(db_pool, 'attempts', 'section_data'))
+```

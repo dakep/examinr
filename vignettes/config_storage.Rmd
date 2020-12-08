@@ -195,7 +195,7 @@ db_pool <- dbPool(drv = RPostgres::Postgres(),
                   minSize = 1,
                   maxSize = 2)
 
-# Disconnect from the DB when shiny stops (this also destroys the ephemeral database!)
+# Close all connections in the pool shiny stops
 shiny::onStop(function () { poolClose(db_pool) })
 
 # Use this database as storage for the exam

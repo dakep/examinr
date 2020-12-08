@@ -1,0 +1,15 @@
+.figure {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.figure img {
+  outline: 1px solid #aaa;
+  outline-offset: 0.5rem;
+}
+
+.figure .caption {
+  margin-top: 1rem;
+  color: #444;
+  font-size: 0.9em;
+}
