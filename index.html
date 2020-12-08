@@ -11,7 +11,8 @@
 <script src="bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
-<script src="pkgdown.js"></script><meta property="og:title" content="Online Exams in R via Interactive Shiny Documents">
+<script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
+<meta property="og:title" content="Online Exams in R via Interactive Shiny Documents">
 <meta property="og:description" content="Create online exams in R as interactive shiny documents.
   Supports multiple types of questions, coding exercises, randomization,
   and online grading.">
@@ -40,12 +41,6 @@
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
-  <a href="index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
-<li>
   <a href="articles/examinr.html">Get started</a>
 </li>
 <li>
@@ -58,23 +53,30 @@
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
-<li>
-      <a href="articles/config_access.html">Controlling access to exams</a>
-    </li>
+<li class="dropdown-header">Content</li>
     <li>
-      <a href="articles/config_storage.html">Storage configuration</a>
-    </li>
-    <li>
-      <a href="articles/exercises.html">Coding exercises</a>
-    </li>
-    <li>
-      <a href="articles/grading.html">Grading exams</a>
+      <a href="articles/randomized_exam.html">Randomization</a>
     </li>
     <li>
       <a href="articles/question_types.html">Question types</a>
     </li>
     <li>
-      <a href="articles/randomized_exam.html">Randomizing exams</a>
+      <a href="articles/exercises.html">Coding exercises</a>
+    </li>
+    <li class="divider">
+    <li>
+      <a href="articles/grading.html">Grading</a>
+    </li>
+    <li>
+      <a href="articles/deployment.html">Deploying</a>
+    </li>
+    <li class="divider">
+    <li class="dropdown-header">Configuration</li>
+    <li>
+      <a href="articles/config_access.html">Controlling access to exams</a>
+    </li>
+    <li>
+      <a href="articles/config_storage.html">Storage configuration</a>
     </li>
   </ul>
 </li>
@@ -104,8 +106,8 @@
 <!-- begin badges -->
 <!-- [![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/examinr)](https://CRAN.R-project.org/package=examinr) -->
 
-<p>Create gradable exams as interactive Shiny documents from R Markdown documents. Learners can attempt an exam one or more times, and each attempt uses specific random seed to generate the question text and answers.</p>
-<p>For a full list of features and to learn how to create your own exams, visit the documentation at <a href="https://dakep.github.io/examinr" class="uri">https://dakep.github.io/examinr</a>.</p>
+<p>Create gradable exams as interactive Shiny documents from R markdown documents. Learners can attempt an exam one or more times, and each attempt uses a (potentially) different random seed to generate the question text and answers.</p>
+<p>For a full list of features and to learn how to create your own exams, visit the documentation at <a href="https://dakep.github.io/examinr/articles/examinr.html">https://dakep.github.io/examinr</a>.</p>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
 <a href="#installation" class="anchor"></a>Installation</h2>
@@ -146,23 +148,24 @@
 <li>High-contrast theme and screen-reader friendly output</li>
 </ul>
 </div>
-<div id="missing-features" class="section level2">
+<div id="features-to-be-added" class="section level2">
 <h2 class="hasAnchor">
-<a href="#missing-features" class="anchor"></a>Missing features</h2>
+<a href="#features-to-be-added" class="anchor"></a>Features to be added</h2>
 <p>The package is still in a development phase and some features are not yet available, most notably the following:</p>
 <ul>
-<li>No authentication provider is available which requires users to log in on the exam page before accessing the exam. This may be useful in situations where RStudio Connect is not available or where users don’t have a user on the RStudio Connect installation</li>
-<li>Reloading the page clears all input.</li>
-<li>Only one input per text question. Allowing more than one input (e.g., for the lower and upper bounds of confidence intervals) is in the works.</li>
-<li>Rendering of help pages is not very nice.</li>
-<li>No auto-grading of code exercises.</li>
+<li>Authentication provider requiring users to log in on the exam page before accessing the exam. This may be useful in situations where RStudio Connect is not available or where users don’t have an account on the RStudio Connect installation.</li>
+<li>File upload question.</li>
+<li>Re-populate input values from client-side storage after page reload.</li>
+<li>Multiple text inputs per text question.</li>
+<li>Improved rendering of help pages.</li>
+<li>Support of auto-grading for code exercises.</li>
 </ul>
-<p>If you are looking for specific features which are not yet supported by examinr and not yet requested, please create an <a href="https://github.com/dakep/examinr/issues">issues</a> or, even better, a <a href="https://github.com/dakep/examinr/pulls">pull request</a>.</p>
+<p>If you are looking for specific features which are not yet supported by examinr and not yet requested, please create an <a href="https://github.com/dakep/examinr/issues">issue</a> or, even better, a <a href="https://github.com/dakep/examinr/pulls">pull request</a>.</p>
 </div>
 <div id="acknowledgments" class="section level2">
 <h2 class="hasAnchor">
 <a href="#acknowledgments" class="anchor"></a>Acknowledgments</h2>
-<p>Many features in examinr are inspired from the <a href="https://github.com/rstudio/learnr">learnr</a> package, in particular the exercises.</p>
+<p>Several features in examinr are inspired by the <a href="https://github.com/rstudio/learnr">learnr</a> package, in particular the exercises.</p>
 </div>
 </div>
   </div>

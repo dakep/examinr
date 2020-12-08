@@ -38,6 +38,8 @@
 
 
 
+  <link href="../extra.css" rel="stylesheet">
+  
 
 <meta property="og:title" content="Exam Configuration — exam_config" />
 <meta property="og:description" content="Set the global exam configuration. Must be called from the server context
@@ -80,12 +82,6 @@
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
-<li>
   <a href="../articles/examinr.html">Get started</a>
 </li>
 <li>
@@ -98,23 +94,30 @@
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
+    <li class="dropdown-header">Content</li>
     <li>
-      <a href="../articles/config_access.html">Controlling access to exams</a>
-    </li>
-    <li>
-      <a href="../articles/config_storage.html">Storage configuration</a>
-    </li>
-    <li>
-      <a href="../articles/exercises.html">Coding exercises</a>
-    </li>
-    <li>
-      <a href="../articles/grading.html">Grading exams</a>
+      <a href="../articles/randomized_exam.html">Randomization</a>
     </li>
     <li>
       <a href="../articles/question_types.html">Question types</a>
     </li>
     <li>
-      <a href="../articles/randomized_exam.html">Randomizing exams</a>
+      <a href="../articles/exercises.html">Coding exercises</a>
+    </li>
+    <li class="divider"></li>
+    <li>
+      <a href="../articles/grading.html">Grading</a>
+    </li>
+    <li>
+      <a href="../articles/deployment.html">Deploying</a>
+    </li>
+    <li class="divider"></li>
+    <li class="dropdown-header">Configuration</li>
+    <li>
+      <a href="../articles/config_access.html">Controlling access to exams</a>
+    </li>
+    <li>
+      <a href="../articles/config_storage.html">Storage configuration</a>
     </li>
   </ul>
 </li>
@@ -330,7 +333,7 @@ The seed changes with the attempt, but all users in a group will get the same se
 #&gt;   user_id &lt;- shiny_session$user
 #&gt;   return(list(user_id = user_id, seed = digest::digest2int(shiny_session$user)))
 #&gt; }
-#&gt; &lt;environment: 0x91f9228&gt;</div><div class='input'><span class='co'># Use the RStudio Connect user and assign the same seed for all users with the same first letter.</span>
+#&gt; &lt;environment: 0x8fbeda0&gt;</div><div class='input'><span class='co'># Use the RStudio Connect user and assign the same seed for all users with the same first letter.</span>
 <span class='kw'>function</span> <span class='op'>(</span><span class='va'>shiny_session</span><span class='op'>)</span> <span class='op'>{</span>
   <span class='va'>user_id</span> <span class='op'>&lt;-</span> <span class='va'>shiny_session</span><span class='op'>$</span><span class='va'>user</span>
   <span class='kw'><a href='https://rdrr.io/r/base/function.html'>return</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>user_id <span class='op'>=</span> <span class='va'>user_id</span>,
@@ -345,7 +348,7 @@ The seed changes with the attempt, but all users in a group will get the same se
 #&gt; 
 #&gt;               }))
 #&gt; }
-#&gt; &lt;environment: 0x91f9228&gt;</div><div class='input'>
+#&gt; &lt;environment: 0x8fbeda0&gt;</div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

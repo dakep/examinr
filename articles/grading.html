@@ -11,7 +11,8 @@
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../pkgdown.js"></script><meta property="og:title" content="Grading exams">
+<script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
+<meta property="og:title" content="Grading exams">
 <meta property="og:description" content="examinr">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -38,12 +39,6 @@
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
-  <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
-<li>
   <a href="../articles/examinr.html">Get started</a>
 </li>
 <li>
@@ -56,23 +51,30 @@
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
-<li>
-      <a href="../articles/config_access.html">Controlling access to exams</a>
-    </li>
+<li class="dropdown-header">Content</li>
     <li>
-      <a href="../articles/config_storage.html">Storage configuration</a>
-    </li>
-    <li>
-      <a href="../articles/exercises.html">Coding exercises</a>
-    </li>
-    <li>
-      <a href="../articles/grading.html">Grading exams</a>
+      <a href="../articles/randomized_exam.html">Randomization</a>
     </li>
     <li>
       <a href="../articles/question_types.html">Question types</a>
     </li>
     <li>
-      <a href="../articles/randomized_exam.html">Randomizing exams</a>
+      <a href="../articles/exercises.html">Coding exercises</a>
+    </li>
+    <li class="divider">
+    <li>
+      <a href="../articles/grading.html">Grading</a>
+    </li>
+    <li>
+      <a href="../articles/deployment.html">Deploying</a>
+    </li>
+    <li class="divider">
+    <li class="dropdown-header">Configuration</li>
+    <li>
+      <a href="../articles/config_access.html">Controlling access to exams</a>
+    </li>
+    <li>
+      <a href="../articles/config_storage.html">Storage configuration</a>
     </li>
   </ul>
 </li>
@@ -118,9 +120,52 @@
 <h2 class="hasAnchor">
 <a href="#using-the-grading-interface" class="anchor"></a>Using the grading interface</h2>
 <div class="figure">
-<img src="figures/grading/overview.png" alt="Grading interface." style="width:90.0%"><p class="caption">Grading interface.</p>
+<img src="figures/grading/overview.png" alt="Grading interface." style="width:75.0%"><p class="caption">Grading interface.</p>
 </div>
-<p>At the top of the grading interface are two controls to select the learner (center) and the learner’s attempt (right). The button at the top right is to export the grades for all learners as CSV file.</p>
+<p>At the top of the grading interface is the control bar for selecting the learner (center) and the learner’s attempt:</p>
+<div class="figure">
+<img src="figures/grading/control_bar.png" alt="Control bar." style="width:100.0%"><p class="caption">Control bar.</p>
+</div>
+<p>Attempts are identified and ordered by the time they have been finished (i.e., the last section was submitted). By default, the learner’s latest finished attempt is selected. You can also select un-finished attempts Selecting the learner/attempt will re-render the page in the state as shown to the learner for this attempt, and update the solutions according to the realized values. The button on the far right exports grades for all learners. <a href="#exporting-grades">See below</a> for details on the export.</p>
+<div id="grading-a-question" class="section level3">
+<h3 class="hasAnchor">
+<a href="#grading-a-question" class="anchor"></a>Grading a question</h3>
+<div class="figure">
+<img src="figures/grading/question.png" alt="Question in the grading interface." style="width:100.0%"><p class="caption">Question in the grading interface.</p>
+</div>
+<p>You can set the number of points awarded to the learner for their answer using the input at the top right corner of every question. You can add an individual comment, only visible to this learner, by clicking on the “+” button next to the points:</p>
+<div class="figure">
+<img src="figures/grading/question_comment.png" alt="Adding an individual comment to a question." style="width:100.0%"><p class="caption">Adding an individual comment to a question.</p>
+</div>
+<p>The comment can be removed by clicking on the “×” button. Points and comments are automatically saved as soon as they entered.</p>
+</div>
+<div id="exporting-grades" class="section level3">
+<h3 class="hasAnchor">
+<a href="#exporting-grades" class="anchor"></a>Exporting grades</h3>
+<p>Grades for all learners and attempts are exported by clicking on the download button at the far right of the control bar.</p>
+<table class="table">
+<thead><tr class="header">
+<th align="center">exam</th>
+<th align="center">exam_version</th>
+<th align="center">user_id</th>
+<th align="center">attempt</th>
+<th align="center">question</th>
+<th align="center">submitted</th>
+<th align="center">points</th>
+<th align="center">points_available</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td align="center">exam id</td>
+<td align="center">exam version</td>
+<td align="center">learner id</td>
+<td align="center">attempt id</td>
+<td align="center">question label</td>
+<td align="center">date-time of submission (<code>NA</code> for un-finished attempts)</td>
+<td align="center">points awarded</td>
+<td align="center">total points available for the question</td>
+</tr></tbody>
+</table>
+</div>
 </div>
   </div>
 
