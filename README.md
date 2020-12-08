@@ -13,13 +13,14 @@ released](https://img.shields.io/badge/CRAN-not%20yet%20released-red.svg)
 Status](https://travis-ci.com/dakep/examinr.svg?branch=main)](https://travis-ci.com/dakep/examinr)
 <!-- end badges -->
 
-Create gradable exams as interactive Shiny documents from R Markdown
+Create gradable exams as interactive Shiny documents from R markdown
 documents. Learners can attempt an exam one or more times, and each
-attempt uses specific random seed to generate the question text and
-answers.
+attempt uses a (potentially) different random seed to generate the
+question text and answers.
 
 For a full list of features and to learn how to create your own exams,
-visit the documentation at <https://dakep.github.io/examinr>.
+visit the documentation at
+[https://dakep.github.io/examinr](https://dakep.github.io/examinr/articles/examinr.html).
 
 ## Installation
 
@@ -58,25 +59,26 @@ devtools::install_github("dakep/examinr")
 
 ## Features to be added
 
-The package is still in a development phase and some features are not yet available, most notably the following:
+The package is still in a development phase and some features are not
+yet available, most notably the following:
 
-  - No authentication provider is available which requires users to log
-    in on the exam page before accessing the exam. This may be useful in
-    situations where RStudio Connect is not available or where users
-    don’t have a user on the RStudio Connect installation
-  - Reloading the page clears all input.
-  - Only one input per text question.
-  - No file upload questions.
-  - Rendering of help pages is not very nice.
-  - No auto-grading of code exercises.
+  - Authentication provider requiring users to log in on the exam page
+    before accessing the exam. This may be useful in situations where
+    RStudio Connect is not available or where users don’t have an
+    account on the RStudio Connect installation.
+  - File upload question.
+  - Re-populate input values from client-side storage after page reload.
+  - Multiple text inputs per text question.
+  - Improved rendering of help pages.
+  - Support of auto-grading for code exercises.
 
 If you are looking for specific features which are not yet supported by
 examinr and not yet requested, please create an
-[issues](https://github.com/dakep/examinr/issues) or, even better, a
+[issue](https://github.com/dakep/examinr/issues) or, even better, a
 [pull request](https://github.com/dakep/examinr/pulls).
 
 ## Acknowledgments
 
-Many features in examinr are inspired from the
+Several features in examinr are inspired by the
 [learnr](https://github.com/rstudio/learnr) package, in particular the
 exercises.
