@@ -77,7 +77,7 @@ exam_document <- function (id = 'exam', version = '0.1', use_cdn = FALSE, render
     abort("Exam documents must have an id!")
   }
 
-  if (!is.na(feedback) && !identical(feedback, 'immediately')) {
+  if (!all(is.na(feedback)) && !is.null(feedback) && !isFALSE(feedback) && !identical(feedback, 'immediately')) {
     feedback <- parse_datetime(feedback)
   }
 

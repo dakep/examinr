@@ -15,18 +15,16 @@
 #' Note that pandoc heading identifiers (anything in `{}` at the end of the section title) are omitted from the name.
 #'
 #' @param section name of the section for which to set configuration options.
-#' @param next_button_label the label for the button at the end of a section.
+#' @param button_label the label for the button at the end of a section.
 #'   Default button label is _Submit answers_.
 #'   If `progressive=FALSE`, only the button in the last section will be displayed.
-#'   Buttons can be hidden for specific sections via `section_specific_options(next_button_label=NA)`. This is only
-#'   useful for progressive exams where the last section is only for information purposes.
 #' @param fix_order logical if the section should remain fixed in order.
 #'
 #' @importFrom rlang is_missing abort
 #' @importFrom knitr opts_knit knit_meta_add
 #' @family exam configuration
 #' @export
-section_config <- function (section, next_button_label, fix_order) {
+section_config <- function (section, button_label, fix_order) {
   section <- normalize_string(section)
   knitting <- FALSE
 
@@ -38,7 +36,7 @@ section_config <- function (section, next_button_label, fix_order) {
   if (isTRUE(opts_knit$get('examinr.initial_pass'))) {
     knit_meta_add(list(structure(
       list(section = section,
-           btn_label = next_button_label %||% NULL,
+           btn_label = button_label %|NA|% NULL,
            fixed = fix_order %||% NULL),
       class = 'examinr_section_config_overrides')))
   }

@@ -38,6 +38,7 @@ The question is by default multiple-choice (argument `mc=TRUE`) and answer optio
 The following R code produces a simple MC question displayed below
 
 ```r
+#! context="render"
 mc_question(
   title = "If $X$ follows a standard Normal distribution, what statements are true?",
   points = 2,
@@ -70,6 +71,7 @@ Assume the data provider randomly draws the value of the test statistic (`test_s
 The MC question can be written as:
 
 ```r
+#! context="render"
 mc_question(title = "Does the test reject the null at a significance level of `r esc(significance_level)`?",
             answer("Yes", correct = abs(test_stat) >= crit_value),
             answer("No", correct = abs(test_stat) < crit_value))
@@ -120,6 +122,7 @@ If you would set `min_points=-0.5`, for example, a learner may be penalized with
 Considering the example from above (but ignoring randomization)
 
 ```r
+#! context="render"
 mc_question(
   title = "If $X$ follows a standard Normal distribution, what statements are true?",
   points = 2, nr_answers = 8, random_answer_order = FALSE,
@@ -145,7 +148,6 @@ This is also shown on the feedback page (for 3 different response patterns):
 By default `mc_question()` randomly selects from the pool of supplied answer options and also randomizes the order of the answer options.
 You can disable the shuffling by setting the argument `mc_question(random_answer_order=)` to `FALSE`.
 If you want an answer option to be always displayed, you can set the argument `answer(always_show=)` to `TRUE`.
-
 
 ## Text questions
 

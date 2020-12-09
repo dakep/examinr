@@ -142,6 +142,7 @@ To leverage asynchronous evaluation of user code you must use `future::plan()` t
 The following plan is the minimum recommended for asynchronous evaluation, but more worker processes may be necessary for exams with heavy computing:
 
 ```r
+#! context="server-start"
 library(future)
 plan(cluster, workers = 1)
 ```

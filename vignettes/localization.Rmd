@@ -1,0 +1,53 @@
+---
+title: "Localizing exams"
+desc: >
+  Learn how to write exams for non-english speakers.
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Localizing exams}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", error = TRUE, warning = TRUE)
+esc <- function(code) {
+  sprintf('`r %s`', rlang::enexprs(code))
+}
+begin_rmd_block <- function(header = 'r') {
+  sprintf('```{%s}', header)
+}
+end_rmd_block <- function(header) {
+  '```'
+}
+```
+
+Exams are typically a stressful and task for learners.
+You may not want to add an extra layer of difficulty for your learners if they are not English speakers.
+The examinr package allows you to customize and translate every message the user may encounter during an exam: error messages,
+status messages, buttons, and so on.
+
+In examinr, these strings are generally referred to as _status messages_.
+The package comes with pre-defined status messages in English, stored in a YAML file.
+These messages are loaded as the examinr package is loaded.
+
+You can overwrite the default status messages by loading them from your own YAML file with `status_messages()`.
+This YAML file can be created by calling `status_message_template()` from an interactive R session on your local computer.
+In an R session with working directory set to the folder containing the exam document, run
+
+```r
+library(examinr)
+status_message_template("www/examinr_messages.yaml")
+```
+
+to create the file *examinr_messages.yaml* in sub-directory _www_.
+(Note: exam documents are shiny prerendered documents, as such the file **must** be located in the _www_ sub-directory to be available at run-time.)
+This file contains all default status messages used by examinr.
+To define your own status messages, edit the file and ensure it is saved in _UTF-8_ encoding.
+
+You can include your custom set of status messages in the exam document via
+
+```r
+#! context="server-start"
+status_messages("www/examinr_messages.yaml")
+```

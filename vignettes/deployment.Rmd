@@ -35,20 +35,20 @@ This is a big security issue, as learners may
 * disrupt the exam for everyone.
 
 You need to take precautions to limit the access learners get to the server when running exercise code.
-Most importantly, the user running the shiny process should have as restrictive permissions on the server as possible.
+Most importantly, the user running the shiny process (not to be confused with the _user_ taking the exam) should have as restrictive permissions on the server as possible.
 See the documentation for your shiny server to find out how to set the user running the shiny app process.
-The default `future_evaluator()` sanitizes the environment variables available to the R process, but the R process still has the same privileges as the shiny app process.
+The default `future_evaluator()` sanitizes the environment variables available to the R process, but the R process still has the same privileges as the shiny process.
 You are strongly encouraged to use [RAppArmor](https://cran.r-project.org/package=RAppArmor) to restrict the permissions of the R process executing the learners' code.
 
 ## Database connection
 
 If you don't have much experience with server administration, setting up the database to store the exam data may be the most intriguing challenge for deploying exams.
-If you have only a small number of learners (< 20), you can choose to use a local SQLite database via the [RSQLite package](https://cran.r-project.org/package=RSQLite).
+If you have only a small number of learners (< 30), you can choose to use a local SQLite database via the [RSQLite package](https://cran.r-project.org/package=RSQLite).
 
 An SQLite database, which is basically a single file, can be easily set up from within R and you don't need any other software on the server.
 You must create a separate SQLite database for each exam.
 
-**Important:** if you use RStudio Connect, Shiny Server Pro, or any other Shiny server where you can configure how many processes an app can use, you must limit it to **only 1 process**.
+**Important:** if you choose to use an SQlite database and if you use RStudio Connect, Shiny Server Pro, or any other shiny server where the exam would be distributed across several processes, you must limit it to **only 1 process**.
 SQLite databases don't support concurrent access.
 You can, however, use multiple processes to evaluate coding exercises, if you use them in your exam.
 

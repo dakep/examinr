@@ -1,0 +1,4 @@
+name: Exam
+description: >
+  An exam created with examinr.
+create_dir: true

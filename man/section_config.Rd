@@ -4,16 +4,14 @@
 \alias{section_config}
 \title{Exam Section Configuration}
 \usage{
-section_config(section, next_button_label, fix_order)
+section_config(section, button_label, fix_order)
 }
 \arguments{
 \item{section}{name of the section for which to set configuration options.}
 
-\item{next_button_label}{the label for the button at the end of a section.
+\item{button_label}{the label for the button at the end of a section.
 Default button label is \emph{Submit answers}.
-If \code{progressive=FALSE}, only the button in the last section will be displayed.
-Buttons can be hidden for specific sections via \code{section_specific_options(next_button_label=NA)}. This is only
-useful for progressive exams where the last section is only for information purposes.}
+If \code{progressive=FALSE}, only the button in the last section will be displayed.}
 
 \item{fix_order}{logical if the section should remain fixed in order.}
 }

@@ -1,0 +1,55 @@
+---
+title: "Exam"
+lang: en-US
+output:
+  examinr::exam_document:
+    id: exam
+    version: 0.1.0
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# Load the package
+library(examinr)
+knitr::opts_chunk$set(echo = FALSE)
+
+# Define the data provider for any values in the R markdown document
+data_provider(function (section, ...) {
+  list(
+    sample = rnorm(10)
+  )
+})
+
+```
+
+```{r, context="server-start"}
+# Evaluate exercises asynchronously in 1 worker process
+future::plan(future::cluster, workers = 1)
+
+```
+
+# Introduction
+
+This exam was created with examinr.
+
+# Questions
+
+Consider a sample of $n=10$ i.i.d. normally distributed random variables:
+
+<div class="text-monospace text-center">
+
+`r paste(sprintf("%.3f", sample), sep = ", ")`
+
+</div>
+
+```{r question_1}
+text_question(
+  title = "What is the maximum likelihood estimate for the mean?",
+  type = "numeric",
+  solution = mean(sample))
+```
+
+# Done!
+
+Congratulations!
+You have successfully submitted your answers to this exam.

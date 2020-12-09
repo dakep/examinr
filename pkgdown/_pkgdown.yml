@@ -23,10 +23,14 @@ navbar:
        href: articles/deployment.html
      - text: -------
      - text: Configuration
+     - text: Section navigation
+       href: articles/navigation.html
      - text: Controlling access to exams
        href: articles/config_access.html
      - text: Storage configuration
        href: articles/config_storage.html
+     - text: Localization
+       href: articles/localization.html
 
 reference:
 - title: Questions

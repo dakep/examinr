@@ -1,0 +1,107 @@
+---
+title: "Configuring exam navigation"
+desc: >
+  Learn how to configure how learners navigate through an exam.
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Configuring exam navigation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", error = TRUE, warning = TRUE)
+esc <- function(code) {
+  sprintf('`r %s`', rlang::enexprs(code))
+}
+begin_rmd_block <- function(header = 'r') {
+  sprintf('```{%s}', header)
+}
+end_rmd_block <- function(header) {
+  '```'
+}
+```
+
+Exams are a collection of _sections_ and you can configure how learners will move through these sections via options set in the YAML front-matter of the exam document.
+There are two types of navigation available:
+
+* _progressive:_ learners have access to one section at a time and they can only move forward,
+* _all-at-once:_ learners have access to all sections at once.
+
+The following configuration options are relevant for section navigation:
+
+Option              Description
+---------------     ------------------------------------------------------------------------
+`progressive`       Should the exam be progressive (`TRUE`) or all-at-once (`FALSE`).
+`order`             If the exam is progressive, should the order of the sections be randomized?
+
+The relevant part of the YAML front-matter to set these settings is:
+
+```yaml
+output:
+  examinr::exam_document:
+    progressive: yes
+    order: random
+```
+
+## Sections
+
+A _section_ in an exam document starts with a level-one heading, i.e., lines starting with a single hash `#`.
+The following R markdown document, for example has four sections: _Introduction_, _Confidence Intervals_, _MLE_, and _Done!_.
+
+```md
+# Introduction
+
+...
+
+# Confidence Intervals
+
+...
+
+# MLE
+
+...
+
+# Done!
+
+...
+```
+
+Anything between `# Introduction` and `# Confidence Intervals` is considered the content of section _Introduction_.
+
+### The "end" section
+Unless the exam is configured to show feedback immediately after the exam is submitted (i.e., `feedback="immediately"`), the last section, _Done!_, is treated differently from the rest.
+It is considered the "end" section, and you should use this section to let learners know they have finished the exam.
+
+The "end" section is a dead end and hence does not have a submit button at the bottom.
+It is always displayed last, even if the exam is configured to randomized the section order.
+
+Therefore, unless `feedback="immediately"`, an exam document must have at least two sections: at least one section with actual content and the "end" section.
+
+## Progressive exams
+
+In progressive exams, only a single section is displayed at any given time.
+To move on to the next section, learners must click the _submit_ button at the bottom of the section.
+This will save all their answers and the next section will be displayed.
+The exam is considered finished when the last section is submitted (not counting the "end" section).
+
+You can randomize the order in which a learner moves through the sections by setting the option `order="random"`.
+The "end" section will always be displayed last.
+
+### Section-specific configuration
+
+You can overwrite some settings for individual sections with `section_config()` in a R code chunk with _server-start_ context.
+You can change the label of the submit button, or fix the order of the section.
+
+In the above example, you may want to have the section _Introduction_ always in its original position (i.e., first) and use a different button label, e.g.,
+
+```r
+#! context="server-start"
+section_config("Introduction", fix_order = TRUE, button_label = "Start exam")
+```
+
+## All-at-once exams
+
+For all-at-once exams, the section order cannot be randomized and is always as given in the exam document.
+Only the last section (not including the "end" section) will have a submit button.
+This submit button will submit answers to all questions across all sections and will mark the exam as finished.

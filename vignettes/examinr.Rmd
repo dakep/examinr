@@ -34,6 +34,12 @@ They are only populated with the learners individualized content at the time the
 
 ## Creating an exam document
 
+You can create a new exam document from the provided R markdown template by following the [instructions for RStudio](https://rstudio.github.io/rstudio-extensions/rmarkdown_templates.html) or using the `rmarkdown::draft` function:
+
+```r
+rmarkdown::draft("newexam.Rmd", template = "exam", package = "examinr")
+```
+
 Exams are standard R markdown documents and are configured via the YAML front-matter.
 Let us consider the following simple exam document:
 

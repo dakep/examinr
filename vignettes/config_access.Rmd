@@ -49,6 +49,7 @@ The `rsconnect_auth()` authentication provider uses this information and allows 
 For example
 
 ```r
+#! context="server-start"
 exam_config(auth_provider = rsconnect_auth(grading_groups = c('instructor', 'ta')))
 ```
 
@@ -96,6 +97,7 @@ This is done by calling `configure_attempts()` in an R code chunk with `context=
 For instance, to give users _s443_ and _s872_ 2 hours for the exam, and give user _s221_ more attempts, you would use
 
 ```r
+#! context="server-start"
 configure_attempts(c("s443", "s872"), timelimit = "2:00")
 configure_attempts("s221", max_attempts = 3)
 ```
@@ -105,6 +107,7 @@ The last call to `configure_attempts()` for a certain user and specific option w
 The following example would give users _s443_, _s872_, and _s221_ 2 hours to complete the exam, but users _s443_ and _s872_ would get 3 attempts, while user _s221_ gets 4.
 
 ```r
+#! context="server-start"
 configure_attempts(c("s443", "s872", "s221"), timelimit = "2:00", max_attempts = 3)
 configure_attempts("s221", max_attempts = 4)
 ```
