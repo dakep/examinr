@@ -71,10 +71,16 @@
     <li class="divider">
     <li class="dropdown-header">Configuration</li>
     <li>
+      <a href="../articles/navigation.html">Section navigation</a>
+    </li>
+    <li>
       <a href="../articles/config_access.html">Controlling access to exams</a>
     </li>
     <li>
       <a href="../articles/config_storage.html">Storage configuration</a>
+    </li>
+    <li>
+      <a href="../articles/localization.html">Localization</a>
     </li>
   </ul>
 </li>
@@ -120,14 +126,14 @@
 <li>inject harmful code and take over the server,</li>
 <li>disrupt the exam for everyone.</li>
 </ul>
-<p>You need to take precautions to limit the access learners get to the server when running exercise code. Most importantly, the user running the shiny process should have as restrictive permissions on the server as possible. See the documentation for your shiny server to find out how to set the user running the shiny app process. The default <code><a href="../reference/exercise_evaluator.html">future_evaluator()</a></code> sanitizes the environment variables available to the R process, but the R process still has the same privileges as the shiny app process. You are strongly encouraged to use <a href="https://cran.r-project.org/package=RAppArmor">RAppArmor</a> to restrict the permissions of the R process executing the learners’ code.</p>
+<p>You need to take precautions to limit the access learners get to the server when running exercise code. Most importantly, the user running the shiny process (not to be confused with the <em>user</em> taking the exam) should have as restrictive permissions on the server as possible. See the documentation for your shiny server to find out how to set the user running the shiny app process. The default <code><a href="../reference/exercise_evaluator.html">future_evaluator()</a></code> sanitizes the environment variables available to the R process, but the R process still has the same privileges as the shiny process. You are strongly encouraged to use <a href="https://cran.r-project.org/package=RAppArmor">RAppArmor</a> to restrict the permissions of the R process executing the learners’ code.</p>
 </div>
 <div id="database-connection" class="section level2">
 <h2 class="hasAnchor">
 <a href="#database-connection" class="anchor"></a>Database connection</h2>
-<p>If you don’t have much experience with server administration, setting up the database to store the exam data may be the most intriguing challenge for deploying exams. If you have only a small number of learners (&lt; 20), you can choose to use a local SQLite database via the <a href="https://cran.r-project.org/package=RSQLite">RSQLite package</a>.</p>
+<p>If you don’t have much experience with server administration, setting up the database to store the exam data may be the most intriguing challenge for deploying exams. If you have only a small number of learners (&lt; 30), you can choose to use a local SQLite database via the <a href="https://cran.r-project.org/package=RSQLite">RSQLite package</a>.</p>
 <p>An SQLite database, which is basically a single file, can be easily set up from within R and you don’t need any other software on the server. You must create a separate SQLite database for each exam.</p>
-<p><strong>Important:</strong> if you use RStudio Connect, Shiny Server Pro, or any other Shiny server where you can configure how many processes an app can use, you must limit it to <strong>only 1 process</strong>. SQLite databases don’t support concurrent access. You can, however, use multiple processes to evaluate coding exercises, if you use them in your exam.</p>
+<p><strong>Important:</strong> if you choose to use an SQlite database and if you use RStudio Connect, Shiny Server Pro, or any other shiny server where the exam would be distributed across several processes, you must limit it to <strong>only 1 process</strong>. SQLite databases don’t support concurrent access. You can, however, use multiple processes to evaluate coding exercises, if you use them in your exam.</p>
 <p>For larger numbers of learners, there is unfortunately no way around configuring a more potent storage provider.</p>
 <p>Setting up the required SQLite database can be done from within R, executed on the server. Note that the path to the database file (in the code chunk below <em>/var/run/examinr-my_first_exam.sqlite</em> must be writable by the user creating the database and the user running the shiny process:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">

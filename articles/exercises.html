@@ -71,10 +71,16 @@
     <li class="divider">
     <li class="dropdown-header">Configuration</li>
     <li>
+      <a href="../articles/navigation.html">Section navigation</a>
+    </li>
+    <li>
       <a href="../articles/config_access.html">Controlling access to exams</a>
     </li>
     <li>
       <a href="../articles/config_storage.html">Storage configuration</a>
+    </li>
+    <li>
+      <a href="../articles/localization.html">Localization</a>
     </li>
   </ul>
 </li>
@@ -247,7 +253,8 @@
 <p>The examinr package sanitizes the environment variables to avoid possibly leaking secrets and other sensitive information to user code, but there are currently no other restrictions.</p>
 <p>To leverage asynchronous evaluation of user code you must use <code><a href="https://rdrr.io/pkg/future/man/plan.html">future::plan()</a></code> to configure the future strategy. The following plan is the minimum recommended for asynchronous evaluation, but more worker processes may be necessary for exams with heavy computing:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/HenrikBengtsson/future">future</a></span><span class="op">)</span>
+<code class="sourceCode R"><span class="co">#! context="server-start"</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/HenrikBengtsson/future">future</a></span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/pkg/future/man/plan.html">plan</a></span><span class="op">(</span><span class="va">cluster</span>, workers <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></code></pre></div>
 <div id="writing-your-own-evaluator" class="section level3">
 <h3 class="hasAnchor">

@@ -71,10 +71,16 @@
     <li class="divider">
     <li class="dropdown-header">Configuration</li>
     <li>
+      <a href="../articles/navigation.html">Section navigation</a>
+    </li>
+    <li>
       <a href="../articles/config_access.html">Controlling access to exams</a>
     </li>
     <li>
       <a href="../articles/config_storage.html">Storage configuration</a>
+    </li>
+    <li>
+      <a href="../articles/localization.html">Localization</a>
     </li>
   </ul>
 </li>
@@ -116,74 +122,77 @@
 <div id="creating-an-exam-document" class="section level2">
 <h2 class="hasAnchor">
 <a href="#creating-an-exam-document" class="anchor"></a>Creating an exam document</h2>
+<p>You can create a new exam document from the provided R markdown template by following the <a href="https://rstudio.github.io/rstudio-extensions/rmarkdown_templates.html">instructions for RStudio</a> or using the <code><a href="https://rdrr.io/pkg/rmarkdown/man/draft.html">rmarkdown::draft</a></code> function:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu">rmarkdown</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/rmarkdown/man/draft.html">draft</a></span><span class="op">(</span><span class="st">"newexam.Rmd"</span>, template <span class="op">=</span> <span class="st">"exam"</span>, package <span class="op">=</span> <span class="st">"examinr"</span><span class="op">)</span></code></pre></div>
 <p>Exams are standard R markdown documents and are configured via the YAML front-matter. Let us consider the following simple exam document:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode md"><code class="sourceCode markdown"><a class="sourceLine" id="cb1-1" data-line-number="1">---</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">title: "Online exam with examinr"</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">lang: en-US</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">output:</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">  examinr::exam_document:</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="bn">    id: online-exam-with-examinr</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="bn">    version: 0.1</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">runtime: shiny_prerendered</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">---</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">```{r setup, include=FALSE}</a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">library(examinr)</a>
-<a class="sourceLine" id="cb1-13" data-line-number="13">knitr::opts_chunk$set(echo = FALSE)</a>
-<a class="sourceLine" id="cb1-14" data-line-number="14">```</a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="fu"># Welcome!</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18">This is an online exam created with examinr!</a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="fu"># What question types are available?</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22">Here we are exploring the question types available in examinr exams.</a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"></a>
-<a class="sourceLine" id="cb1-24" data-line-number="24">```{r q-1}</a>
-<a class="sourceLine" id="cb1-25" data-line-number="25">mc_question(</a>
-<a class="sourceLine" id="cb1-26" data-line-number="26">  title = "What basic question types are available?",</a>
-<a class="sourceLine" id="cb1-27" data-line-number="27">  random_answer_order = FALSE,</a>
-<a class="sourceLine" id="cb1-28" data-line-number="28">  answer("Multiple-choice questions"),</a>
-<a class="sourceLine" id="cb1-29" data-line-number="29">  answer("Numeric questions"),</a>
-<a class="sourceLine" id="cb1-30" data-line-number="30">  answer("Text questions"),</a>
-<a class="sourceLine" id="cb1-31" data-line-number="31">  answer("Coding exercises"),</a>
-<a class="sourceLine" id="cb1-32" data-line-number="32">  answer("All of the above", correct = TRUE)</a>
-<a class="sourceLine" id="cb1-33" data-line-number="33">)</a>
-<a class="sourceLine" id="cb1-34" data-line-number="34">```</a>
-<a class="sourceLine" id="cb1-35" data-line-number="35"></a>
-<a class="sourceLine" id="cb1-36" data-line-number="36">```{r q-2}</a>
-<a class="sourceLine" id="cb1-37" data-line-number="37">text_question(</a>
-<a class="sourceLine" id="cb1-38" data-line-number="38">  title = "How many question types are there in total?",</a>
-<a class="sourceLine" id="cb1-39" data-line-number="39">  type = "numeric",</a>
-<a class="sourceLine" id="cb1-40" data-line-number="40">  solution = 4</a>
-<a class="sourceLine" id="cb1-41" data-line-number="41">)</a>
-<a class="sourceLine" id="cb1-42" data-line-number="42">```</a>
-<a class="sourceLine" id="cb1-43" data-line-number="43"></a>
-<a class="sourceLine" id="cb1-44" data-line-number="44">Now that you know what question types are available, explain which is your most</a>
-<a class="sourceLine" id="cb1-45" data-line-number="45">preferred question type, and why.</a>
-<a class="sourceLine" id="cb1-46" data-line-number="46"></a>
-<a class="sourceLine" id="cb1-47" data-line-number="47">```{r q-3}</a>
-<a class="sourceLine" id="cb1-48" data-line-number="48">text_question(</a>
-<a class="sourceLine" id="cb1-49" data-line-number="49">  title = "What is your most preferred question type?",</a>
-<a class="sourceLine" id="cb1-50" data-line-number="50">  solution = "Anything is fine, really."</a>
-<a class="sourceLine" id="cb1-51" data-line-number="51">)</a>
-<a class="sourceLine" id="cb1-52" data-line-number="52">```</a>
-<a class="sourceLine" id="cb1-53" data-line-number="53"></a>
-<a class="sourceLine" id="cb1-54" data-line-number="54">You can also test if the users are versed in R coding.</a>
-<a class="sourceLine" id="cb1-55" data-line-number="55">You can ask them, for example, to use the <span class="bn">`mtcars`</span> dataset to create side-by-side boxplots</a>
-<a class="sourceLine" id="cb1-56" data-line-number="56">of the mileage (in column <span class="bn">`mpg`</span>) vs. the number of cylinders (in column <span class="bn">`cyl`</span>).</a>
-<a class="sourceLine" id="cb1-57" data-line-number="57"></a>
-<a class="sourceLine" id="cb1-58" data-line-number="58">```{r q-4, exercise=TRUE, exercise.solution="q-4-solution"}</a>
-<a class="sourceLine" id="cb1-59" data-line-number="59"><span class="fu"># Create side-by-side boxplots of mpg vs. cyl from dataset mtcars</span></a>
-<a class="sourceLine" id="cb1-60" data-line-number="60">```</a>
-<a class="sourceLine" id="cb1-61" data-line-number="61"></a>
-<a class="sourceLine" id="cb1-62" data-line-number="62">```{r q-4-solution, echo}</a>
-<a class="sourceLine" id="cb1-63" data-line-number="63">boxplot(mpg ~ cyl, data = mtcars)</a>
-<a class="sourceLine" id="cb1-64" data-line-number="64">```</a>
-<a class="sourceLine" id="cb1-65" data-line-number="65"></a>
-<a class="sourceLine" id="cb1-66" data-line-number="66"><span class="fu"># Done!</span></a>
-<a class="sourceLine" id="cb1-67" data-line-number="67">You have successfully submitted the exam.</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode md"><code class="sourceCode markdown"><a class="sourceLine" id="cb2-1" data-line-number="1">---</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">title: "Online exam with examinr"</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">lang: en-US</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">output:</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  examinr::exam_document:</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="bn">    id: online-exam-with-examinr</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="bn">    version: 0.1</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">runtime: shiny_prerendered</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">---</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">```{r setup, include=FALSE}</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">library(examinr)</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">knitr::opts_chunk$set(echo = FALSE)</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">```</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16"><span class="fu"># Welcome!</span></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">This is an online exam created with examinr!</a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20"><span class="fu"># What question types are available?</span></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">Here we are exploring the question types available in examinr exams.</a>
+<a class="sourceLine" id="cb2-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb2-24" data-line-number="24">```{r q-1}</a>
+<a class="sourceLine" id="cb2-25" data-line-number="25">mc_question(</a>
+<a class="sourceLine" id="cb2-26" data-line-number="26">  title = "What basic question types are available?",</a>
+<a class="sourceLine" id="cb2-27" data-line-number="27">  random_answer_order = FALSE,</a>
+<a class="sourceLine" id="cb2-28" data-line-number="28">  answer("Multiple-choice questions"),</a>
+<a class="sourceLine" id="cb2-29" data-line-number="29">  answer("Numeric questions"),</a>
+<a class="sourceLine" id="cb2-30" data-line-number="30">  answer("Text questions"),</a>
+<a class="sourceLine" id="cb2-31" data-line-number="31">  answer("Coding exercises"),</a>
+<a class="sourceLine" id="cb2-32" data-line-number="32">  answer("All of the above", correct = TRUE)</a>
+<a class="sourceLine" id="cb2-33" data-line-number="33">)</a>
+<a class="sourceLine" id="cb2-34" data-line-number="34">```</a>
+<a class="sourceLine" id="cb2-35" data-line-number="35"></a>
+<a class="sourceLine" id="cb2-36" data-line-number="36">```{r q-2}</a>
+<a class="sourceLine" id="cb2-37" data-line-number="37">text_question(</a>
+<a class="sourceLine" id="cb2-38" data-line-number="38">  title = "How many question types are there in total?",</a>
+<a class="sourceLine" id="cb2-39" data-line-number="39">  type = "numeric",</a>
+<a class="sourceLine" id="cb2-40" data-line-number="40">  solution = 4</a>
+<a class="sourceLine" id="cb2-41" data-line-number="41">)</a>
+<a class="sourceLine" id="cb2-42" data-line-number="42">```</a>
+<a class="sourceLine" id="cb2-43" data-line-number="43"></a>
+<a class="sourceLine" id="cb2-44" data-line-number="44">Now that you know what question types are available, explain which is your most</a>
+<a class="sourceLine" id="cb2-45" data-line-number="45">preferred question type, and why.</a>
+<a class="sourceLine" id="cb2-46" data-line-number="46"></a>
+<a class="sourceLine" id="cb2-47" data-line-number="47">```{r q-3}</a>
+<a class="sourceLine" id="cb2-48" data-line-number="48">text_question(</a>
+<a class="sourceLine" id="cb2-49" data-line-number="49">  title = "What is your most preferred question type?",</a>
+<a class="sourceLine" id="cb2-50" data-line-number="50">  solution = "Anything is fine, really."</a>
+<a class="sourceLine" id="cb2-51" data-line-number="51">)</a>
+<a class="sourceLine" id="cb2-52" data-line-number="52">```</a>
+<a class="sourceLine" id="cb2-53" data-line-number="53"></a>
+<a class="sourceLine" id="cb2-54" data-line-number="54">You can also test if the users are versed in R coding.</a>
+<a class="sourceLine" id="cb2-55" data-line-number="55">You can ask them, for example, to use the <span class="bn">`mtcars`</span> dataset to create side-by-side boxplots</a>
+<a class="sourceLine" id="cb2-56" data-line-number="56">of the mileage (in column <span class="bn">`mpg`</span>) vs. the number of cylinders (in column <span class="bn">`cyl`</span>).</a>
+<a class="sourceLine" id="cb2-57" data-line-number="57"></a>
+<a class="sourceLine" id="cb2-58" data-line-number="58">```{r q-4, exercise=TRUE, exercise.solution="q-4-solution"}</a>
+<a class="sourceLine" id="cb2-59" data-line-number="59"><span class="fu"># Create side-by-side boxplots of mpg vs. cyl from dataset mtcars</span></a>
+<a class="sourceLine" id="cb2-60" data-line-number="60">```</a>
+<a class="sourceLine" id="cb2-61" data-line-number="61"></a>
+<a class="sourceLine" id="cb2-62" data-line-number="62">```{r q-4-solution, echo}</a>
+<a class="sourceLine" id="cb2-63" data-line-number="63">boxplot(mpg ~ cyl, data = mtcars)</a>
+<a class="sourceLine" id="cb2-64" data-line-number="64">```</a>
+<a class="sourceLine" id="cb2-65" data-line-number="65"></a>
+<a class="sourceLine" id="cb2-66" data-line-number="66"><span class="fu"># Done!</span></a>
+<a class="sourceLine" id="cb2-67" data-line-number="67">You have successfully submitted the exam.</a></code></pre></div>
 <p>The learner would see the rendered exam as</p>
 <div class="figure">
 <img src="figures/examinr/exam.png" alt="Rendered exam as shown to the learner." style="width:85.0%"><p class="caption">Rendered exam as shown to the learner.</p>

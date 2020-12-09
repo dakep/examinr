@@ -71,10 +71,16 @@
     <li class="divider">
     <li class="dropdown-header">Configuration</li>
     <li>
+      <a href="../articles/navigation.html">Section navigation</a>
+    </li>
+    <li>
       <a href="../articles/config_access.html">Controlling access to exams</a>
     </li>
     <li>
       <a href="../articles/config_storage.html">Storage configuration</a>
+    </li>
+    <li>
+      <a href="../articles/localization.html">Localization</a>
     </li>
   </ul>
 </li>
@@ -118,7 +124,8 @@
 <p>Multiple-choice and single-choice questions are added via <code><a href="../reference/mc_question.html">mc_question()</a></code>. The question is by default multiple-choice (argument <code>mc=TRUE</code>) and answer options are displayed with check-boxes, allowing the learner to select any number of answer options.</p>
 <p>The following R code produces a simple MC question displayed below</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/mc_question.html">mc_question</a></span><span class="op">(</span>
+<code class="sourceCode R"><span class="co">#! context="render"</span>
+<span class="fu"><a href="../reference/mc_question.html">mc_question</a></span><span class="op">(</span>
   title <span class="op">=</span> <span class="st">"If $X$ follows a standard Normal distribution, what statements are true?"</span>,
   points <span class="op">=</span> <span class="fl">2</span>,
   <span class="fu"><a href="../reference/mc_question.html">answer</a></span><span class="op">(</span><span class="st">r"($\Pr(X = 0) = 0$)"</span>, correct <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,
@@ -136,7 +143,8 @@
 <p>Answer options are added by supplying <code><a href="../reference/mc_question.html">mc_question()</a></code> with an arbitrary number (at least one) of unnamed objects created with <code><a href="../reference/mc_question.html">answer()</a></code>. An answer option is a <em>label</em> (the text shown to the learner) and some metadata. Both the question title and answer labels may contain commonmark markdown and LaTeX formulas (within $ delimiters). For simple answer options, as in the example above, <code>correct</code> may be simply a constant (<code>TRUE</code> or <code>FALSE</code>). For more complex scenarios you can also supply an expression which will be evaluated at run-time in the environment created by the data provider (explained in detail in the <a href="randomized_exam.html">companion vignette on randomization</a>). The expression must yield either <code>TRUE</code> or <code>FALSE</code> depending on the randomized values for the attempt.</p>
 <p>Consider an example where the learner is asked to decide whether a certain test rejects the null hypothesis in favor of the alternative. Assume the data provider randomly draws the value of the test statistic (<code>test_stat</code>) and the significance level (<code>sign_level</code>), and also returns the critical value (<code>crit_value</code>). The MC question can be written as:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/mc_question.html">mc_question</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Does the test reject the null at a significance level of `r significance_level`?"</span>,
+<code class="sourceCode R"><span class="co">#! context="render"</span>
+<span class="fu"><a href="../reference/mc_question.html">mc_question</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Does the test reject the null at a significance level of `r significance_level`?"</span>,
             <span class="fu"><a href="../reference/mc_question.html">answer</a></span><span class="op">(</span><span class="st">"Yes"</span>, correct <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span><span class="op">(</span><span class="va">test_stat</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="va">crit_value</span><span class="op">)</span>,
             <span class="fu"><a href="../reference/mc_question.html">answer</a></span><span class="op">(</span><span class="st">"No"</span>, correct <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span><span class="op">(</span><span class="va">test_stat</span><span class="op">)</span> <span class="op">&lt;</span> <span class="va">crit_value</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <div id="changing-the-number-of-displayed-answer-options" class="section level3">
@@ -170,7 +178,8 @@ p = t \times \left(\frac{ \sum_{i \in C} w_{i 2} s_i } { \sum_{i \in C} w_{i 2} 
 <p>By default a learner cannot get a negative score on a question, but this can be changed via argument <code><a href="../reference/mc_question.html">mc_question(min_points=)</a></code>. If you would set <code>min_points=-0.5</code>, for example, a learner may be penalized with up to -0.5 points.</p>
 <p>Considering the example from above (but ignoring randomization)</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/mc_question.html">mc_question</a></span><span class="op">(</span>
+<code class="sourceCode R"><span class="co">#! context="render"</span>
+<span class="fu"><a href="../reference/mc_question.html">mc_question</a></span><span class="op">(</span>
   title <span class="op">=</span> <span class="st">"If $X$ follows a standard Normal distribution, what statements are true?"</span>,
   points <span class="op">=</span> <span class="fl">2</span>, nr_answers <span class="op">=</span> <span class="fl">8</span>, random_answer_order <span class="op">=</span> <span class="cn">FALSE</span>,
   <span class="fu"><a href="../reference/mc_question.html">answer</a></span><span class="op">(</span><span class="st">r"($\Pr(X = 0) = 0$)"</span>, correct <span class="op">=</span> <span class="cn">TRUE</span>, weight <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span>,

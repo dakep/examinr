@@ -71,10 +71,16 @@
     <li class="divider">
     <li class="dropdown-header">Configuration</li>
     <li>
+      <a href="../articles/navigation.html">Section navigation</a>
+    </li>
+    <li>
       <a href="../articles/config_access.html">Controlling access to exams</a>
     </li>
     <li>
       <a href="../articles/config_storage.html">Storage configuration</a>
+    </li>
+    <li>
+      <a href="../articles/localization.html">Localization</a>
     </li>
   </ul>
 </li>
@@ -138,7 +144,8 @@
 <p>The <code>user$user_id</code> must be present and uniquely identifies a user for the exam. If <code>user$grading</code> is present and is <code>TRUE</code>, the user has the ability to access the grading interface. Also, if <code>user$display_name</code> is present it will be shown in lieu of the user id when grading, but be aware of privacy issues when storing the exam data in an unencrypted database. See also the information for <a href="config_storage.html">storage providers</a>.</p>
 <p>Currently, examinr ships with only one authentication provider: <code><a href="../reference/rsconnect_auth.html">rsconnect_auth()</a></code>, which uses the RStudio Connect user information. RStudio Connect exposes the current user in <code>session$user</code> and the group membership of the user in <code>session$groups</code>. The <code><a href="../reference/rsconnect_auth.html">rsconnect_auth()</a></code> authentication provider uses this information and allows you to give grading permission to certain groups. For example</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/exam_config.html">exam_config</a></span><span class="op">(</span>auth_provider <span class="op">=</span> <span class="fu"><a href="../reference/rsconnect_auth.html">rsconnect_auth</a></span><span class="op">(</span>grading_groups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'instructor'</span>, <span class="st">'ta'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="co">#! context="server-start"</span>
+<span class="fu"><a href="../reference/exam_config.html">exam_config</a></span><span class="op">(</span>auth_provider <span class="op">=</span> <span class="fu"><a href="../reference/rsconnect_auth.html">rsconnect_auth</a></span><span class="op">(</span>grading_groups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'instructor'</span>, <span class="st">'ta'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>would use the RStudio Connect user name as <code>user_id</code> and set <code>grading=TRUE</code> to any user with membership in either the <em>instructor</em> or <em>ta</em> group.</p>
 <p>You can also write your own authentication provider which takes information from the session object (e.g., from the query string) to authenticate users. The authentication provider can add more information to the user object than specified above. Any function receiving the user object as input will receive all the information returned by the authentication provider.</p>
 </div>
@@ -192,11 +199,13 @@
 <p>An attempt must be finished either within 1 hour and 15 minutes of starting the attempt, or at the closing time (whichever comes first). If the time runs out, the user is given 60 seconds to submit their exam. After this grace period the exam is disabled and all input up to this point is recorded automatically.</p>
 <p>The attempt configuration can be overridden for specific users (e.g., to give them more time or more attempts). This is done by calling <code><a href="../reference/configure_attempts.html">configure_attempts()</a></code> in an R code chunk with <code>context="server-start"</code>. For instance, to give users <em>s443</em> and <em>s872</em> 2 hours for the exam, and give user <em>s221</em> more attempts, you would use</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/configure_attempts.html">configure_attempts</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"s443"</span>, <span class="st">"s872"</span><span class="op">)</span>, timelimit <span class="op">=</span> <span class="st">"2:00"</span><span class="op">)</span>
+<code class="sourceCode R"><span class="co">#! context="server-start"</span>
+<span class="fu"><a href="../reference/configure_attempts.html">configure_attempts</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"s443"</span>, <span class="st">"s872"</span><span class="op">)</span>, timelimit <span class="op">=</span> <span class="st">"2:00"</span><span class="op">)</span>
 <span class="fu"><a href="../reference/configure_attempts.html">configure_attempts</a></span><span class="op">(</span><span class="st">"s221"</span>, max_attempts <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></code></pre></div>
 <p>This allows fully customization for user’s specific needs and requests. The last call to <code><a href="../reference/configure_attempts.html">configure_attempts()</a></code> for a certain user and specific option will be the one taking effect. The following example would give users <em>s443</em>, <em>s872</em>, and <em>s221</em> 2 hours to complete the exam, but users <em>s443</em> and <em>s872</em> would get 3 attempts, while user <em>s221</em> gets 4.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/configure_attempts.html">configure_attempts</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"s443"</span>, <span class="st">"s872"</span>, <span class="st">"s221"</span><span class="op">)</span>, timelimit <span class="op">=</span> <span class="st">"2:00"</span>, max_attempts <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>
+<code class="sourceCode R"><span class="co">#! context="server-start"</span>
+<span class="fu"><a href="../reference/configure_attempts.html">configure_attempts</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"s443"</span>, <span class="st">"s872"</span>, <span class="st">"s221"</span><span class="op">)</span>, timelimit <span class="op">=</span> <span class="st">"2:00"</span>, max_attempts <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>
 <span class="fu"><a href="../reference/configure_attempts.html">configure_attempts</a></span><span class="op">(</span><span class="st">"s221"</span>, max_attempts <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></code></pre></div>
 <p>To disable opening or closing date-times (i.e., making the exam accessible as soon as it is uploaded or for the rest of time), set the option to <code>NA</code>. Similarly, disabling time limits and attempt counters, set the options to <code>Inf</code>.</p>
 <p>Correct attempt configurations are critical for ensuring integrity of an exam. For debugging, you can verify the attempt configuration in your exam by printing the final configuration in the exam document with <code><a href="../reference/configure_attempts.html">show_attempts_configuration()</a></code>. Simply add an R code chunk to your exam which calls this function, e.g.,</p>

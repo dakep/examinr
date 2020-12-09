@@ -8,9 +8,11 @@ articles:
   examinr: examinr.html
   exercises: exercises.html
   grading: grading.html
+  localization: localization.html
+  navigation: navigation.html
   question_types: question_types.html
   randomized_exam: randomized_exam.html
-last_built: 2020-12-08T01:35Z
+last_built: 2020-12-09T03:33Z
 urls:
   reference: https://dakep.github.io/examinr/reference
   article: https://dakep.github.io/examinr/articles

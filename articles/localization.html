@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grading exams • examinr</title>
+<title>Localizing exams • examinr</title>
 <!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="Grading exams">
+<meta property="og:title" content="Localizing exams">
 <meta property="og:description" content="examinr">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -102,84 +102,36 @@
 
       
 
-      </header><link href="grading_files/anchor-sections-1.0/anchor-sections.css" rel="stylesheet">
-<script src="grading_files/anchor-sections-1.0/anchor-sections.js"></script><div class="row">
+      </header><link href="localization_files/anchor-sections-1.0/anchor-sections.css" rel="stylesheet">
+<script src="localization_files/anchor-sections-1.0/anchor-sections.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
-      <h1 data-toc-skip>Grading exams</h1>
+      <h1 data-toc-skip>Localizing exams</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/dakep/examinr/blob/master/vignettes/grading.Rmd"><code>vignettes/grading.Rmd</code></a></small>
-      <div class="hidden name"><code>grading.Rmd</code></div>
+      <small class="dont-index">Source: <a href="https://github.com/dakep/examinr/blob/master/vignettes/localization.Rmd"><code>vignettes/localization.Rmd</code></a></small>
+      <div class="hidden name"><code>localization.Rmd</code></div>
 
     </div>
 
     
     
-<p>Grading is arguably one of the most time-consuming tasks of conducting an exam. Exams created with examinr come with a grading interface to support you in this task. Moreover, some question types (numeric questions and multiple-choice questions) are automatically graded, but still give you the opportunity to override these grades.</p>
-<div id="accessing-the-grading-interface" class="section level2">
-<h2 class="hasAnchor">
-<a href="#accessing-the-grading-interface" class="anchor"></a>Accessing the grading interface</h2>
-<p>The grading interface is available under the same path as the exam document, but you need to append <code>display=feedback</code> to the query string. For instance, if the exam is available under <code>http://127.0.0.1:8181/exam.Rmd</code>, the grading interface would be accessible under <code>http://127.0.0.1:8181/exam.Rmd?display=feedback</code>. If the user accessing this page does not have grading permissions, the user will see only their individual feedback (if the feedback has been made public already). Only users with grading permissions are able to access the grading interface.</p>
-</div>
-<div id="using-the-grading-interface" class="section level2">
-<h2 class="hasAnchor">
-<a href="#using-the-grading-interface" class="anchor"></a>Using the grading interface</h2>
-<div class="figure">
-<img src="figures/grading/overview.png" alt="Grading interface." style="width:75.0%"><p class="caption">Grading interface.</p>
-</div>
-<p>At the top of the grading interface is the control bar for selecting the learner (center) and the learner’s attempt:</p>
-<div class="figure">
-<img src="figures/grading/control_bar.png" alt="Control bar." style="width:100.0%"><p class="caption">Control bar.</p>
-</div>
-<p>Attempts are identified and ordered by the time they have been finished (i.e., the last section was submitted). By default, the learner’s latest finished attempt is selected. You can also select un-finished attempts Selecting the learner/attempt will re-render the page in the state as shown to the learner for this attempt, and update the solutions according to the realized values. The button on the far right exports grades for all learners. <a href="#exporting-grades">See below</a> for details on the export.</p>
-<div id="grading-a-question" class="section level3">
-<h3 class="hasAnchor">
-<a href="#grading-a-question" class="anchor"></a>Grading a question</h3>
-<div class="figure">
-<img src="figures/grading/question.png" alt="Question in the grading interface." style="width:100.0%"><p class="caption">Question in the grading interface.</p>
-</div>
-<p>You can set the number of points awarded to the learner for their answer using the input at the top right corner of every question. You can add an individual comment, only visible to this learner, by clicking on the “+” button next to the points:</p>
-<div class="figure">
-<img src="figures/grading/question_comment.png" alt="Adding an individual comment to a question." style="width:100.0%"><p class="caption">Adding an individual comment to a question.</p>
-</div>
-<p>The comment can be removed by clicking on the “×” button. Points and comments are automatically saved as soon as they entered.</p>
-</div>
-<div id="exporting-grades" class="section level3">
-<h3 class="hasAnchor">
-<a href="#exporting-grades" class="anchor"></a>Exporting grades</h3>
-<p>Grades for all learners and attempts are exported by clicking on the download button at the far right of the control bar.</p>
-<table class="table">
-<thead><tr class="header">
-<th align="center">exam</th>
-<th align="center">exam_version</th>
-<th align="center">user_id</th>
-<th align="center">attempt</th>
-<th align="center">question</th>
-<th align="center">submitted</th>
-<th align="center">points</th>
-<th align="center">points_available</th>
-</tr></thead>
-<tbody><tr class="odd">
-<td align="center">exam id</td>
-<td align="center">exam version</td>
-<td align="center">learner id</td>
-<td align="center">attempt id</td>
-<td align="center">question label</td>
-<td align="center">date-time of submission (<code>NA</code> for un-finished attempts)</td>
-<td align="center">points awarded</td>
-<td align="center">total points available for the question</td>
-</tr></tbody>
-</table>
-</div>
-</div>
+<p>Exams are typically a stressful and task for learners. You may not want to add an extra layer of difficulty for your learners if they are not English speakers. The examinr package allows you to customize and translate every message the user may encounter during an exam: error messages, status messages, buttons, and so on.</p>
+<p>In examinr, these strings are generally referred to as <em>status messages</em>. The package comes with pre-defined status messages in English, stored in a YAML file. These messages are loaded as the examinr package is loaded.</p>
+<p>You can overwrite the default status messages by loading them from your own YAML file with <code><a href="../reference/status_message_template.html">status_messages()</a></code>. This YAML file can be created by calling <code><a href="../reference/status_message_template.html">status_message_template()</a></code> from an interactive R session on your local computer. In an R session with working directory set to the folder containing the exam document, run</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://dakep.github.io/examinr/">examinr</a></span><span class="op">)</span>
+<span class="fu"><a href="../reference/status_message_template.html">status_message_template</a></span><span class="op">(</span><span class="st">"www/examinr_messages.yaml"</span><span class="op">)</span></code></pre></div>
+<p>to create the file <em>examinr_messages.yaml</em> in sub-directory <em>www</em>. (Note: exam documents are shiny prerendered documents, as such the file <strong>must</strong> be located in the <em>www</em> sub-directory to be available at run-time.) This file contains all default status messages used by examinr. To define your own status messages, edit the file and ensure it is saved in <em>UTF-8</em> encoding.</p>
+<p>You can include your custom set of status messages in the exam document via</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co">#! context="server-start"</span>
+<span class="fu"><a href="../reference/status_message_template.html">status_messages</a></span><span class="op">(</span><span class="st">"www/examinr_messages.yaml"</span><span class="op">)</span></code></pre></div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
-    </nav>
-</div>
+      </div>
 
 </div>
 
