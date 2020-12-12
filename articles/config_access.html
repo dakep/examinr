@@ -120,6 +120,25 @@
 <div id="authentication-provider" class="section level2">
 <h2 class="hasAnchor">
 <a href="#authentication-provider" class="anchor"></a>Authentication provider</h2>
+<p>Currently, examinr ships with only two authentication providers: <code><a href="../reference/rsconnect_auth.html">rsconnect_auth()</a></code>, which uses the RStudio Connect user information, and <code><a href="../reference/ui_auth.html">ui_auth()</a></code> which shows a login screen when the learner loads the exam.</p>
+<div id="login-screen" class="section level3">
+<h3 class="hasAnchor">
+<a href="#login-screen" class="anchor"></a>Login screen</h3>
+<p>The <code>ui_aith()</code> authentication provider works on every shiny server. Learners visiting the exam URL are prompted for a username and password, which have to be somehow given to the learners beforehand.</p>
+</div>
+<div id="rstudo-connect" class="section level3">
+<h3 class="hasAnchor">
+<a href="#rstudo-connect" class="anchor"></a>RStudo Connect</h3>
+<p>RStudio Connect exposes the current user in <code>session$user</code> and the group membership of the user in <code>session$groups</code>. The <code><a href="../reference/rsconnect_auth.html">rsconnect_auth()</a></code> authentication provider uses this information and allows you to give grading permission to certain groups. For example</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co">#! context="server-start"</span>
+<span class="fu"><a href="../reference/exam_config.html">exam_config</a></span><span class="op">(</span>auth_provider <span class="op">=</span> <span class="fu"><a href="../reference/rsconnect_auth.html">rsconnect_auth</a></span><span class="op">(</span>grading_groups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'instructor'</span>, <span class="st">'ta'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<p>would use the RStudio Connect user name as <code>user_id</code> and set <code>grading=TRUE</code> to any user with membership in either the <em>instructor</em> or <em>ta</em> group.</p>
+<p>You can also write your own authentication provider which takes information from the session object (e.g., from the query string) to authenticate users. The authentication provider can add more information to the user object than specified above. Any function receiving the user object as input will receive all the information returned by the authentication provider.</p>
+</div>
+<div id="writing-a-custom-authentication-provider" class="section level3">
+<h3 class="hasAnchor">
+<a href="#writing-a-custom-authentication-provider" class="anchor"></a>Writing a custom authentication provider</h3>
 <p>Loosely speaking, the authentication provider determines who the user is and relays this information in a standardized form to examinr. The authentication provider is set via <code><a href="../reference/exam_config.html">exam_config(auth_provider=)</a></code>, which requires a function taking the Shiny session as argument and returning a <em>user object</em>. The <em>user object</em> is an R list with the following entries</p>
 <table class="table">
 <thead><tr class="header">
@@ -142,12 +161,7 @@
 </tbody>
 </table>
 <p>The <code>user$user_id</code> must be present and uniquely identifies a user for the exam. If <code>user$grading</code> is present and is <code>TRUE</code>, the user has the ability to access the grading interface. Also, if <code>user$display_name</code> is present it will be shown in lieu of the user id when grading, but be aware of privacy issues when storing the exam data in an unencrypted database. See also the information for <a href="config_storage.html">storage providers</a>.</p>
-<p>Currently, examinr ships with only one authentication provider: <code><a href="../reference/rsconnect_auth.html">rsconnect_auth()</a></code>, which uses the RStudio Connect user information. RStudio Connect exposes the current user in <code>session$user</code> and the group membership of the user in <code>session$groups</code>. The <code><a href="../reference/rsconnect_auth.html">rsconnect_auth()</a></code> authentication provider uses this information and allows you to give grading permission to certain groups. For example</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co">#! context="server-start"</span>
-<span class="fu"><a href="../reference/exam_config.html">exam_config</a></span><span class="op">(</span>auth_provider <span class="op">=</span> <span class="fu"><a href="../reference/rsconnect_auth.html">rsconnect_auth</a></span><span class="op">(</span>grading_groups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'instructor'</span>, <span class="st">'ta'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<p>would use the RStudio Connect user name as <code>user_id</code> and set <code>grading=TRUE</code> to any user with membership in either the <em>instructor</em> or <em>ta</em> group.</p>
-<p>You can also write your own authentication provider which takes information from the session object (e.g., from the query string) to authenticate users. The authentication provider can add more information to the user object than specified above. Any function receiving the user object as input will receive all the information returned by the authentication provider.</p>
+</div>
 </div>
 <div id="attempt-configuration" class="section level2">
 <h2 class="hasAnchor">
