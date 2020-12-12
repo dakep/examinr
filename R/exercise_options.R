@@ -7,7 +7,8 @@
 #' @param button label of the run exercise button. Default: _exercise.buttonLabel_ from [status_messages()].
 #' @param timelimit time limit for the code to run (in seconds). Default: 5.
 #' @param lines the minimum number of lines in the code editor. Default: 5.
-#' @param autocomplete enable or disable auto-completion in the code editor. Default: `TRUE`.
+#' @param autocomplete enable or disable auto-completion in the code editor. Note that this sends many requests
+#'   to the server and could pose performance issues if many users access the exam at the same time. Default: `FALSE`.
 #' @param df_print method used for printing data frames created by the user code. Default to use the same
 #'  as the R-markdown document, but can be changed if needed. See argument `df_print` in
 #'  [html_document()][rmarkdown::html_document()] for details.

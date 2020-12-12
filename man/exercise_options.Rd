@@ -27,7 +27,8 @@ exercise_options(
 
 \item{lines}{the minimum number of lines in the code editor. Default: 5.}
 
-\item{autocomplete}{enable or disable auto-completion in the code editor. Default: \code{TRUE}.}
+\item{autocomplete}{enable or disable auto-completion in the code editor. Note that this sends many requests
+to the server and could pose performance issues if many users access the exam at the same time. Default: \code{FALSE}.}
 
 \item{df_print}{method used for printing data frames created by the user code. Default to use the same
 as the R-markdown document, but can be changed if needed. See argument \code{df_print} in

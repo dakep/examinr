@@ -63,8 +63,6 @@ devtools::install_github("dakep/examinr")
 
 The package is still in a development phase and some features are not yet available, most notably the following:
 
-- Authentication provider requiring users to log in on the exam page before accessing the exam.
-  This may be useful in situations where RStudio Connect is not available or where users don't have an account on the RStudio Connect installation.
 - File upload question.
 - Re-populate input values from client-side storage after page reload.
 - Multiple text inputs per text question.

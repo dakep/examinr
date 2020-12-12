@@ -58,7 +58,7 @@ opts_hook_possible_exercise_initial_pass <- function (options, ...) {
 #' @importFrom rmarkdown shiny_prerendered_chunk
 opts_hook_possible_exercise_second_pass <- function (options, ...) {
   options <- opts_hook_possible_exercise_initial_pass(options)
-  if (isTRUE(options[['exercise']]) && isTRUE(options$exercise.autocomplete %||% TRUE)) {
+  if (isTRUE(options[['exercise']]) && isTRUE(options$exercise.autocomplete %||% FALSE)) {
     shiny_prerendered_chunk(context = 'server-start', sprintf('examinr:::prepare_exercise_autocomplete("%s", "%s")',
                                                               options$label,
                                                               serialize_object(options$exercise.support_code)))
@@ -123,7 +123,7 @@ knit_hook_exercise <- function (before, options, envir, ...) {
                        buttonLabel = options$exercise.button %||% get_status_message('exercise')$buttonLabel,
                        title = options$exercise.title %||% get_status_message('exercise')$panelTitle,
                        lines = options$exercise.lines %||% 5,
-                       autocomplete = options$exercise.autocomplete %||% TRUE)
+                       autocomplete = options$exercise.autocomplete %||% FALSE)
 
     shiny_prerendered_chunk('server', sprintf('examinr:::exercise_chunk_server("%s")', serialize_object(ex_data_srv)))
 

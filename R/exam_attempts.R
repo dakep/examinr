@@ -249,10 +249,6 @@ get_attempts_config <- function (user_id) {
 #' @importFrom shiny reactiveVal observeEvent observe
 initialize_attempt <- function (session, exam_id, exam_version) {
   session_env <- get_session_env(session)
-  if (!is.null(session_env$attempt_state)) {
-    # This is theoretically impossible.
-    abort("Attempt state is already initialized.")
-  }
   current_time <- Sys.time()
 
   # Get currently authenticated user
@@ -350,8 +346,10 @@ initialize_attempt_state <- function (session, status, attempt) {
   if (is.null(session_env$attempt_state)) {
     session_env$attempt_state <- reactiveValues(status = status %||% NULL, current = attempt %||% NULL)
   } else {
-    abort("Attempt state already initialized")
+    session_env$attempt_state$status <- status
+    session_env$attempt_state$current <- attempt
   }
+  return(session_env$attempt_state)
 }
 
 #' @importFrom rlang abort
@@ -371,7 +369,12 @@ update_attempt_state <- function (session, status, attempt) {
 #' @importFrom shiny getDefaultReactiveDomain
 #' @importFrom rlang abort
 get_current_attempt <- function (session = getDefaultReactiveDomain()) {
-  return(get_session_env(session)$attempt_state$current)
+  session_env <- get_session_env(session)
+  if (is.null(session_env$attempt_state)) {
+    initialize_attempt_state(session)$current
+  } else {
+    session_env$attempt_state$current
+  }
 }
 
 ## Get the status of the current attempt.
@@ -384,9 +387,14 @@ get_current_attempt <- function (session = getDefaultReactiveDomain()) {
 ##   NA,FALSE ... no attempt is available
 #' @importFrom shiny getDefaultReactiveDomain
 get_attempt_status <- function (session = getDefaultReactiveDomain()) {
-  return(get_session_env(session)$attempt_state$status)
+  session_env <- get_session_env(session)
+  if (is.null(session_env$attempt_state)) {
+    initialize_attempt_state(session)$status
+  } else {
+    session_env$attempt_state$status
+  }
+  # return(get_session_env(session)$attempt_state$status)
 }
-
 
 #' @importFrom shiny getDefaultReactiveDomain
 #' @importFrom rlang warn

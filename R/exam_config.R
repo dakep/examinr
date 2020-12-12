@@ -195,6 +195,13 @@ exam_config <- function (auth_provider, storage_provider, exercise_data_provider
     .exam_configuration$set(exercise_data_provider = cached_data_provider(exercise_data_provider, isTRUE(cache_data)))
   }
 
+  if (!missing(auth_provider)) {
+    if (is.list(auth_provider) && inherits(auth_provider, 'ui_authentication_provider')) {
+      .exam_configuration$set(login_ui = auth_provider[c('ui', 'callback')])
+      auth_provider <- auth_provider$auth
+    }
+  }
+
   .exam_configuration$set(
     auth_provider = auth_provider,
     points_format = points_format_fun,
@@ -389,6 +396,10 @@ get_current_user <- function (session) {
     }
   }
   return(session_env$user)
+}
+
+get_login_ui <- function () {
+  .exam_configuration$get('login_ui')
 }
 
 format_points <- function (points) {

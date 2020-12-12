@@ -29,21 +29,15 @@ Whether the user is allowed to start a new attempt or resume an old attempt is d
 
 ## Authentication provider
 
-Loosely speaking, the authentication provider determines who the user is and relays this information in a standardized form to examinr.
-The authentication provider is set via `exam_config(auth_provider=)`, which requires a function taking the Shiny session as argument and returning a _user object_.
-The _user object_ is an R list with the following entries
+Currently, examinr ships with only two authentication providers: `rsconnect_auth()`, which uses the RStudio Connect user information, and `ui_auth()` which shows a login screen when the learner loads the exam.
 
-Name                 Description
----------------      --------------------------------------------------
-`user_id`            a character string uniquely identifying the user
-`grading`            (optional) a logical value indicating if the user has permission to grade attempts
-`display_name`       (optional) a character string with a human-readable name to be displayed while grading
+### Login screen
 
-The `user$user_id` must be present and uniquely identifies a user for the exam.
-If `user$grading` is present and is `TRUE`, the user has the ability to access the grading interface.
-Also, if `user$display_name` is present it will be shown in lieu of the user id when grading, but be aware of privacy issues when storing the exam data in an unencrypted database. See also the information for [storage providers](config_storage.html).
+The `ui_aith()` authentication provider works on every shiny server.
+Learners visiting the exam URL are prompted for a username and password, which have to be somehow given to the learners beforehand.
 
-Currently, examinr ships with only one authentication provider: `rsconnect_auth()`, which uses the RStudio Connect user information.
+### RStudo Connect
+
 RStudio Connect exposes the current user in `session$user` and the group membership of the user in  `session$groups`.
 The `rsconnect_auth()` authentication provider uses this information and allows you to give grading permission to certain groups.
 For example
@@ -58,6 +52,25 @@ would use the RStudio Connect user name as `user_id` and set `grading=TRUE` to a
 You can also write your own authentication provider which takes information from the session object (e.g., from the query string) to authenticate users.
 The authentication provider can add more information to the user object than specified above.
 Any function receiving the user object as input will receive all the information returned by the authentication provider.
+
+
+### Writing a custom authentication provider
+
+Loosely speaking, the authentication provider determines who the user is and relays this information in a standardized form to examinr.
+The authentication provider is set via `exam_config(auth_provider=)`, which requires a function taking the Shiny session as argument and returning a _user object_.
+The _user object_ is an R list with the following entries
+
+Name                 Description
+---------------      --------------------------------------------------
+`user_id`            a character string uniquely identifying the user
+`grading`            (optional) a logical value indicating if the user has permission to grade attempts
+`display_name`       (optional) a character string with a human-readable name to be displayed while grading
+
+The `user$user_id` must be present and uniquely identifies a user for the exam.
+If `user$grading` is present and is `TRUE`, the user has the ability to access the grading interface.
+Also, if `user$display_name` is present it will be shown in lieu of the user id when grading, but be aware of privacy issues when storing the exam data in an unencrypted database. See also the information for [storage providers](config_storage.html).
+
+
 
 ## Attempt configuration
 

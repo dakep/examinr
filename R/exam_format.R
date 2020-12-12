@@ -286,6 +286,7 @@ knit_print.examinr_exam_init <- function (x, ...) {
 
 ## Initialize a new exam session
 #' @importFrom shiny parseQueryString getDefaultReactiveDomain reactiveValuesToList
+#' @importFrom rlang warn cnd_message
 initialize_exam_server <- function (config) {
   config <- unserialize_object(config)
   session <- getDefaultReactiveDomain()
@@ -294,27 +295,65 @@ initialize_exam_server <- function (config) {
     abort("shiny session not available")
   }
 
+  # display the feedback url in the logs
+  isolate(with(reactiveValuesToList(session$clientData), {
+    feedback_url <- sprintf('%s//%s', url_protocol, url_hostname)
+    if (!identical(url_port, 80) || !identical(url_port, 443)) {
+      feedback_url <- paste(feedback_url, url_port, sep = ':')
+    }
+    if (nzchar(url_pathname)) {
+      feedback_url <- paste(feedback_url, url_pathname, sep = '/')
+    }
+    feedback_url <- if (nzchar(url_search)) {
+      sprintf('%s%s&display=feedback', feedback_url, url_search)
+    } else {
+      paste(feedback_url, 'display=feedback', sep = '?')
+    }
+    signal_feedback_url(feedback_url)
+  }))
+
+  # log in user
+  login_ui <- get_login_ui()
+  if (!is.null(login_ui)) {
+    send_message('loginscreen', login_ui$ui, session = session)
+
+    obs <- observe({
+      login_data <- session$input[['__.examinr.__-login']]
+      if (!is.null(login_data)) {
+        tryCatch({
+          input_vals <- lapply(login_data$inputs, `[[`, 'value')
+          names(input_vals) <- vapply(login_data$inputs, `[[`, 'name', FUN.VALUE = character(1L))
+
+          login_res <- login_ui$callback(input_vals, session, config$exam_metadata)
+          msg <- if (isTRUE(login_res)) {
+            send_message('login', list(status = TRUE), session = session)
+            obs$destroy()
+            # Continue the exam initialization.
+            continue_initialize_exam_server(config, session)
+          } else {
+            send_message('login', list(status = FALSE, error = as.character(login_res)), session = session)
+          }
+        }, error = function (e) {
+          warn(paste("Login UI throws an error:", cnd_message(e)))
+          send_message('login', list(
+            status = FALSE,
+            errorTitle = get_status_message('authenticationError')$title,
+            error = get_status_message('authenticationError')$body
+          ), session = session)
+        })
+      }
+    }, domain = session)
+  } else {
+    continue_initialize_exam_server(config, session)
+  }
+}
+
+continue_initialize_exam_server <- function (config, session) {
   query <- parseQueryString(isolate(session$clientData$url_search))
 
   if (identical(query$display, 'feedback')) {
     initialize_feedback(session, config$exam_metadata, config$sections)
   } else {
-    isolate(with(reactiveValuesToList(session$clientData), {
-      feedback_url <- sprintf('%s//%s', url_protocol, url_hostname)
-      if (!identical(url_port, 80) || !identical(url_port, 443)) {
-        feedback_url <- paste(feedback_url, url_port, sep = ':')
-      }
-      if (nzchar(url_pathname)) {
-        feedback_url <- paste(feedback_url, url_pathname, sep = '/')
-      }
-      feedback_url <- if (nzchar(url_search)) {
-        sprintf('%s%s&display=feedback', feedback_url, url_search)
-      } else {
-        paste(feedback_url, 'display=feedback', sep = '?')
-      }
-      signal_feedback_url(feedback_url)
-    }))
-
     initialize_attempt(session, exam_id = config$exam_metadata$id, exam_version = config$exam_metadata$version)
     initialize_sections_server(session, config$sections, config$exam_metadata)
   }

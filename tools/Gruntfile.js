@@ -17,6 +17,7 @@ module.exports = function (grunt) {
       },
       src: [
         path.join(concatDir, 'exam.js'),
+        path.join(concatDir, 'exam.css'),
         path.join(outputDir, 'exam.min.css'),
         path.join(outputDir, 'exam.js'),
         path.join(outputDir, 'exam.js.map'),
@@ -42,6 +43,7 @@ module.exports = function (grunt) {
           path.join(inputDir, 'autocomplete.js'),
           path.join(inputDir, 'section_navigation.js'),
           path.join(inputDir, 'grading.js'),
+          path.join(inputDir, 'login.js'),
           path.join(inputDir, 'ace-monochrome.js'),
           path.join(inputDir, 'lib', 'bootstrap', 'js', 'util.js'),
           path.join(inputDir, 'lib', 'bootstrap', 'js', 'modal.js')
@@ -71,7 +73,7 @@ module.exports = function (grunt) {
       },
       examinr: {
         src: path.join(inputDir, 'examinr.scss'),
-        dest: path.join(concatDir, 'examinr.css')
+        dest: path.join(outputDir, 'exam.css')
       }
     },
 
@@ -84,7 +86,7 @@ module.exports = function (grunt) {
         ]
       },
       examinr: {
-        src: path.join(concatDir, 'examinr.css'),
+        src: path.join(outputDir, 'exam.css'),
         dest: path.join(outputDir, 'exam.min.css')
       }
     },

@@ -40,10 +40,13 @@ exam_config(auth_provider = function (session) {
 
 }
 \seealso{
-\code{\link[=rsconnect_auth]{rsconnect_auth()}} for a simple authentication provider using the user information from RStudio Connect.
+\code{\link[=rsconnect_auth]{rsconnect_auth()}} for an authentication provider using the user information from RStudio Connect.
+
+\code{\link[=ui_auth]{ui_auth()}} for an authentication provider displaying a login user interface before the exam begins.
 
 Other access configuration: 
 \code{\link{configure_attempts}()},
-\code{\link{rsconnect_auth}()}
+\code{\link{rsconnect_auth}()},
+\code{\link{ui_auth}()}
 }
 \concept{access configuration}

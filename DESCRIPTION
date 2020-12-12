@@ -33,7 +33,8 @@ Imports:
 Suggests:
   DBI,
   pool,
-  testthat
+  testthat,
+  sodium
 Collate:
     'authentication_provider.R'
     'create_exam_rmd.R'
