@@ -4,7 +4,8 @@ r:
 - release
 warnings_are_errors: true
 before_cache:
- - sudo apt-get -y install libharfbuzz-dev libfribidi-dev libsodium-dev
+ - sudo apt-get -y install libharfbuzz-dev libfribidi-dev
+ - sudo apt-get -y install libsodium-dev
  - Rscript -e 'remotes::install_cran("textshaping"); remotes::install_cran("pkgdown")'
 r_packages:
 - rmarkdown
