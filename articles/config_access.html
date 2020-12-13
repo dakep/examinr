@@ -117,14 +117,22 @@
     
     
 <p>Access to an exam is determined on two factors: <em>who</em> is accessing the exam and <em>when</em> is the exam accessed. The first factor, <em>who</em> is accessing the exam, is resolved through the <em>authentication provider</em>. Once the user is authenticated, either a new attempt is started or an unfinished attempt is resumed. Whether the user is allowed to start a new attempt or resume an old attempt is determined by the global or user-specific attempt configuration.</p>
-<div id="authentication-provider" class="section level2">
+<div id="authentication-providers" class="section level2">
 <h2 class="hasAnchor">
-<a href="#authentication-provider" class="anchor"></a>Authentication provider</h2>
-<p>Currently, examinr ships with only two authentication providers: <code><a href="../reference/rsconnect_auth.html">rsconnect_auth()</a></code>, which uses the RStudio Connect user information, and <code><a href="../reference/ui_auth.html">ui_auth()</a></code> which shows a login screen when the learner loads the exam.</p>
+<a href="#authentication-providers" class="anchor"></a>Authentication providers</h2>
+<p>Currently, examinr ships with only three authentication providers: <code><a href="../reference/rsconnect_auth.html">rsconnect_auth()</a></code>, which uses the RStudio Connect user information, as well as <code><a href="../reference/password_auth.html">password_auth()</a></code> and <code><a href="../reference/password_auth.html">ui_token_auth()</a></code> which show a login screen when the learner loads the exam.</p>
 <div id="login-screen" class="section level3">
 <h3 class="hasAnchor">
 <a href="#login-screen" class="anchor"></a>Login screen</h3>
-<p>The <code>ui_aith()</code> authentication provider works on every shiny server. Learners visiting the exam URL are prompted for a username and password, which have to be somehow given to the learners beforehand.</p>
+<p>The <code><a href="../reference/password_auth.html">password_auth()</a></code> and <code><a href="../reference/password_auth.html">ui_token_auth()</a></code> authentication providers work on every shiny server. Learners visiting the exam URL are prompted either for</p>
+<ul>
+<li>a username and password (<code><a href="../reference/password_auth.html">password_auth()</a></code>), or</li>
+<li>a login token (<code><a href="../reference/password_auth.html">ui_token_auth()</a></code>),</li>
+</ul>
+<p>which have to be somehow distributed to the learners beforehand.</p>
+<div class="figure">
+<img src="figures/exam_config/login.png" alt="Login screen from ui_token_auth() at the beginning of the exam."><p class="caption">Login screen from <code><a href="../reference/password_auth.html">ui_token_auth()</a></code> at the beginning of the exam.</p>
+</div>
 </div>
 <div id="rstudo-connect" class="section level3">
 <h3 class="hasAnchor">

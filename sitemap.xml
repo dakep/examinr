@@ -37,6 +37,9 @@
     <loc>https://dakep.github.io/examinr/reference/mc_question.html</loc>
   </url>
   <url>
+    <loc>https://dakep.github.io/examinr/reference/password_auth.html</loc>
+  </url>
+  <url>
     <loc>https://dakep.github.io/examinr/reference/rsconnect_auth.html</loc>
   </url>
   <url>
@@ -50,9 +53,6 @@
   </url>
   <url>
     <loc>https://dakep.github.io/examinr/reference/text_question.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/ui_auth.html</loc>
   </url>
   <url>
     <loc>https://dakep.github.io/examinr/articles/config_access.html</loc>
