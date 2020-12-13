@@ -27,14 +27,19 @@ The first factor, _who_ is accessing the exam, is resolved through the _authenti
 Once the user is authenticated, either a new attempt is started or an unfinished attempt is resumed.
 Whether the user is allowed to start a new attempt or resume an old attempt is determined by the global or user-specific attempt configuration.
 
-## Authentication provider
+## Authentication providers
 
-Currently, examinr ships with only two authentication providers: `rsconnect_auth()`, which uses the RStudio Connect user information, and `ui_auth()` which shows a login screen when the learner loads the exam.
+Currently, examinr ships with only three authentication providers: `rsconnect_auth()`, which uses the RStudio Connect user information, as well as `password_auth()` and `ui_token_auth()` which show a login screen when the learner loads the exam.
 
 ### Login screen
 
-The `ui_aith()` authentication provider works on every shiny server.
-Learners visiting the exam URL are prompted for a username and password, which have to be somehow given to the learners beforehand.
+The `password_auth()` and `ui_token_auth()` authentication providers work on every shiny server.
+Learners visiting the exam URL are prompted either for
+
+- a username and password (`password_auth()`), or
+- a login token (`ui_token_auth()`),
+
+which have to be somehow distributed to the learners beforehand.
 
 ### RStudo Connect
 

@@ -55,7 +55,7 @@ override explicitly disables an option (e.g., a global time-limit, but no time-l
 \seealso{
 Other access configuration: 
 \code{\link{authentication_provider}},
-\code{\link{rsconnect_auth}()},
-\code{\link{ui_auth}()}
+\code{\link{password_auth}()},
+\code{\link{rsconnect_auth}()}
 }
 \concept{access configuration}

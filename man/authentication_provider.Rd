@@ -46,7 +46,7 @@ exam_config(auth_provider = function (session) {
 
 Other access configuration: 
 \code{\link{configure_attempts}()},
-\code{\link{rsconnect_auth}()},
-\code{\link{ui_auth}()}
+\code{\link{password_auth}()},
+\code{\link{rsconnect_auth}()}
 }
 \concept{access configuration}

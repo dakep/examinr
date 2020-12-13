@@ -69,23 +69,21 @@ rsconnect_auth <- function (grading_groups = NULL) {
 #' Authenticate Users Via User Interface
 #'
 #' Present the user with a login interface before the exam begins.
+#' `password_auth()` requests the user to enter a username and password.
 #'
-#' This authentication provider matches the given username and password against the data frame `users`.
-#' The data frame `users` must have at least two columns: _username_ and _password_.
+#' The `password_auth()` authentication provider
+#' matches the given username and password against columns _username_ and _password_ in data frame `users`.
 #' The _password_ column must contain **hashed** passwords created with [sodium::password_store()]
 #' (e.g., `sodium::password_store("password")`, or a SHA-256 HMAC created with [digest::hmac()]
 #' (`digest::hmac("exam_id", "password", algo = "sha256")`).
 #'
-#' If the `users` data frame also contains columns *display_name* and/or _grading_, they are added to the user object
-#' (and used as described in the [authentication provider documentation][authentication_provider]).
-#'
-#' @param users a data frame with user authentication information (username and **hashed** password).
-#'   See below for details.
+#' @param users a data frame with user authentication information. See below for details.
 #' @param username_label label for the username input field.
 #' @param password_label label for the password input field.
 #' @param title title of the dialog.
 #' @param button_label label for the login button.
-#' @param username_empty,password_empty error messages for empty username/password field.
+#' @param username_empty error messages for empty username field.
+#' @param password_empty error messages for empty password field.
 #' @param unauthorized error message for incorrect username/password.
 #'
 #' @export
@@ -93,10 +91,10 @@ rsconnect_auth <- function (grading_groups = NULL) {
 #' @importFrom rlang abort
 #' @importFrom stringr str_starts
 #' @importFrom digest hmac
-ui_auth <- function (users, username_label = 'Username', password_label = 'Password', title = 'Login',
-                     button_label = 'Login', username_empty = 'Username cannot be empty.',
-                     password_empty = 'Passwort cannot be empty.',
-                     unauthorized = 'The username/password are incorrect.') {
+password_auth <- function (users, username_label = 'Username', password_label = 'Password', title = 'Login',
+                           button_label = 'Login', username_empty = 'Username cannot be empty.',
+                           password_empty = 'Passwort cannot be empty.',
+                           unauthorized = 'The username/password are incorrect.') {
   use_sodium <- FALSE
   if (!is.character(users$username)) {
     abort("Argument `users` must contain a character column `username`.")
@@ -156,6 +154,76 @@ ui_auth <- function (users, username_label = 'Username', password_label = 'Passw
 
     session$userData[['__examinr_ui_auth_login_info']] <- list(
       user_id = users$username[[user_match]],
+      display_name = users$display_name[[user_match]],
+      grading = isTRUE(users$grading[[user_match]])
+    )
+    return(TRUE)
+  }
+
+  # This is the actual authentication provider which needs the session information populated by
+  # the callback.
+  auth_provider <- function (session) {
+    return(session$userData[['__examinr_ui_auth_login_info']])
+  }
+
+  structure(list(
+    ui = ui,
+    callback = callback,
+    auth = auth_provider
+  ), class = 'ui_authentication_provider')
+}
+
+#' @description
+#' `ui_token_auth()` requires the user to enter only an access token.
+#'
+#' @details
+#' The `ui_token_auth()` authentication provider
+#' matches the given token and against column _token_ in data frame `users`.
+#' The token can be any character data.
+#'
+#' For both authentication providers, if the `users` data frame also contains columns *display_name*
+#' and/or _grading_, they are added to the user object
+#' (and used as described in the [authentication provider documentation][authentication_provider]).
+#'
+#' @param token_label label for the token input field.
+#' @param token_empty error messages for empty token field.
+#'
+#' @rdname password_auth
+#' @export
+#' @importFrom rlang abort
+ui_token_auth <- function (users, token_label = 'Access token', title = 'Login',
+                           button_label = 'Login', token_empty = 'Access token cannot be empty.',
+                           unauthorized = 'The token is incorrect.') {
+  if (!is.character(users$token)) {
+    abort("Argument `users` must contain a character column `token`.")
+  }
+
+  users$token <- enc2utf8(users$token)
+
+  # Define the user interface for the login screen.
+  # `inputs` can be a list of arbitrary length, each item defining one input
+  ui <- list(
+    title = title,
+    btnLabel = button_label,
+    inputs = list(list(name = 'token', label = token_label, emptyError = token_empty)))
+
+  # The callback is called when the user clicks the login button.
+  # It gets an argument `input` which is a named list with the user's input values.
+  # The name is the `name` from the input in the UI definition.
+  # If the callback returns anything but `TRUE`, the return value is interpreted as error message that
+  # should be shown to the user.
+  callback <- function (input, session, exam_metadata) {
+    if (length(input$token) != 1L || !nzchar(input$token)) {
+      return(token_empty)
+    }
+    input$token <- enc2utf8(input$token)
+    user_match <- which(match(users$token, input$token, nomatch = 0L) == 1L)
+    if (length(user_match) != 1L) {
+      return(unauthorized)
+    }
+
+    session$userData[['__examinr_ui_auth_login_info']] <- list(
+      user_id = users$token[[user_match]],
       display_name = users$display_name[[user_match]],
       grading = isTRUE(users$grading[[user_match]])
     )

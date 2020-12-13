@@ -287,6 +287,7 @@ knit_print.examinr_exam_init <- function (x, ...) {
 ## Initialize a new exam session
 #' @importFrom shiny parseQueryString getDefaultReactiveDomain reactiveValuesToList
 #' @importFrom rlang warn cnd_message
+#' @importFrom stringr str_detect fixed
 initialize_exam_server <- function (config) {
   config <- unserialize_object(config)
   session <- getDefaultReactiveDomain()
@@ -305,7 +306,11 @@ initialize_exam_server <- function (config) {
       feedback_url <- paste(feedback_url, url_pathname, sep = '/')
     }
     feedback_url <- if (nzchar(url_search)) {
-      sprintf('%s%s&display=feedback', feedback_url, url_search)
+      if (str_detect(url_search, fixed('display=feedback'))) {
+        paste(feedback_url, url_search, sep = '')
+      } else {
+        sprintf('%s%s&display=feedback', feedback_url, url_search)
+      }
     } else {
       paste(feedback_url, 'display=feedback', sep = '?')
     }

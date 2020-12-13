@@ -27,6 +27,6 @@ exam_config(auth_provider = auth_prov)
 Other access configuration: 
 \code{\link{authentication_provider}},
 \code{\link{configure_attempts}()},
-\code{\link{ui_auth}()}
+\code{\link{password_auth}()}
 }
 \concept{access configuration}
