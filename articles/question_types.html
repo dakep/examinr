@@ -121,7 +121,7 @@
 <div id="multiple-choice-questions" class="section level2">
 <h2 class="hasAnchor">
 <a href="#multiple-choice-questions" class="anchor"></a>Multiple-choice questions</h2>
-<p>Multiple-choice and single-choice questions are added via <code><a href="../reference/mc_question.html">mc_question()</a></code>. The question is by default multiple-choice (argument <code>mc=TRUE</code>) and answer options are displayed with check-boxes, allowing the learner to select any number of answer options.</p>
+<p>Multiple-choice and multiple-response questions are added via <code><a href="../reference/mc_question.html">mc_question()</a></code>. The question is by default multiple-response (argument <code>checkbox=TRUE</code>) and answer options are displayed with check-boxes, allowing the learner to select any number of answer options.</p>
 <p>The following R code produces a simple MC question displayed below</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co">#! context="render"</span>
@@ -139,7 +139,7 @@
 <div class="figure">
 <img src="figures/question_types/mc.png" alt="Multiple choice question."><p class="caption">Multiple choice question.</p>
 </div>
-<p>By default, <code><a href="../reference/mc_question.html">mc_question()</a></code> will randomly select 5 answer options from the pool of supplied answer options. At least one correct answer option is always displayed. If you would rather want to restrict learners to select only a single option, you can set <code>mc=FALSE</code>. In this case exactly one answer option will be displayed.</p>
+<p>By default, <code><a href="../reference/mc_question.html">mc_question()</a></code> will randomly select 5 answer options from the pool of supplied answer options. At least one correct answer option is always displayed. If you would rather want to restrict learners to select only a single option, you can set <code>checkbox=FALSE</code>. In this case exactly one answer option will be displayed.</p>
 <p>Answer options are added by supplying <code><a href="../reference/mc_question.html">mc_question()</a></code> with an arbitrary number (at least one) of unnamed objects created with <code><a href="../reference/mc_question.html">answer()</a></code>. An answer option is a <em>label</em> (the text shown to the learner) and some metadata. Both the question title and answer labels may contain commonmark markdown and LaTeX formulas (within $ delimiters). For simple answer options, as in the example above, <code>correct</code> may be simply a constant (<code>TRUE</code> or <code>FALSE</code>). For more complex scenarios you can also supply an expression which will be evaluated at run-time in the environment created by the data provider (explained in detail in the <a href="randomized_exam.html">companion vignette on randomization</a>). The expression must yield either <code>TRUE</code> or <code>FALSE</code> depending on the randomized values for the attempt.</p>
 <p>Consider an example where the learner is asked to decide whether a certain test rejects the null hypothesis in favor of the alternative. Assume the data provider randomly draws the value of the test statistic (<code>test_stat</code>) and the significance level (<code>sign_level</code>), and also returns the critical value (<code>crit_value</code>). The MC question can be written as:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -151,7 +151,7 @@
 <h3 class="hasAnchor">
 <a href="#changing-the-number-of-displayed-answer-options" class="anchor"></a>Changing the number of displayed answer options</h3>
 <p>The number of answer options shown at any time is determined by the argument <code>nr_answers</code>, which can either be a single number or a vector of two numbers.</p>
-<p>If a single number, <code>nr_answers</code> determines how many answer options in total will be shown. The number of shown <em>correct</em> answer options is either exactly 1 (if <code>mc=FALSE</code>) or varies between 1 and <code>nr_answers</code> (if <code>mc=TRUE</code>).</p>
+<p>If a single number, <code>nr_answers</code> determines how many answer options in total will be shown. The number of shown <em>correct</em> answer options is either exactly 1 (if <code>checkbox=FALSE</code>) or varies between 1 and <code>nr_answers</code> (if <code>checkbox=TRUE</code>).</p>
 <p>If <code>nr_answers</code> is a vector of two numbers, the first number determines the number of <em>correct</em> answer options to display and the second number determines the number of <em>incorrect</em> answer options to display.</p>
 <p><strong>Important:</strong> You must ensure to provide enough correct and incorrect answer options to satisfy the requested number of answer options. Since correctness is only determined at run-time, examinr cannot warn you at the time of knitting if there will be enough correct/incorrect answer options available. In particular, you must ensure that at least one answer option is correct.</p>
 </div>
