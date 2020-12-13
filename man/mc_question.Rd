@@ -11,7 +11,7 @@ mc_question(
   points = 1,
   nr_answers = 5,
   random_answer_order = TRUE,
-  mc = TRUE,
+  checkbox = TRUE,
   label = "Select the correct answer(s).",
   hide_label = FALSE,
   min_points = 0,
@@ -44,7 +44,7 @@ If \code{NULL}, all answer options are shown. If a vector of length two, the fir
 
 \item{random_answer_order}{should the order of answers be randomized? Randomization is unique for every user.}
 
-\item{mc}{show as multiple choice, i.e., allow the user to select more than one answer.}
+\item{checkbox}{make a multiple response question, i.e., allow the user to select more than one answer.}
 
 \item{label}{answer text to show. Supports markdown formatting and inline code chunks of the form \code{`r value`}.}
 

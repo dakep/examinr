@@ -32,8 +32,8 @@ If you want to define multiple questions in one code chunk, you must use the `id
 
 ## Multiple-choice questions
 
-Multiple-choice and single-choice questions are added via `mc_question()`.
-The question is by default multiple-choice (argument `mc=TRUE`) and answer options are displayed with check-boxes, allowing the learner to select any number of answer options.
+Multiple-choice and multiple-response questions are added via `mc_question()`.
+The question is by default multiple-response (argument `checkbox=TRUE`) and answer options are displayed with check-boxes, allowing the learner to select any number of answer options.
 
 The following R code produces a simple MC question displayed below
 
@@ -56,7 +56,7 @@ mc_question(
 
 By default, `mc_question()` will randomly select 5 answer options from the pool of supplied answer options.
 At least one correct answer option is always displayed.
-If you would rather want to restrict learners to select only a single option, you can set `mc=FALSE`.
+If you would rather want to restrict learners to select only a single option, you can set `checkbox=FALSE`.
 In this case exactly one answer option will be displayed.
 
 Answer options are added by supplying `mc_question()` with an arbitrary number (at least one) of unnamed objects created with `answer()`.
@@ -82,7 +82,7 @@ mc_question(title = "Does the test reject the null at a significance level of `r
 The number of answer options shown at any time is determined by the argument `nr_answers`, which can either be a single number or a vector of two numbers.
 
 If a single number, `nr_answers` determines how many answer options in total will be shown.
-The number of shown _correct_ answer options is either exactly 1 (if `mc=FALSE`) or varies between 1 and `nr_answers` (if `mc=TRUE`).
+The number of shown _correct_ answer options is either exactly 1 (if `checkbox=FALSE`) or varies between 1 and `nr_answers` (if `checkbox=TRUE`).
 
 If `nr_answers` is a vector of two numbers, the first number determines the number of _correct_ answer options to display and the second number determines the number of _incorrect_ answer options to display.
 

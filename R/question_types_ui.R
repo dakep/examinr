@@ -145,7 +145,7 @@ comp_digits <- function (digits, pm = 1) {
 #' @param nr_answers maximum number of answers to display. At least one correct answer will always be shown.
 #'   If `NULL`, all answer options are shown. If a vector of length two, the first number specifies the number of
 #'   *correct* answers to be shown and the second number specifies the number of *incorrect* answers to be shown.
-#' @param mc show as multiple choice, i.e., allow the user to select more than one answer.
+#' @param checkbox make a multiple response question, i.e., allow the user to select more than one answer.
 #' @param label a label to help screen readers describe the purpose of the input element.
 #' @param hide_label hide the label from non-screen readers.
 #' @param random_answer_order should the order of answers be randomized? Randomization is unique for every user.
@@ -164,7 +164,7 @@ comp_digits <- function (digits, pm = 1) {
 #'
 #' @family exam question types
 #' @export
-mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_order = TRUE, mc = TRUE,
+mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_order = TRUE, checkbox = TRUE,
                         label = "Select the correct answer(s).", hide_label = FALSE, min_points = 0,
                         mandatory = FALSE, id = NULL, title_container = h6, static_title = NULL) {
   if (is.null(label)) {
@@ -239,7 +239,7 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
                         points_str = points_str,
                         nr_always_show = nr_always_show,
                         random_answer_order = isTRUE(random_answer_order),
-                        mc = isTRUE(mc),
+                        checkbox = isTRUE(checkbox),
                         title_container = title_container),
                    class = c('mcquestion', 'examinr_question')))
 }
@@ -425,7 +425,7 @@ render_question_body.textquestion <- function (question, ns, ...) {
 #' @importFrom shiny checkboxGroupInput radioButtons NS
 render_question_body.mcquestion <- function (question, ns, ...) {
   # The input groups are empty at first.
-  input_group <- if (question$mc) {
+  input_group <- if (question$checkbox) {
     checkboxGroupInput(ns(question$input_id), label = question$input_label, choices = c('N/A' = 'N/A'), selected = '')
   } else {
     radioButtons(ns(question$input_id), label = question$input_label, choices = c('N/A' = 'N/A'), selected = '')

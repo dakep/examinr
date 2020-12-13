@@ -143,7 +143,7 @@ render_mcquestion_server <- function (question, ns) {
 
       # Send the answer options to the client. Add the 'N/A' option to ensure the input
       # is captured when saving section data.
-      if (isTRUE(question$mc)) {
+      if (isTRUE(question$checkbox)) {
         updateCheckboxGroupInput(session, inputId = question$input_id, selected = 'N/A',
                                  choiceValues = c('N/A', values), choiceNames = c('N/A', labels))
       } else {
@@ -193,7 +193,7 @@ sample_answers <- function (question, seed, rendering_env, attempt_id) {
       # How many answers, in addition to the always shown answers, are necessary
       total_nr_sample_answers <- question$nr_answers - sum(nr_always_show)
 
-      nr_sample_answers[['cor']] <- if (isTRUE(question$mc)) {
+      nr_sample_answers[['cor']] <- if (isTRUE(question$checkbox)) {
         # Sample at most as many correct answers as available
         max_sample <- min(length(answers$cor_sample), total_nr_sample_answers)
         # Sample at least as many correct answers as needed to have
