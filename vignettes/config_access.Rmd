@@ -41,6 +41,8 @@ Learners visiting the exam URL are prompted either for
 
 which have to be somehow distributed to the learners beforehand.
 
+![Login screen from `ui_token_auth()` at the beginning of the exam.](figures/exam_config/login.png)
+
 ### RStudo Connect
 
 RStudio Connect exposes the current user in `session$user` and the group membership of the user in  `session$groups`.

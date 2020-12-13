@@ -22,7 +22,8 @@
 #' Any additional information will be proxied to all callback functions receiving a `user` object.
 #'
 #' @seealso [rsconnect_auth()] for an authentication provider using the user information from RStudio Connect.
-#' @seealso [ui_auth()] for an authentication provider displaying a login user interface before the exam begins.
+#' @seealso [password_auth()] and [ui_token_auth()] for authentication providers displaying a login user interface
+#'   before the exam begins.
 #'
 #' @examples
 #' # Use a "dummy" authentication provider which assigns everyone the same user id
