@@ -242,7 +242,7 @@ evaluate_exercise <- function (user_code, support_code, chunk_options, status_me
 
   # Sanitize the system environment: only keep required and R-related env variables
   envvars <- Sys.getenv()
-  keep_envvars <- names(envvars) %in% c('PATH', 'LANG', 'TAR', 'TMPDIR', 'USER', 'UID', 'GID', 'LC') |
+  keep_envvars <- names(envvars) %in% c('PATH', 'HOME', 'LANG', 'TAR', 'TMPDIR', 'USER', 'UID', 'GID', 'LC') |
     str_starts(names(envvars), fixed('R_'))
   Sys.unsetenv(names(envvars)[!keep_envvars])
   on.exit(do.call(Sys.setenv, as.list(envvars)), add = TRUE)
