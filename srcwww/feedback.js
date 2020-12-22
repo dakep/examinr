@@ -431,7 +431,7 @@ exports.feedback = (function () {
     } else if (feedback.comment) {
       footer.append('<div class="text-muted examinr-grading-feedback">' +
           '<h6>' + exports.status.getMessage('feedback').commentLabel + '</h6>' +
-          '<div>' + feedback.comment + '</div>' +
+          '<div>' + feedback.commentHtml || feedback.comment + '</div>' +
         '</div>')
     }
 

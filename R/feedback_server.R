@@ -184,10 +184,17 @@ send_feedback <- function (attempt, all_attempts, session) {
         lapply(names(sd$section_data), function (qid) {
           feedback <- attempt$points[[qid]] %||% feedback_cache[[qid]] %||% list()
 
+          comment_html <- if (!is.null(feedback$comment)) {
+            render_markdown_as_html(feedback$comment, use_rmarkdown = FALSE)
+          } else {
+            NULL
+          }
+
           answer <- sd$section_data[[qid]]
           list(qid = qid,
                points = feedback$points,
                comment = feedback$comment,
+               commentHtml = comment_html,
                maxPoints = feedback$max_points,
                solution = feedback$solution,
                answer = feedback$answer %||% sd$section_data[[qid]])

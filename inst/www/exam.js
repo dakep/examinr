@@ -1052,7 +1052,7 @@ exports.feedback = function () {
         footer.find('.examinr-grading-comment').hide().find('textarea').val('');
       }
     } else if (feedback.comment) {
-      footer.append('<div class="text-muted examinr-grading-feedback">' + '<h6>' + exports.status.getMessage('feedback').commentLabel + '</h6>' + '<div>' + feedback.comment + '</div>' + '</div>');
+      footer.append('<div class="text-muted examinr-grading-feedback">' + '<h6>' + exports.status.getMessage('feedback').commentLabel + '</h6>' + '<div>' + feedback.commentHtml || feedback.comment + '</div>' + '</div>');
     }
 
     exports.utils.renderMathJax(footer);
@@ -1826,7 +1826,7 @@ exports.grading = function () {
   };
 }();
 
-exports.login = function () {
+(function () {
   'use strict';
 
   var kEnterKey = 13;
@@ -1837,7 +1837,7 @@ exports.login = function () {
    * Display a login screen
    */
 
-  function showLogin(data) {
+  Shiny.addCustomMessageHandler('__.examinr.__-loginscreen', function (data) {
     exports.utils.toggleShim($('body'), false);
     dialogContainer.find('#' + dialogTitleId).html(data.title || 'Login');
     dialogContainer.find('button').html(data.btnLabel || 'Login');
@@ -1856,7 +1856,7 @@ exports.login = function () {
       if (event.which === kEnterKey) {
         dialogContainer.find('button').click();
       }
-    });
+    }).first().focus();
     dialogContainer.find('button').click(function (event) {
       var allOk = true;
       dialogContainer.find('.alert').remove();
@@ -1889,9 +1889,7 @@ exports.login = function () {
 
       event.stopImmediatePropagation();
     });
-  }
-
-  Shiny.addCustomMessageHandler('__.examinr.__-loginscreen', showLogin);
+  });
   Shiny.addCustomMessageHandler('__.examinr.__-login', function (data) {
     if (data.status === true) {
       dialogContainer.modal('hide').remove();
@@ -1906,10 +1904,7 @@ exports.login = function () {
       dialogContainer.find('.modal-body').append(errorMsg);
     }
   });
-  return {
-    showLogin: showLogin
-  };
-}();
+})();
 
 ace.define('ace/theme/monochrome', ['require', 'exports', 'module', 'ace/lib/dom'], function (acequire, exports, module) {
   exports.isDark = false;

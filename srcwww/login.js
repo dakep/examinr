@@ -1,4 +1,4 @@
-exports.login = (function () {
+(function () {
   'use strict'
 
   const kEnterKey = 13
@@ -27,7 +27,7 @@ exports.login = (function () {
   /**
    * Display a login screen
    */
-  function showLogin (data) {
+  Shiny.addCustomMessageHandler('__.examinr.__-loginscreen', function (data) {
     exports.utils.toggleShim($('body'), false)
     dialogContainer.find('#' + dialogTitleId).html(data.title || 'Login')
     dialogContainer.find('button').html((data.btnLabel || 'Login'))
@@ -54,7 +54,8 @@ exports.login = (function () {
       if (event.which === kEnterKey) {
         dialogContainer.find('button').click()
       }
-    })
+    }).first().focus()
+
     dialogContainer.find('button').click(function (event) {
       let allOk = true
       dialogContainer.find('.alert').remove()
@@ -83,9 +84,8 @@ exports.login = (function () {
       }
       event.stopImmediatePropagation()
     })
-  }
+  })
 
-  Shiny.addCustomMessageHandler('__.examinr.__-loginscreen', showLogin)
   Shiny.addCustomMessageHandler('__.examinr.__-login', function (data) {
     if (data.status === true) {
       dialogContainer.modal('hide').remove()
@@ -98,8 +98,4 @@ exports.login = (function () {
       dialogContainer.find('.modal-body').append(errorMsg)
     }
   })
-
-  return {
-    showLogin: showLogin
-  }
 }())

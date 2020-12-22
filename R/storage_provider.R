@@ -269,7 +269,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
                                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8, $9)', attempts_table)
       test_user_id <- get_user_id(list(user_id = 'user'), 'exam id string', '0.0.0')
 
-      DBI::dbExecute(conn, attempts_insert_sql, immediate = FALSE, params = list(
+      DBI::dbExecute(conn, attempts_insert_sql, params = list(
         attempt_id, test_user_id, 'exam id string', '0.0.0.0', as.numeric(Sys.time()),
         as.numeric(Sys.time()) + 1, 1L, serialize_object(list('user object')),
         serialize_object(list('points'))))
@@ -281,7 +281,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
     tryCatch({
       test_insert_sql <- sprintf('INSERT INTO %s (attempt_id, section, saved_at, section_data)
                                  VALUES ($1,$2,$3,$4)', section_data_table)
-      DBI::dbExecute(conn, test_insert_sql, immediate = FALSE, params = list(
+      DBI::dbExecute(conn, test_insert_sql, params = list(
         attempt_id, 'section', as.numeric(Sys.time()), serialize_object(list('section data'))))
     }, error = function (e) {
       abort(paste('Table ', section_data_table, ' does not seem to exist or is not writable (error: ',
@@ -310,7 +310,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
         insert_stmt <- sprintf('INSERT INTO %s (attempt_id, user_id, exam_id, exam_version, started_at, seed, user_obj)
                                 VALUES ($1,$2,$3,$4,$5,$6,$7)', attempts_table)
 
-        DBI::dbExecute(conn, insert_stmt, immediate = FALSE, params = list(
+        DBI::dbExecute(conn, insert_stmt, params = list(
           attempt_id, user_id, as.character(exam_id), as.character(exam_version),
           as.numeric(started_at), as.integer(seed), serialize_object(user)))
 
@@ -335,7 +335,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
         }
         DBI::dbBegin(conn)
         update_sql <- sprintf('UPDATE %s SET finished_at = $1 WHERE attempt_id = $2', attempts_table)
-        affected_rows <- DBI::dbExecute(conn, update_sql, immediate = FALSE, params = list(
+        affected_rows <- DBI::dbExecute(conn, update_sql, params = list(
           as.numeric(finished_at), attempt_id))
         DBI::dbCommit(conn)
         isTRUE(affected_rows == 1L)
@@ -358,7 +358,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
         }
         DBI::dbBegin(conn)
         update_sql <- sprintf('UPDATE %s SET points = $1 WHERE attempt_id = $2', attempts_table)
-        affected_rows <- DBI::dbExecute(conn, update_sql, immediate = FALSE, params = list(
+        affected_rows <- DBI::dbExecute(conn, update_sql, params = list(
           serialize_object(points), attempt_id))
         DBI::dbCommit(conn)
         isTRUE(affected_rows == 1L)
@@ -387,7 +387,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
                               FROM
                                 %s
                               WHERE %s', attempts_table, filter_sql)
-        db_tbl <- DBI::dbGetQuery(conn, query_sql, immediate = FALSE, params = filter_data)
+        db_tbl <- DBI::dbGetQuery(conn, query_sql, params = filter_data)
 
         if (nrow(db_tbl) > 0L) {
           lapply(seq_len(nrow(db_tbl)), function (i) {
@@ -420,7 +420,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
                               WHERE attempt_id = $4
                               ORDER BY saved_at DESC
                               LIMIT 1', section_data_table)
-        db_tbl <- DBI::dbGetQuery(conn, read_stmt, immediate = FALSE, params = list(attempt_id), n = 1L)
+        db_tbl <- DBI::dbGetQuery(conn, read_stmt, params = list(attempt_id), n = 1L)
         if (nrow(db_tbl) > 0L) {
           db_tbl$section[[1L]]
         } else {
@@ -434,25 +434,18 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
 
     # Get section data
     get_section_data = function (attempt_id, section, ...) {
-      filter_sql <- 't.attempt_id = $1'
+      filter_sql <- 'attempt_id = $1'
       filter_data <- list(attempt_id)
       if (!is.null(section)) {
         filter_data <- c(filter_data, as.character(section))
-        filter_sql <- paste(filter_sql, 't.section = $2', sep = ' AND ')
+        filter_sql <- paste(filter_sql, 'section = $2', sep = ' AND ')
       }
 
       tryCatch({
-        read_stmt <- sprintf('SELECT
-                                t.section, t.saved_at, t.section_data
-                              FROM %s t
-                              INNER JOIN (
-                                SELECT attempt_id, section, MAX(saved_at) saved_at
-                                FROM %s
-                                GROUP BY attempt_id, section) ft
-                              ON(t.attempt_id = ft.attempt_id AND t.section = ft.section AND t.saved_at = ft.saved_at)
-                              WHERE %s', section_data_table, section_data_table, filter_sql)
+        read_stmt <- sprintf('SELECT section, saved_at, section_data FROM %s WHERE %s',
+                             section_data_table, filter_sql)
 
-        db_tbl <- DBI::dbGetQuery(conn, read_stmt, immediate = FALSE, params = filter_data)
+        db_tbl <- DBI::dbGetQuery(conn, read_stmt, params = filter_data)
         if (nrow(db_tbl) > 0L) {
           lapply(seq_len(nrow(db_tbl)), function (i) {
             list(section = db_tbl$section[[i]],
@@ -475,9 +468,14 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
           conn <- pool::poolCheckout(conn)
         }
         DBI::dbBegin(conn)
+        # Drop old section data (if present)
+        drop_old_stmt <- sprintf('DELETE FROM %s WHERE attempt_id = $1 AND section = $2', section_data_table)
+        DBI::dbExecute(conn, drop_old_stmt, params = list(attempt_id, as.character(section)))
+
+        # Insert new section data
         insert_stmt <- sprintf('INSERT INTO %s (attempt_id, section, saved_at, section_data)
                                  VALUES ($1,$2,$3,$4)', section_data_table)
-        affected_rows <- DBI::dbExecute(conn, insert_stmt, immediate = FALSE, params = list(
+        affected_rows <- DBI::dbExecute(conn, insert_stmt, params = list(
           attempt_id, as.character(section), as.numeric(Sys.time()), serialize_object(section_data)))
         DBI::dbCommit(conn)
         isTRUE(affected_rows == 1L)
