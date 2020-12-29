@@ -159,8 +159,8 @@
 </tr>
 <tr class="odd">
 <td align="left"><code>started_at</code></td>
-<td align="left">TIMESTAMP</td>
-<td align="left">in UTC</td>
+<td align="left">DOUBLE PRECISION</td>
+<td align="left">seconds since 1970-01-01 00:00 UTC (UNIX timestamp)</td>
 </tr>
 <tr class="even">
 <td align="left"><code>seed</code></td>
@@ -169,8 +169,8 @@
 </tr>
 <tr class="odd">
 <td align="left"><code>finished_at</code></td>
-<td align="left">TIMESTAMP</td>
-<td align="left">in UTC</td>
+<td align="left">DOUBLE PRECISION</td>
+<td align="left">seconds since 1970-01-01 00:00 UTC (UNIX timestamp)</td>
 </tr>
 <tr class="even">
 <td align="left"><code>user_obj</code></td>
@@ -192,10 +192,10 @@
 <a class="sourceLine" id="cb1-3" data-line-number="3">  user_id      <span class="dt">character</span> <span class="dt">varying</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</a>
 <a class="sourceLine" id="cb1-4" data-line-number="4">  exam_id      <span class="dt">character</span> <span class="dt">varying</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</a>
 <a class="sourceLine" id="cb1-5" data-line-number="5">  exam_version <span class="dt">character</span> <span class="dt">varying</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">  started_at   <span class="dt">timestamp</span>         <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="fu">current_timestamp</span>,</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">  started_at   <span class="dt">double</span> <span class="dt">precision</span>  <span class="kw">NOT</span> <span class="kw">NULL</span>,</a>
 <a class="sourceLine" id="cb1-7" data-line-number="7">  seed         <span class="dt">integer</span>           <span class="kw">NOT</span> <span class="kw">NULL</span>,</a>
 <a class="sourceLine" id="cb1-8" data-line-number="8">  user_obj     text              <span class="kw">NOT</span> <span class="kw">NULL</span>,</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">  finished_at  <span class="dt">timestamp</span>,</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">  finished_at  <span class="dt">double</span> <span class="dt">precision</span>,</a>
 <a class="sourceLine" id="cb1-10" data-line-number="10">  points       text</a>
 <a class="sourceLine" id="cb1-11" data-line-number="11">);</a>
 <a class="sourceLine" id="cb1-12" data-line-number="12"></a>
@@ -223,8 +223,8 @@
 </tr>
 <tr class="odd">
 <td align="left"><code>saved_at</code></td>
-<td align="left">TIMESTAMP</td>
-<td align="left">in UTC</td>
+<td align="left">DOUBLE PRECISION</td>
+<td align="left">seconds since 1970-01-01 00:00 UTC (UNIX timestamp)</td>
 </tr>
 <tr class="even">
 <td align="left"><code>section_data</code></td>
@@ -238,14 +238,14 @@
 <p>An example table definition for PostgreSQL may look like:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">CREATE</span> <span class="kw">TABLE</span> section_data (</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="kw">id</span>           serial            <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">  attempt_id   uuid              <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">REFERENCES</span> attempts (attempt)</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  attempt_id   uuid              <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">REFERENCES</span> attempts (attempt_id)</a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">                                          <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span> <span class="kw">ON</span> <span class="kw">UPDATE</span> <span class="kw">CASCADE</span>,</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">  section      <span class="dt">character</span> <span class="dt">varying</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">  saved_at     <span class="dt">timestamp</span>         <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="fu">current_timestamp</span>,</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">  saved_at     <span class="dt">double</span> <span class="dt">precision</span>  <span class="kw">NOT</span> <span class="kw">NULL</span>,</a>
 <a class="sourceLine" id="cb2-7" data-line-number="7">  section_data text</a>
 <a class="sourceLine" id="cb2-8" data-line-number="8">);</a>
 <a class="sourceLine" id="cb2-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">CREATE</span> <span class="kw">INDEX</span> section_data_index <span class="kw">ON</span> section_data (attempt_d, section);</a></code></pre></div>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">CREATE</span> <span class="kw">INDEX</span> section_data_index <span class="kw">ON</span> section_data (attempt_id, section);</a></code></pre></div>
 </div>
 <div id="user-id-hashing" class="section level4">
 <h4 class="hasAnchor">

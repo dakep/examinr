@@ -207,9 +207,9 @@ hashing is used.</p></dd>
 <dt><code>exam_id</code></dt><dd><p>stored as character data. Ensure it can hold enough characters for the exam ids used in your exams.</p></dd>
 <dt><code>exam_version</code></dt><dd><p>stored as character data. Ensure it can hold enough characters for the exam version strings
 used in your exams.</p></dd>
-<dt><code>started_at</code></dt><dd><p>the UTC time at which the attempt was started.</p></dd>
+<dt><code>started_at</code></dt><dd><p>unix timestamp at which the attempt was started.</p></dd>
 <dt><code>seed</code></dt><dd><p>the integer used to seed the RNG for this attempt.</p></dd>
-<dt><code>finished_at</code></dt><dd><p>the UTC time at which the attempt was finished.</p></dd>
+<dt><code>finished_at</code></dt><dd><p>unix timestamp at which the attempt was finished.</p></dd>
 <dt><code>user_obj</code></dt><dd><p>the user object (<em>less the identifier</em>) as returned by the authentication provider stored as character
 data of arbitrary length.</p></dd>
 <dt><code>points</code></dt><dd><p>the points awarded for the attempt, as character data of arbitrary length.</p></dd>
@@ -218,22 +218,25 @@ data of arbitrary length.</p></dd>
 
 <p>Exam data is stored in a table which requires the following columns:</p>
 <dl>
-<dt><code>attempt</code></dt><dd><p>the attempt identifier of type <em>UUID</em>.</p></dd>
+<dt><code>attempt_id</code></dt><dd><p>the attempt identifier of type <em>UUID</em>.</p></dd>
 <dt><code>section</code></dt><dd><p>the section identifier, as character data.</p></dd>
-<dt><code>saved_at</code></dt><dd><p>the UTC time at which the section data was last saved (of type <em>TIMESTAMP</em>).</p></dd>
+<dt><code>saved_at</code></dt><dd><p>unix timestamp at which the section data was last saved.</p></dd>
 <dt><code>section_data</code></dt><dd><p>stored as character data of arbitrary length.</p></dd>
 
 </dl>
 
+<p><code>dbi_storage_provider()</code> reads/writes unix timestamps as type <em>numeric</em>, and some database systems (e.g., PostgreSQL)
+do not accept numeric input for timestamps. For these database systems, it is best to create the columns of type
+<code>double precision</code>.</p>
 <p>A sample definition of the tables for PostgreSQL is as follows:</p><pre>CREATE TABLE attempts (
   attempt_id UUID PRIMARY KEY,
   user_id character varying(256) NOT NULL,
   exam_id character varying(64) NOT NULL,
   exam_version character varying(64) NOT NULL,
-  started_at timestamp NOT NULL DEFAULT current_timestamp,
+  started_at double precision NOT NULL,
   seed integer NOT NULL,
   user_obj text NOT NULL,
-  finished_at timestamp,
+  finished_at double precision,
   points text);
 
 CREATE INDEX attempts_index ON attempts
@@ -241,14 +244,14 @@ CREATE INDEX attempts_index ON attempts
 
 CREATE TABLE section_data (
   id serial PRIMARY KEY,
-  attempt_id UUID NOT NULL REFERENCES attempts (attempt)
+  attempt_id UUID NOT NULL REFERENCES attempts (attempt_id)
     ON DELETE CASCADE ON UPDATE CASCADE,
   section character varying (256) NOT NULL,
-  saved_at timestamp NOT NULL DEFAULT current_timestamp,
+  saved_at double precision NOT NULL,
   section_data text);
 
 CREATE INDEX section_data_index ON section_data
-  (attempt_d, section);
+  (attempt_id, section);
 </pre>
 
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
