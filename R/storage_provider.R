@@ -150,9 +150,9 @@ NULL
 #' \item{`exam_id`}{stored as character data. Ensure it can hold enough characters for the exam ids used in your exams.}
 #' \item{`exam_version`}{stored as character data. Ensure it can hold enough characters for the exam version strings
 #'                       used in your exams.}
-#' \item{`started_at`}{the UTC time at which the attempt was started.}
+#' \item{`started_at`}{unix timestamp at which the attempt was started.}
 #' \item{`seed`}{the integer used to seed the RNG for this attempt.}
-#' \item{`finished_at`}{the UTC time at which the attempt was finished.}
+#' \item{`finished_at`}{unix timestamp at which the attempt was finished.}
 #' \item{`user_obj`}{the user object (_less the identifier_) as returned by the authentication provider stored as character
 #'                   data of arbitrary length.}
 #' \item{`points`}{the points awarded for the attempt, as character data of arbitrary length.}
@@ -161,11 +161,15 @@ NULL
 #' Exam data is stored in a table which requires the following columns:
 #'
 #' \describe{
-#' \item{`attempt`}{the attempt identifier of type _UUID_.}
+#' \item{`attempt_id`}{the attempt identifier of type _UUID_.}
 #' \item{`section`}{the section identifier, as character data.}
-#' \item{`saved_at`}{the UTC time at which the section data was last saved (of type _TIMESTAMP_).}
+#' \item{`saved_at`}{unix timestamp at which the section data was last saved.}
 #' \item{`section_data`}{stored as character data of arbitrary length.}
 #' }
+#'
+#' `dbi_storage_provider()` reads/writes unix timestamps as type _numeric_, and some database systems (e.g., PostgreSQL)
+#' do not accept numeric input for timestamps. For these database systems, it is best to create the columns of type
+#' `double precision`.
 #'
 #' A sample definition of the tables for PostgreSQL is as follows:
 #'
@@ -175,10 +179,10 @@ NULL
 #'   user_id character varying(256) NOT NULL,
 #'   exam_id character varying(64) NOT NULL,
 #'   exam_version character varying(64) NOT NULL,
-#'   started_at timestamp NOT NULL DEFAULT current_timestamp,
+#'   started_at double precision NOT NULL,
 #'   seed integer NOT NULL,
 #'   user_obj text NOT NULL,
-#'   finished_at timestamp,
+#'   finished_at double precision,
 #'   points text);
 #'
 #' CREATE INDEX attempts_index ON attempts
@@ -186,14 +190,14 @@ NULL
 #'
 #' CREATE TABLE section_data (
 #'   id serial PRIMARY KEY,
-#'   attempt_id UUID NOT NULL REFERENCES attempts (attempt)
+#'   attempt_id UUID NOT NULL REFERENCES attempts (attempt_id)
 #'     ON DELETE CASCADE ON UPDATE CASCADE,
 #'   section character varying (256) NOT NULL,
-#'   saved_at timestamp NOT NULL DEFAULT current_timestamp,
+#'   saved_at double precision NOT NULL,
 #'   section_data text);
 #'
 #' CREATE INDEX section_data_index ON section_data
-#'   (attempt_d, section);
+#'   (attempt_id, section);
 #' ```
 #'
 #'

@@ -51,9 +51,9 @@ Field               SQL data type       Storage requirements
 `user_id`           CHAR                either 64 characters (if hashing is enabled), or variable length (depending on the authentication provider)
 `exam_id`           CHAR                variable length                
 `exam_version`      CHAR                variable length
-`started_at`        TIMESTAMP           in UTC
+`started_at`        DOUBLE PRECISION    seconds since 1970-01-01 00:00 UTC (UNIX timestamp)
 `seed`              INTEGER             a signed integer of 4 bytes
-`finished_at`       TIMESTAMP           in UTC
+`finished_at`       DOUBLE PRECISION    seconds since 1970-01-01 00:00 UTC (UNIX timestamp)
 `user_obj`          CHAR                variable length (must be able to hold a serialized R object of arbitrary size)
 `points`            CHAR                variable length (must be able to hold a serialized R object of arbitrary size)
 
@@ -75,10 +75,10 @@ CREATE TABLE attempts (
   user_id      character varying NOT NULL,
   exam_id      character varying NOT NULL,
   exam_version character varying NOT NULL,
-  started_at   timestamp         NOT NULL DEFAULT current_timestamp,
+  started_at   double precision  NOT NULL,
   seed         integer           NOT NULL,
   user_obj     text              NOT NULL,
-  finished_at  timestamp,
+  finished_at  double precision,
   points       text
 );
 
@@ -91,7 +91,7 @@ Field               SQL data type       Storage requirements
 ----------------    ----------------    -----------------------------------------------------------------------------------
 `attempt_id`        CHAR (or UUID)      same as for `attempt_id` of the attempts table
 `section`           CHAR                variable length                
-`saved_at  `        TIMESTAMP           in UTC
+`saved_at  `        DOUBLE PRECISION    seconds since 1970-01-01 00:00 UTC (UNIX timestamp)
 `section_data`      CHAR                variable length (must be able to hold a serialized R object of arbitrary size)
 
 This definition does not have a natural candidate for a primary key, so it is up to you and your database system what kind of primary key you want to use.
@@ -105,14 +105,14 @@ An example table definition for PostgreSQL may look like:
 ```sql
 CREATE TABLE section_data (
   id           serial            PRIMARY KEY,
-  attempt_id   uuid              NOT NULL REFERENCES attempts (attempt)
+  attempt_id   uuid              NOT NULL REFERENCES attempts (attempt_id)
                                           ON DELETE CASCADE ON UPDATE CASCADE,
   section      character varying NOT NULL,
-  saved_at     timestamp         NOT NULL DEFAULT current_timestamp,
+  saved_at     double precision  NOT NULL,
   section_data text
 );
 
-CREATE INDEX section_data_index ON section_data (attempt_d, section);
+CREATE INDEX section_data_index ON section_data (attempt_id, section);
 ```
 
 #### User ID hashing
