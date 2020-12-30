@@ -32,6 +32,8 @@ Learners can be given access to graded exams, including personalized feedback.
 You do not have to worry about learners being able to access questions before they are made available: the HTML page sent to the browser does not contain the question texts.
 They are only populated with the learners individualized content at the time they are given access.
 
+If you don't yet have a shiny server or a database, you can follow the [vignette on deploying an exam to shinyapps.io](deployment_shinyapps.html).
+
 ## Creating an exam document
 
 You can create a new exam document from the provided R markdown template by following the [instructions for RStudio](https://rstudio.github.io/rstudio-extensions/rmarkdown_templates.html) or using the `rmarkdown::draft` function:
@@ -128,6 +130,7 @@ The simple exam above is not particularly useful, because:
 1. The exam does not **store data**.
    You need to set up a storage provider to persist the answers given by your users.
    The [vignette on configuring storage](config_storage.html) explains how to set up a storage provider for your server.
+   You can also follow the [vignette on deploying an exam to shinyapps.io](deployment_shinyapps.html) if you don't yet have a database.
 1. The exam does not know **who is accessing** the exam.
    The answers provided by the learner can therefore not be associated with the learner and you cannot assign grades.
    The [vignette on configuring access to the exam](config_access.html) explains how to set up an authentication provider so that examinr knows who is accessing the exam.

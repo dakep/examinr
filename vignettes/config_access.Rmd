@@ -43,7 +43,7 @@ which have to be somehow distributed to the learners beforehand.
 
 ![Login screen from `ui_token_auth()` at the beginning of the exam.](figures/exam_config/login.png)
 
-### RStudo Connect
+### RStudio Connect
 
 RStudio Connect exposes the current user in `session$user` and the group membership of the user in  `session$groups`.
 The `rsconnect_auth()` authentication provider uses this information and allows you to give grading permission to certain groups.

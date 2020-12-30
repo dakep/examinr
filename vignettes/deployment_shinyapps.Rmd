@@ -1,0 +1,316 @@
+---
+title: "Deploying exams to shinyapps.io"
+desc: >
+  Learn how to deploy exams to shinyapps.io using AWS RDS as storage.
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Deploying exams to shinyapps.io}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", error = TRUE, warning = TRUE)
+esc <- function(code) {
+  sprintf('`r %s`', rlang::enexprs(code))
+}
+begin_rmd_block <- function(header = 'r') {
+  sprintf('```{%s}', header)
+}
+end_rmd_block <- function(header) {
+  '```'
+}
+```
+
+If you don't have access to your own shiny server or database server, hosting exams may seem intriguing.
+A simple alternative to acquiring, setting up, and managing your own infrastructure is to use cloud-based hosting providers.
+This guide showcases how to use [shinyapps.io](https://www.shinyapps.io) for hosting the exam and [AWS RDS](https://aws.amazon.com/rds/) for hosting the database.
+Of course there are numerous other hosting providers which may better suite your needs or preferences, and many of the steps outlined here can be easily translated to these other providers.
+
+**Important:** some of the services used in this guide may incur costs.
+[shinyapps.io](https://www.shinyapps.io) offers a free account which is sufficient for trying out exam documents, and may be enough to administer an exam to a small group of learners.
+The RDS service hosted by [Amazon AWS](https://aws.amazon.com) also has a _free tier_ program (for up to 1 year), which gives you access to a database for testing or few learners.
+If you need to provision for exams for a larger number of learners, the free services may not be sufficient.
+However, you can easily scale up the database and/or the shinyapps.io resources without having to redo the setup.
+Similarly, you can stop the database during times you don't need it and you will not pay anything for running the database.
+If you are above the free tier usage limits for storage size, you would continue to pay for the storage.
+But it is very unlikely that you would come close to the free tier limits if you store only data from examinr exams.
+
+The following guide explains how to use the free services provided by shinyapps.io and Amazon AWS and you will need
+
+* an [Amazon AWS](https://aws.amazon.com) account
+* an account on [shinyapps.io](https://www.shinyapps.io)
+* [pgAdmin 4](http://www.pgadmin.org/) or the `psql` command line utility on your local computer
+* the RStudio IDE
+
+The three steps covered in this guide are
+
+1. Setting up a database
+1. Preparing the exam document to use the new database
+1. Publishing the exam to shinyapps.io
+
+## Step 1: Setting up a database
+
+Log in to the [Amazon AWS Management Console](https://console.aws.amazon.com).
+Ensure you are operating in the AWS region your database should be hosted in (can be selected in the top right corner of the management console).
+This is relevant if you have to follow certain data privacy laws which mandate the location where data needs to be stored.
+
+### Step 1.1: Configure the cluster network
+
+#### Step 1.1.1: Set up a VPC
+Go to the service _VPC_ to configure the "virtual private cloud" network.
+This is a "virtual network" in which the database server will be launched in.
+
+1. Click on _Create VPC_.
+2. Set the name of the VPC to something descriptive, e.g., `examinr-db`.
+3. Use an IPv4 CIDR block of `172.31.0.0/16`.
+4. Click on _Create VPC_.
+
+![Settings for the new VPC.](figures/publish/create_vpc.png){width=50%}
+
+#### Step 1.1.2: Create a security group
+
+Next you need to create a security group which specifies through what channels someone can access the server inside the VPC and also how the server inside the VPC may communicate with the outside.
+
+1. In the navigation on the left, click on _Security Groups_.
+1. Click on _Create Security Group_.
+1. Set a descriptive name for the security group, e.g., `examinr-db-sg`.
+1. Add a description, e.g., `Security group for the database cluster storing examinr exam data.`.
+1. Select the previously created VPC (`examinr-db`).
+1. Under **Inbound rules** click on _Add rule_.
+    1. Under **Type** select _PostgreSQL_.
+    1. Under **Source** select _Anywhere_.
+1. The **Outbound rules** can be left as-is.
+4. Click on _Create security group_
+
+![Settings for the new security group.](figures/publish/create_sg.png){width=100%}
+
+Now you have defined a network which allows inbound traffic only to the database.
+
+### Step 1.1: Create a database instance
+
+Go to the service _RDS_ to create you database instance
+
+1. Click on _Create database_. Ensure again that you are in the correct region!
+1. Under **Choose a database creation method**, select _Standard create_.
+1. Under **Engine options**, select _PostgreSQL_ as the engine type and leave the selected version.
+1. Under **Templates**, select _Free tier_.
+1. Under **Settings**, use a descriptive name for the DB instance identifier, e.g., `examinr-db`.
+   Leave the master username as `postgres` and select *Auto generate a password* as this is the most secure option.
+   **Important:** this is a very, very sensitive password and hence should be very complex. You will use this password only once and you can specify a new password in the AWS console if you forget it, so there is no need to make the password easy to memorize or anything. Anyone with this password can access all the exam data!
+1. Leave the settings under **DB instance size**, **Storage**, and **Availability & durability** as they are.
+   You can increase the instance size and storage size later when your database becomes a bottleneck for the exam (e.g., if your exam is used by > 20 learners at a time).
+1. Under **Connectivity**, select the following
+   1. Select the VPC you created in [Step 1.1.1](#step-1.1.1-set-up-a-vpc).
+   1. Under Public access, select _Yes_.
+1. Under **Database authentication**, select _Password authentication_.
+1. If you chose to automatically generate the password, the _View credential details_ button appears on the Database page.
+   To view the password for the DB instance, click on _View credential details_.
+   Take note of the password as you cannot view it again (but you can change the master password anytime in the AWS console).
+
+![Settings for the new database.](figures/publish/create_db.png){width=100%}
+
+The new database will take a few minutes to be created and started.
+
+### Step 1.2: Create a database on the DB instance
+
+Once the new database is launched, click on the DB identifier `examinr-db` to get the summary information for the new database.
+Locate the endpoint URL:
+
+![Endpoint URL for the newly created DB instance](figures/publish/db_summary_conn.png){width=40%}
+
+If you use [pgAdmin 4](https://www.pgadmin.org), you need to use the information from the summary page to set up the connection to the DB instance.
+Start pgAdmin 4, click on _Object_ > _Create_ > _Server_, and enter the details for the server connection, as shown in the figure below (replace *DB_instance_endpoint* with the endpoint URL of the DB instance)
+Click on _Save_.
+
+![Add server connection to pgAdmin 4.](figures/publish/pgadmin_conn.png){width=67%}
+
+When connected to the DB instance, you need to create a database for the exam data.
+In pgAdmin 4, click on _Object_ > _Create_ > _Database_ and enter `examinr` as _Database_ name.
+Click on _Save_.
+
+![Create a new database on the DB instance.](figures/publish/pgadmin_newdb.png){width=33%}
+
+If you have the `psql` command line utilities installed, you can also run the following command in your shell  (replace *DB_instance_endpoint* with the endpoint URL of the DB instance):
+
+```sh
+createdb \
+  --host=DB_instance_endpoint \
+  --port=5432 \
+  --username=postgres \
+  --encoding=UTF8 \
+  examinr
+```
+
+### Step 1.3: Create a database role
+
+Once the database is created, you need to create a role, i.e., the DB user used for connecting to the database from the exam document).
+
+If you use pgAdmin 4, click on _Object_ > _Create_ > _Login/Group Role_:
+
+* Under _General_, enter the name for the role, e.g., `examinr`.
+* Under _Definition_, enter the password for the role.
+* Under _Privileges_, set _Can login?_ to _Yes_ and leave the others as _No_.
+
+Click on _Save_.
+
+![Create a new role for connecting to the database.](figures/publish/pgadmin_newrole.png){width=100%}
+
+If you have the `psql` command line utilities installed, you can add the role by starting the `psql` shell with (replace *DB_instance_endpoint* with the endpoint URL of the DB instance):
+
+```sh
+psql \
+  --host=DB_instance_endpoint \
+  --port=5432
+  --username=postgres \
+  --database=examinr
+```
+
+This opens a shell where you can enter SQL and `psql` commands:
+
+```
+psql (12.1, server 12.4)
+SSL connection (protocol: TLSv1.2, cipher: ECDHE-RSA-AES256-GCM-SHA384, bits: 256, compression: off)
+Type "help" for help.
+
+examinr=>
+```
+
+The role `examinr` can be created created by running the following two commands:
+
+```
+CREATE ROLE examinr WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
+\password examinr
+```
+
+### Step 1.4: Create the tables
+
+Open a query tool in pgAdmin 4 for the `examinr` database by clicking on the _examinr_ database and then using right-click on the database to start the query tool:
+
+![Start the query tool on the _examinr_ database.](figures/publish/pgadmin_query.png){width=30%}
+
+If using the `psql` command line utilities, connect to the `examinr` database with:
+
+```sh
+psql \
+  --host=DB_instance_endpoint \
+  --port=5432
+  --username=postgres \
+  --database=examinr
+```
+
+Either in the query tool (if using pgAdmin 4) or in the `psql` shell, run the following SQL commands:
+
+```sql
+CREATE TABLE attempts (
+  attempt_id   uuid              PRIMARY KEY,
+  user_id      character varying NOT NULL,
+  exam_id      character varying NOT NULL,
+  exam_version character varying NOT NULL,
+  started_at   double precision  NOT NULL,
+  seed         integer           NOT NULL,
+  user_obj     text              NOT NULL,
+  finished_at  double precision,
+  points       text
+);
+
+CREATE INDEX attempts_index ON attempts (user_id, exam_id, exam_version);
+
+CREATE TABLE section_data (
+  id           serial            PRIMARY KEY,
+  attempt_id   uuid              NOT NULL REFERENCES attempts (attempt_id)
+                                          ON DELETE CASCADE ON UPDATE CASCADE,
+  section      character varying NOT NULL,
+  saved_at     double precision  NOT NULL,
+  section_data text
+);
+
+CREATE INDEX section_data_index ON section_data (attempt_id, section);
+
+GRANT CONNECT ON DATABASE examinr TO examinr;
+GRANT SELECT, INSERT, UPDATE ON attempts TO examinr;
+GRANT SELECT, INSERT, DELETE ON section_data TO examinr;
+GRANT USAGE ON section_data_id_seq TO examinr;
+```
+
+Now your database is all set up and ready to be used from the exam document.
+
+
+## Step 2: Using the new database in an exam
+
+You can now create an exam which uses the newly created database.
+In RStudio, click on _File_ > _New File_ > _R Markdown…_.
+Select _From Template_ and select the _Exam_ template.
+Enter the name of the exam document and where to save the exam.
+
+You would go about creating the exam as usual, but you also need to give the exam document the connection credentials (i.e., the name and password for the role you created before).
+Because the exam will later run on shinyapps.io, you need a little trick for sharing the credentials with examinr.
+
+Theoretically, a learner could access the credentials from an exercise chunk, which would potentially expose data from all learners.
+You will therefore store the credentials in a file called _pgauth.yaml_ in folder _www_.
+The contents of the file _www/pgauth.yaml_ are as follows:
+
+```yaml
+user: examinr
+password: password_for_database_user_examinr
+```
+
+You need to replace *password_for_database_user_examinr* with the actual password you entered when creating the database role `examinr`.
+
+In the exam document you will read this file only once (when the shiny server starts) and remove the file from disk afterwards.
+Therefore, the code executed by learners will not have access to this file.
+
+Now you are ready to set up the connection with the database in the exam document as follows.
+In an R code chunk with `server-start` context, add:
+
+```r
+#! context="server-start"
+library(pool)
+library(RPostgres)
+
+# Read the authentication information from disk and store as environment variables.
+if (file.exists("www/pgauth.yaml")) {
+  db_auth <- yaml::read_yaml("www/pgauth.yaml")
+  # Set environment variables for the PostgreSQL driver.
+  Sys.setenv(PGUSER = db_auth$user, PGPASSWORD = db_auth$password)
+  # Remove the authentication information from the session.
+  rm(db_auth)
+  # If running on shinyapps.io, remove the file with authentication information
+  # to ensure nobody can access it once the app is started.
+  if (identical(Sys.getenv("R_CONFIG_ACTIVE"), "shinyapps")) {
+    unlink("www/pgauth.yaml")
+  }
+}
+
+# Create a DB pool (replace DB_instance_endpoint with the endpoint URL of the DB instance).
+db_con <- dbPool(drv = Postgres(),
+                 dbname = "examinr",
+                 host = "DB_instance_endpoint",
+                 timezone = "UTC",
+                 minSize = 1, maxSize = 1)
+
+# Close the DB connection when shiny stops.
+shiny::onStop(function () { poolClose(db_con) })
+
+# Instruct the `future` package to run the user-supplied code in a separate R process.
+library(future)
+plan(cluster, workers = 1)
+
+# Use the new database as storage provider.
+exam_config(storage_provider = dbi_storage_provider(db_con, 'attempts', 'section_data')
+```
+
+## Step 3: Publishing the exam to shinyapps.io
+
+First you need to install the latest version of the rsconnect package by running the following R command:
+
+```r
+install.packages('rsconnect')
+```
+
+You need to authorize RStudio to publish documents to your shinyapps.io account by following the instructions in the [shiny documentation](https://shiny.rstudio.com/articles/shinyapps.html).
+
+Once you completed the exam document, click on _Publish Document…_ in the top right corner of the RStudio IDE.
+On the left the _.Rmd_ file, the database credentials (_www/pgauth.yaml_) and any other resource file the exam needs.
+On the right, select your shinyapps.io account and set the name of the exam and click _Publish_.
+

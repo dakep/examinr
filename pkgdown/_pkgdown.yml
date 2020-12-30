@@ -19,8 +19,10 @@ navbar:
      - text: -------
      - text: Grading
        href: articles/grading.html
-     - text: Deploying
+     - text: Deploying (general)
        href: articles/deployment.html
+     - text: Deploying (to shinyapps.io)
+       href: articles/deployment_shinyapps.html
      - text: -------
      - text: Configuration
      - text: Section navigation
