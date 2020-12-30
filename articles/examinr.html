@@ -66,7 +66,10 @@
       <a href="../articles/grading.html">Grading</a>
     </li>
     <li>
-      <a href="../articles/deployment.html">Deploying</a>
+      <a href="../articles/deployment.html">Deploying (general)</a>
+    </li>
+    <li>
+      <a href="../articles/deployment_shinyapps.html">Deploying (to shinyapps.io)</a>
     </li>
     <li class="divider">
     <li class="dropdown-header">Configuration</li>
@@ -118,6 +121,7 @@
 <p>examinr is a one-stop solution for creating, conducting, and grading online exams. Exams are written as R markdown documents and delivered as a Shiny app which can be hosted on any Shiny server. You can <em>randomize</em> exams such that every learner receives a different version of the exam.</p>
 <p>You (and other authorized users) can grade exams, with several question types supporting automated grading. Learners can be given access to graded exams, including personalized feedback.</p>
 <p>You do not have to worry about learners being able to access questions before they are made available: the HTML page sent to the browser does not contain the question texts. They are only populated with the learners individualized content at the time they are given access.</p>
+<p>If you don’t yet have a shiny server or a database, you can follow the <a href="deployment_shinyapps.html">vignette on deploying an exam to shinyapps.io</a>.</p>
 <div id="creating-an-exam-document" class="section level2">
 <h2 class="hasAnchor">
 <a href="#creating-an-exam-document" class="anchor"></a>Creating an exam document</h2>
@@ -203,7 +207,7 @@
 <p>The simple exam above is not particularly useful, because:</p>
 <ol style="list-style-type: decimal">
 <li>The exam is static, without any <strong>randomization</strong>. Every learner would get the exact same exam, any time they attempt it. With examinr, you can randomize the exam for every learner, or for every attempt, or a combination of both. The <a href="randomized_exam.html">vignette on randomizing an exam</a> explains how to use randomization in your exam.</li>
-<li>The exam does not <strong>store data</strong>. You need to set up a storage provider to persist the answers given by your users. The <a href="config_storage.html">vignette on configuring storage</a> explains how to set up a storage provider for your server.</li>
+<li>The exam does not <strong>store data</strong>. You need to set up a storage provider to persist the answers given by your users. The <a href="config_storage.html">vignette on configuring storage</a> explains how to set up a storage provider for your server. You can also follow the <a href="deployment_shinyapps.html">vignette on deploying an exam to shinyapps.io</a> if you don’t yet have a database.</li>
 <li>The exam does not know <strong>who is accessing</strong> the exam. The answers provided by the learner can therefore not be associated with the learner and you cannot assign grades. The <a href="config_access.html">vignette on configuring access to the exam</a> explains how to set up an authentication provider so that examinr knows who is accessing the exam.</li>
 </ol>
 </div>

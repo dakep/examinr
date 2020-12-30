@@ -5,6 +5,7 @@ articles:
   config_access: config_access.html
   config_storage: config_storage.html
   deployment: deployment.html
+  deployment_shinyapps: deployment_shinyapps.html
   examinr: examinr.html
   exercises: exercises.html
   grading: grading.html
@@ -12,7 +13,7 @@ articles:
   navigation: navigation.html
   question_types: question_types.html
   randomized_exam: randomized_exam.html
-last_built: 2020-12-29T02:24Z
+last_built: 2020-12-30T02:43Z
 urls:
   reference: https://dakep.github.io/examinr/reference
   article: https://dakep.github.io/examinr/articles
