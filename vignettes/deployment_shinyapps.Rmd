@@ -27,7 +27,11 @@ A simple alternative to acquiring, setting up, and managing your own infrastruct
 This guide showcases how to use [shinyapps.io](https://www.shinyapps.io) for hosting the exam and [AWS RDS](https://aws.amazon.com/rds/) for hosting the database.
 Of course there are numerous other hosting providers which may better suite your needs or preferences, and many of the steps outlined here can be easily translated to these other providers.
 
-**Important:** some of the services used in this guide may incur costs.
+**Important caveats when using hosting services such as shinyapps.io:**
+
+* **Security:** it is not safe to add exercise questions to exams hosted on shinyapps.io, as there is no way of preventing the user-code from accessing the exam document file (a learner could see the solutions).
+  Even more concerning, learners could access the credentials used for the database connection!
+* **Costs:** some of the services used in this guide may incur costs.
 [shinyapps.io](https://www.shinyapps.io) offers a free account which is sufficient for trying out exam documents, and may be enough to administer an exam to a small group of learners.
 The RDS service hosted by [Amazon AWS](https://aws.amazon.com) also has a _free tier_ program (for up to 1 year), which gives you access to a database for testing or few learners.
 If you need to provision for exams for a larger number of learners, the free services may not be sufficient.
@@ -39,17 +43,17 @@ But it is very unlikely that you would come close to the free tier limits if you
 The following guide explains how to use the free services provided by shinyapps.io and Amazon AWS and you will need
 
 * an [Amazon AWS](https://aws.amazon.com) account
-* an account on [shinyapps.io](https://www.shinyapps.io)
+* an account on [shinyapps.io](https://www.shinyapps.io) (a free account is sufficient for now)
 * [pgAdmin 4](http://www.pgadmin.org/) or the `psql` command line utility on your local computer
 * the RStudio IDE
 
 The three steps covered in this guide are
 
-1. Setting up a database
-1. Preparing the exam document to use the new database
-1. Publishing the exam to shinyapps.io
+1. Setting up a database on AWS RDS.
+1. Preparing the exam document to use the new database.
+1. Publishing the exam to shinyapps.io.
 
-## Step 1: Setting up a database
+## Step 1: Setting up a database on AWS RDS
 
 Log in to the [Amazon AWS Management Console](https://console.aws.amazon.com).
 Ensure you are operating in the AWS region your database should be hosted in (can be selected in the top right corner of the management console).
@@ -80,6 +84,7 @@ Next you need to create a security group which specifies through what channels s
 1. Under **Inbound rules** click on _Add rule_.
     1. Under **Type** select _PostgreSQL_.
     1. Under **Source** select _Anywhere_.
+       If you don't want to restrict network access to your database, you can white-list only your local computer (by selecting _My IP_) and the the shinyapps.io network (see the [official documentation](https://docs.rstudio.com/shinyapps.io/applications.html#firewalls) for a list of IP addresses).
 1. The **Outbound rules** can be left as-is.
 4. Click on _Create security group_
 
@@ -244,48 +249,52 @@ Select _From Template_ and select the _Exam_ template.
 Enter the name of the exam document and where to save the exam.
 
 You would go about creating the exam as usual, but you also need to give the exam document the connection credentials (i.e., the name and password for the role you created before).
-Because the exam will later run on shinyapps.io, you need a little trick for sharing the credentials with examinr.
+The easiest way is to create the file _.Renviron_ in the directory of the exam document.
+The contents of this file would be
 
-Theoretically, a learner could access the credentials from an exercise chunk, which would potentially expose data from all learners.
-You will therefore store the credentials in a file called _pgauth.yaml_ in folder _www_.
-The contents of the file _www/pgauth.yaml_ are as follows:
-
-```yaml
-user: examinr
-password: password_for_database_user_examinr
+```
+PGUSER='examinr'
+PGPASSWORD='password_for_database_user_examinr'
 ```
 
 You need to replace *password_for_database_user_examinr* with the actual password you entered when creating the database role `examinr`.
+For more control, you could use the config package.
 
-In the exam document you will read this file only once (when the shiny server starts) and remove the file from disk afterwards.
-Therefore, the code executed by learners will not have access to this file.
+**Important:** The file is readable by the user-code from exercises and hence would expose your database credentials.
+Currently, it is not safe to add exercise questions to exams hosted on shinyapps.io, as there is no way of preventing the user-code from accessing the credentials file.
 
-Now you are ready to set up the connection with the database in the exam document as follows.
-In an R code chunk with `server-start` context, add:
+Now you are ready to set up the connection with the database in the exam document.
+The connection is established in a code chunk with _server-start_ context, as in the following sample exam.
 
-```r
-#! context="server-start"
+````md
+---
+title: "Exam Using AWS RDS"
+lang: en-US
+output:
+  examinr::exam_document:
+    id: exam-using-aws-rds
+    version: 0.1
+    progressive: no
+    feedback: immediately
+runtime: shiny_prerendered
+---
+
+`r begin_rmd_block("r setup, include=FALSE")`
+# Load the package
+library(examinr)
+knitr::opts_chunk$set(echo = FALSE)
+`r end_rmd_block()`
+
+`r begin_rmd_block("r, context=\"server-start\"")`
 library(pool)
 library(RPostgres)
 
-# Read the authentication information from disk and store as environment variables.
-if (file.exists("www/pgauth.yaml")) {
-  db_auth <- yaml::read_yaml("www/pgauth.yaml")
-  # Set environment variables for the PostgreSQL driver.
-  Sys.setenv(PGUSER = db_auth$user, PGPASSWORD = db_auth$password)
-  # Remove the authentication information from the session.
-  rm(db_auth)
-  # If running on shinyapps.io, remove the file with authentication information
-  # to ensure nobody can access it once the app is started.
-  if (identical(Sys.getenv("R_CONFIG_ACTIVE"), "shinyapps")) {
-    unlink("www/pgauth.yaml")
-  }
-}
-
-# Create a DB pool (replace DB_instance_endpoint with the endpoint URL of the DB instance).
+# Establish a pool of connections to the database.
+# User-name and password are taken from environment variables
+# PGUSER and PGPASSWORD, respectively.
 db_con <- dbPool(drv = Postgres(),
                  dbname = "examinr",
-                 host = "DB_instance_endpoint",
+                 host = "db-examinr-testing.cwdxbpewlsih.ca-central-1.rds.amazonaws.com",
                  timezone = "UTC",
                  minSize = 1, maxSize = 1)
 
@@ -298,7 +307,42 @@ plan(cluster, workers = 1)
 
 # Use the new database as storage provider.
 exam_config(storage_provider = dbi_storage_provider(db_con, 'attempts', 'section_data')
-```
+`r end_rmd_block()`
+
+# Introduction
+
+This simple exam demonstrates how to use a database instance hosted on AWS RDS
+for storing exam data.
+It is important to keep the DB instance secured and the master password secret.
+
+# Questions
+
+`r begin_rmd_block("r q-1")`
+mc_question(
+  title = "Where is the exam data stored?",
+  checkbox = FALSE,
+  answer("On an Amazon AWS RDS database instance.", correct = TRUE),
+  answer("In a SQLite database file."),
+  answer("In a SQLite database in memory."),
+  answer("On a database somewhere on the internet."),
+  answer("The data is not saved anywhere.")
+)
+`r end_rmd_block()`
+
+
+`r begin_rmd_block("r q-2")`
+mc_question(
+  title = "How to avoid privacy and security issues?",
+  answer("Ensure the DB instance is running in the correct AWS region.", correct = TRUE),
+  answer("Use a complex master password for the DB instance and not share it.", correct = TRUE),
+  answer("Do **not** add exercise question as they may expose the database credentials", correct = TRUE),
+  answer("Use a random endpoint URL for the DB instance."),
+  answer("Do not tell anybody that the database is hosted on AWS RDS."),
+  answer("Amazon AWS guarantees security of the data and that privacy issues are avoided.")
+)
+`r end_rmd_block()`
+
+````
 
 ## Step 3: Publishing the exam to shinyapps.io
 
@@ -314,3 +358,50 @@ Once you completed the exam document, click on _Publish Document…_ in the top 
 On the left the _.Rmd_ file, the database credentials (_www/pgauth.yaml_) and any other resource file the exam needs.
 On the right, select your shinyapps.io account and set the name of the exam and click _Publish_.
 
+
+## Scaling up/down to meet your demand
+
+The database instance on AWS RDS and the shiny server on shinyapps.io can be scaled up if your exam needs to be accessed by a larger number of learners.
+You can also monitor the load of the DB instance and your shiny app to decide if more resources are needed for your number of learners.
+Note, however, that scaling the shiny server or DB instance up/down will take them offline for several minutes, making the exam inaccessible during this time.
+If you are not sure if your number of learners will require more resources than available for free, it is suggested to administer a low-stakes exam to your learners and monitor the load of the DB instance and shiny server.
+If you notice the any of the services buckle under the load, you have to consider scaling up the resources.
+
+In most use-cases it would also make sense to scale up resources for the duration of the actual exam (when many learners access the exam at the same time) and scale back down after the exam.
+Grading and accessing feedback are typically less demanding as the load is spread more over time.
+In many cases, a large number of learners submits the exam at the same time, leading to a very high load on the database and shiny server for a brief moment.
+Being able to handle these substantial spikes is important for a smooth exam experience.
+After this rush, however, demand will be minimal.
+
+### Scaling the DB instance
+
+AWS RDS offers a wide range of instance sizes.
+The free tier applies only to the smallest instance (currently `db.t3.micro`).
+For most exams, "burstable" instance classes are sufficient and much cheaper than standard or optimized instance classes.
+
+You can also stop the DB instance during times where no exam needs to be accessible.
+You will not be billed for computing time while the instance is stopped, but the charges for storage will continue.
+The size of the exam data, however, is small and would not incur high costs.
+
+### Scaling the shiny server
+
+Your shinyapps.io account gives you the option to purchase monthly or yearly plans.
+You would only get more resources when subscribing to at least the _Basic_ plan.
+These plans allow you to use more than 1 instance and more than 1 worker process per instance for your exam.
+
+To increase the number of instances/worker processes for your exam, go to your exam shiny app on shinyapps.io and click on _Settings_.
+Here you have three main knobs to increase the number of learners you can serve simultaneously:
+
+* Under _General_, you can select a larger instance size; the more memory the more learners you can serve.
+* Under _Advanced_, you can set:
+  * The start count under instance settings determines how many instances are started at the beginning.
+    If you expect all your learners to access the exam at the same time, this should be set to the maximum value (depends on your plan). Note that a larger number of instances depletes your allocated number of active hours more quickly.
+  * The maximum number of worker processes (up to 10). All these processes run in the same instance, so 10 processes may even slow down the server. It is suggested to use 3 — 6 processes.
+
+You should ensure that your plan allows you to have enough instances number of worker processes such that your exam can serve the expected number of learners:
+
+$$
+\text{Number of learners} > \text{Max Worker Processes} \times \text{Maximum Instances Limit} \times \text{Max Connections}
+$$
+
+The [shinyapps.io user guide](https://docs.rstudio.com/shinyapps.io/applications.html) has comprehensive information on setting and tuning application performance.
