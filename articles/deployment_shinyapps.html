@@ -66,10 +66,10 @@
       <a href="../articles/grading.html">Grading</a>
     </li>
     <li>
-      <a href="../articles/deployment.html">Deploying (general)</a>
+      <a href="../articles/deployment_shinyapps.html">Deploying to shinyapps.io</a>
     </li>
     <li>
-      <a href="../articles/deployment_shinyapps.html">Deploying (to shinyapps.io)</a>
+      <a href="../articles/deployment.html">Deploying (general)</a>
     </li>
     <li class="divider">
     <li class="dropdown-header">Configuration</li>
@@ -119,25 +119,30 @@
     
     
 <p>If you don’t have access to your own shiny server or database server, hosting exams may seem intriguing. A simple alternative to acquiring, setting up, and managing your own infrastructure is to use cloud-based hosting providers. This guide showcases how to use <a href="https://www.shinyapps.io">shinyapps.io</a> for hosting the exam and <a href="https://aws.amazon.com/rds/">AWS RDS</a> for hosting the database. Of course there are numerous other hosting providers which may better suite your needs or preferences, and many of the steps outlined here can be easily translated to these other providers.</p>
-<p><strong>Important:</strong> some of the services used in this guide may incur costs. <a href="https://www.shinyapps.io">shinyapps.io</a> offers a free account which is sufficient for trying out exam documents, and may be enough to administer an exam to a small group of learners. The RDS service hosted by <a href="https://aws.amazon.com">Amazon AWS</a> also has a <em>free tier</em> program (for up to 1 year), which gives you access to a database for testing or few learners. If you need to provision for exams for a larger number of learners, the free services may not be sufficient. However, you can easily scale up the database and/or the shinyapps.io resources without having to redo the setup. Similarly, you can stop the database during times you don’t need it and you will not pay anything for running the database. If you are above the free tier usage limits for storage size, you would continue to pay for the storage. But it is very unlikely that you would come close to the free tier limits if you store only data from examinr exams.</p>
+<p><strong>Important caveats when using hosting services such as shinyapps.io:</strong></p>
+<ul>
+<li>
+<strong>Security:</strong> it is not safe to add exercise questions to exams hosted on shinyapps.io, as there is no way of preventing the user-code from accessing the exam document file (a learner could see the solutions). Even more concerning, learners could access the credentials used for the database connection!</li>
+<li>
+<strong>Costs:</strong> some of the services used in this guide may incur costs. <a href="https://www.shinyapps.io">shinyapps.io</a> offers a free account which is sufficient for trying out exam documents, and may be enough to administer an exam to a small group of learners. The RDS service hosted by <a href="https://aws.amazon.com">Amazon AWS</a> also has a <em>free tier</em> program (for up to 1 year), which gives you access to a database for testing or few learners. If you need to provision for exams for a larger number of learners, the free services may not be sufficient. However, you can easily scale up the database and/or the shinyapps.io resources without having to redo the setup. Similarly, you can stop the database during times you don’t need it and you will not pay anything for running the database. If you are above the free tier usage limits for storage size, you would continue to pay for the storage. But it is very unlikely that you would come close to the free tier limits if you store only data from examinr exams.</li>
+</ul>
 <p>The following guide explains how to use the free services provided by shinyapps.io and Amazon AWS and you will need</p>
 <ul>
 <li>an <a href="https://aws.amazon.com">Amazon AWS</a> account</li>
-<li>an account on <a href="https://www.shinyapps.io">shinyapps.io</a>
-</li>
+<li>an account on <a href="https://www.shinyapps.io">shinyapps.io</a> (a free account is sufficient for now)</li>
 <li>
 <a href="http://www.pgadmin.org/">pgAdmin 4</a> or the <code>psql</code> command line utility on your local computer</li>
 <li>the RStudio IDE</li>
 </ul>
 <p>The three steps covered in this guide are</p>
 <ol style="list-style-type: decimal">
-<li>Setting up a database</li>
-<li>Preparing the exam document to use the new database</li>
-<li>Publishing the exam to shinyapps.io</li>
+<li>Setting up a database on AWS RDS.</li>
+<li>Preparing the exam document to use the new database.</li>
+<li>Publishing the exam to shinyapps.io.</li>
 </ol>
-<div id="step-1-setting-up-a-database" class="section level2">
+<div id="step-1-setting-up-a-database-on-aws-rds" class="section level2">
 <h2 class="hasAnchor">
-<a href="#step-1-setting-up-a-database" class="anchor"></a>Step 1: Setting up a database</h2>
+<a href="#step-1-setting-up-a-database-on-aws-rds" class="anchor"></a>Step 1: Setting up a database on AWS RDS</h2>
 <p>Log in to the <a href="https://console.aws.amazon.com">Amazon AWS Management Console</a>. Ensure you are operating in the AWS region your database should be hosted in (can be selected in the top right corner of the management console). This is relevant if you have to follow certain data privacy laws which mandate the location where data needs to be stored.</p>
 <div id="step-1-1-configure-the-cluster-network" class="section level3">
 <h3 class="hasAnchor">
@@ -169,7 +174,7 @@
 <li>Under <strong>Inbound rules</strong> click on <em>Add rule</em>.
 <ol style="list-style-type: decimal">
 <li>Under <strong>Type</strong> select <em>PostgreSQL</em>.</li>
-<li>Under <strong>Source</strong> select <em>Anywhere</em>.</li>
+<li>Under <strong>Source</strong> select <em>Anywhere</em>. If you don’t want to restrict network access to your database, you can white-list only your local computer (by selecting <em>My IP</em>) and the the shinyapps.io network (see the <a href="https://docs.rstudio.com/shinyapps.io/applications.html#firewalls">official documentation</a> for a list of IP addresses).</li>
 </ol>
 </li>
 <li>The <strong>Outbound rules</strong> can be left as-is.</li>
@@ -310,47 +315,86 @@ examinr=&gt;</code></pre>
 <h2 class="hasAnchor">
 <a href="#step-2-using-the-new-database-in-an-exam" class="anchor"></a>Step 2: Using the new database in an exam</h2>
 <p>You can now create an exam which uses the newly created database. In RStudio, click on <em>File</em> &gt; <em>New File</em> &gt; <em>R Markdown…</em>. Select <em>From Template</em> and select the <em>Exam</em> template. Enter the name of the exam document and where to save the exam.</p>
-<p>You would go about creating the exam as usual, but you also need to give the exam document the connection credentials (i.e., the name and password for the role you created before). Because the exam will later run on shinyapps.io, you need a little trick for sharing the credentials with examinr.</p>
-<p>Theoretically, a learner could access the credentials from an exercise chunk, which would potentially expose data from all learners. You will therefore store the credentials in a file called <em>pgauth.yaml</em> in folder <em>www</em>. The contents of the file <em>www/pgauth.yaml</em> are as follows:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode yaml"><code class="sourceCode yaml"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="fu">user:</span><span class="at"> examinr</span></a>
-<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="fu">password:</span><span class="at"> password_for_database_user_examinr</span></a></code></pre></div>
-<p>You need to replace <em>password_for_database_user_examinr</em> with the actual password you entered when creating the database role <code>examinr</code>.</p>
-<p>In the exam document you will read this file only once (when the shiny server starts) and remove the file from disk afterwards. Therefore, the code executed by learners will not have access to this file.</p>
-<p>Now you are ready to set up the connection with the database in the exam document as follows. In an R code chunk with <code>server-start</code> context, add:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">#! context="server-start"</span></a>
-<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="kw">library</span>(pool)</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="kw">library</span>(RPostgres)</a>
-<a class="sourceLine" id="cb8-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="co"># Read the authentication information from disk and store as environment variables.</span></a>
-<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="cf">if</span> (<span class="kw">file.exists</span>(<span class="st">"www/pgauth.yaml"</span>)) {</a>
-<a class="sourceLine" id="cb8-7" data-line-number="7">  db_auth &lt;-<span class="st"> </span>yaml<span class="op">::</span><span class="kw">read_yaml</span>(<span class="st">"www/pgauth.yaml"</span>)</a>
-<a class="sourceLine" id="cb8-8" data-line-number="8">  <span class="co"># Set environment variables for the PostgreSQL driver.</span></a>
-<a class="sourceLine" id="cb8-9" data-line-number="9">  <span class="kw">Sys.setenv</span>(<span class="dt">PGUSER =</span> db_auth<span class="op">$</span>user, <span class="dt">PGPASSWORD =</span> db_auth<span class="op">$</span>password)</a>
-<a class="sourceLine" id="cb8-10" data-line-number="10">  <span class="co"># Remove the authentication information from the session.</span></a>
-<a class="sourceLine" id="cb8-11" data-line-number="11">  <span class="kw">rm</span>(db_auth)</a>
-<a class="sourceLine" id="cb8-12" data-line-number="12">  <span class="co"># If running on shinyapps.io, remove the file with authentication information</span></a>
-<a class="sourceLine" id="cb8-13" data-line-number="13">  <span class="co"># to ensure nobody can access it once the app is started.</span></a>
-<a class="sourceLine" id="cb8-14" data-line-number="14">  <span class="cf">if</span> (<span class="kw">identical</span>(<span class="kw">Sys.getenv</span>(<span class="st">"R_CONFIG_ACTIVE"</span>), <span class="st">"shinyapps"</span>)) {</a>
-<a class="sourceLine" id="cb8-15" data-line-number="15">    <span class="kw">unlink</span>(<span class="st">"www/pgauth.yaml"</span>)</a>
-<a class="sourceLine" id="cb8-16" data-line-number="16">  }</a>
-<a class="sourceLine" id="cb8-17" data-line-number="17">}</a>
+<p>You would go about creating the exam as usual, but you also need to give the exam document the connection credentials (i.e., the name and password for the role you created before). The easiest way is to create the file <em>.Renviron</em> in the directory of the exam document. The contents of this file would be</p>
+<pre><code>PGUSER='examinr'
+PGPASSWORD='password_for_database_user_examinr'</code></pre>
+<p>You need to replace <em>password_for_database_user_examinr</em> with the actual password you entered when creating the database role <code>examinr</code>. For more control, you could use the config package.</p>
+<p><strong>Important:</strong> The file is readable by the user-code from exercises and hence would expose your database credentials. Currently, it is not safe to add exercise questions to exams hosted on shinyapps.io, as there is no way of preventing the user-code from accessing the credentials file.</p>
+<p>Now you are ready to set up the connection with the database in the exam document. The connection is established in a code chunk with <em>server-start</em> context, as in the following sample exam.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode md"><code class="sourceCode markdown"><a class="sourceLine" id="cb8-1" data-line-number="1">---</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">title: "Exam Using AWS RDS"</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">lang: en-US</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">output:</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  examinr::exam_document:</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="bn">    id: exam-using-aws-rds</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="bn">    version: 0.1</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8"><span class="bn">    progressive: no</span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9"><span class="bn">    feedback: immediately</span></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">runtime: shiny_prerendered</a>
+<a class="sourceLine" id="cb8-11" data-line-number="11">---</a>
+<a class="sourceLine" id="cb8-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb8-13" data-line-number="13">```{r setup, include=FALSE}</a>
+<a class="sourceLine" id="cb8-14" data-line-number="14"><span class="fu"># Load the package</span></a>
+<a class="sourceLine" id="cb8-15" data-line-number="15">library(examinr)</a>
+<a class="sourceLine" id="cb8-16" data-line-number="16">knitr::opts_chunk$set(echo = FALSE)</a>
+<a class="sourceLine" id="cb8-17" data-line-number="17">```</a>
 <a class="sourceLine" id="cb8-18" data-line-number="18"></a>
-<a class="sourceLine" id="cb8-19" data-line-number="19"><span class="co"># Create a DB pool (replace DB_instance_endpoint with the endpoint URL of the DB instance).</span></a>
-<a class="sourceLine" id="cb8-20" data-line-number="20">db_con &lt;-<span class="st"> </span><span class="kw">dbPool</span>(<span class="dt">drv =</span> <span class="kw">Postgres</span>(),</a>
-<a class="sourceLine" id="cb8-21" data-line-number="21">                 <span class="dt">dbname =</span> <span class="st">"examinr"</span>,</a>
-<a class="sourceLine" id="cb8-22" data-line-number="22">                 <span class="dt">host =</span> <span class="st">"DB_instance_endpoint"</span>,</a>
-<a class="sourceLine" id="cb8-23" data-line-number="23">                 <span class="dt">timezone =</span> <span class="st">"UTC"</span>,</a>
-<a class="sourceLine" id="cb8-24" data-line-number="24">                 <span class="dt">minSize =</span> <span class="dv">1</span>, <span class="dt">maxSize =</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb8-25" data-line-number="25"></a>
-<a class="sourceLine" id="cb8-26" data-line-number="26"><span class="co"># Close the DB connection when shiny stops.</span></a>
-<a class="sourceLine" id="cb8-27" data-line-number="27">shiny<span class="op">::</span><span class="kw">onStop</span>(<span class="cf">function</span> () { <span class="kw">poolClose</span>(db_con) })</a>
-<a class="sourceLine" id="cb8-28" data-line-number="28"></a>
-<a class="sourceLine" id="cb8-29" data-line-number="29"><span class="co"># Instruct the `future` package to run the user-supplied code in a separate R process.</span></a>
-<a class="sourceLine" id="cb8-30" data-line-number="30"><span class="kw">library</span>(future)</a>
-<a class="sourceLine" id="cb8-31" data-line-number="31"><span class="kw">plan</span>(cluster, <span class="dt">workers =</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb8-32" data-line-number="32"></a>
-<a class="sourceLine" id="cb8-33" data-line-number="33"><span class="co"># Use the new database as storage provider.</span></a>
-<a class="sourceLine" id="cb8-34" data-line-number="34"><span class="kw">exam_config</span>(<span class="dt">storage_provider =</span> <span class="kw">dbi_storage_provider</span>(db_con, <span class="st">'attempts'</span>, <span class="st">'section_data'</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb8-19" data-line-number="19">```{r, context="server-start"}</a>
+<a class="sourceLine" id="cb8-20" data-line-number="20">library(pool)</a>
+<a class="sourceLine" id="cb8-21" data-line-number="21">library(RPostgres)</a>
+<a class="sourceLine" id="cb8-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb8-23" data-line-number="23"><span class="fu"># Establish a pool of connections to the database.</span></a>
+<a class="sourceLine" id="cb8-24" data-line-number="24"><span class="fu"># User-name and password are taken from environment variables</span></a>
+<a class="sourceLine" id="cb8-25" data-line-number="25"><span class="fu"># PGUSER and PGPASSWORD, respectively.</span></a>
+<a class="sourceLine" id="cb8-26" data-line-number="26">db_con &lt;- dbPool(drv = Postgres(),</a>
+<a class="sourceLine" id="cb8-27" data-line-number="27"><span class="bn">                 dbname = "examinr",</span></a>
+<a class="sourceLine" id="cb8-28" data-line-number="28"><span class="bn">                 host = "db-examinr-testing.cwdxbpewlsih.ca-central-1.rds.amazonaws.com",</span></a>
+<a class="sourceLine" id="cb8-29" data-line-number="29"><span class="bn">                 timezone = "UTC",</span></a>
+<a class="sourceLine" id="cb8-30" data-line-number="30"><span class="bn">                 minSize = 1, maxSize = 1)</span></a>
+<a class="sourceLine" id="cb8-31" data-line-number="31"></a>
+<a class="sourceLine" id="cb8-32" data-line-number="32"><span class="fu"># Close the DB connection when shiny stops.</span></a>
+<a class="sourceLine" id="cb8-33" data-line-number="33">shiny::onStop(function () { poolClose(db_con) })</a>
+<a class="sourceLine" id="cb8-34" data-line-number="34"></a>
+<a class="sourceLine" id="cb8-35" data-line-number="35"><span class="fu"># Instruct the `future` package to run the user-supplied code in a separate R process.</span></a>
+<a class="sourceLine" id="cb8-36" data-line-number="36">library(future)</a>
+<a class="sourceLine" id="cb8-37" data-line-number="37">plan(cluster, workers = 1)</a>
+<a class="sourceLine" id="cb8-38" data-line-number="38"></a>
+<a class="sourceLine" id="cb8-39" data-line-number="39"><span class="fu"># Use the new database as storage provider.</span></a>
+<a class="sourceLine" id="cb8-40" data-line-number="40">exam_config(storage_provider = dbi_storage_provider(db_con, 'attempts', 'section_data')</a>
+<a class="sourceLine" id="cb8-41" data-line-number="41">```</a>
+<a class="sourceLine" id="cb8-42" data-line-number="42"></a>
+<a class="sourceLine" id="cb8-43" data-line-number="43"><span class="fu"># Introduction</span></a>
+<a class="sourceLine" id="cb8-44" data-line-number="44"></a>
+<a class="sourceLine" id="cb8-45" data-line-number="45">This simple exam demonstrates how to use a database instance hosted on AWS RDS</a>
+<a class="sourceLine" id="cb8-46" data-line-number="46">for storing exam data.</a>
+<a class="sourceLine" id="cb8-47" data-line-number="47">It is important to keep the DB instance secured and the master password secret.</a>
+<a class="sourceLine" id="cb8-48" data-line-number="48"></a>
+<a class="sourceLine" id="cb8-49" data-line-number="49"><span class="fu"># Questions</span></a>
+<a class="sourceLine" id="cb8-50" data-line-number="50"></a>
+<a class="sourceLine" id="cb8-51" data-line-number="51">```{r q-1}</a>
+<a class="sourceLine" id="cb8-52" data-line-number="52">mc_question(</a>
+<a class="sourceLine" id="cb8-53" data-line-number="53">  title = "Where is the exam data stored?",</a>
+<a class="sourceLine" id="cb8-54" data-line-number="54">  checkbox = FALSE,</a>
+<a class="sourceLine" id="cb8-55" data-line-number="55">  answer("On an Amazon AWS RDS database instance.", correct = TRUE),</a>
+<a class="sourceLine" id="cb8-56" data-line-number="56">  answer("In a SQLite database file."),</a>
+<a class="sourceLine" id="cb8-57" data-line-number="57">  answer("In a SQLite database in memory."),</a>
+<a class="sourceLine" id="cb8-58" data-line-number="58">  answer("On a database somewhere on the internet."),</a>
+<a class="sourceLine" id="cb8-59" data-line-number="59">  answer("The data is not saved anywhere.")</a>
+<a class="sourceLine" id="cb8-60" data-line-number="60">)</a>
+<a class="sourceLine" id="cb8-61" data-line-number="61">```</a>
+<a class="sourceLine" id="cb8-62" data-line-number="62"></a>
+<a class="sourceLine" id="cb8-63" data-line-number="63"></a>
+<a class="sourceLine" id="cb8-64" data-line-number="64">```{r q-2}</a>
+<a class="sourceLine" id="cb8-65" data-line-number="65">mc_question(</a>
+<a class="sourceLine" id="cb8-66" data-line-number="66">  title = "How to avoid privacy and security issues?",</a>
+<a class="sourceLine" id="cb8-67" data-line-number="67">  answer("Ensure the DB instance is running in the correct AWS region.", correct = TRUE),</a>
+<a class="sourceLine" id="cb8-68" data-line-number="68">  answer("Use a complex master password for the DB instance and not share it.", correct = TRUE),</a>
+<a class="sourceLine" id="cb8-69" data-line-number="69">  answer("Do **not** add exercise question as they may expose the database credentials", correct = TRUE),</a>
+<a class="sourceLine" id="cb8-70" data-line-number="70">  answer("Use a random endpoint URL for the DB instance."),</a>
+<a class="sourceLine" id="cb8-71" data-line-number="71">  answer("Do not tell anybody that the database is hosted on AWS RDS."),</a>
+<a class="sourceLine" id="cb8-72" data-line-number="72">  answer("Amazon AWS guarantees security of the data and that privacy issues are avoided.")</a>
+<a class="sourceLine" id="cb8-73" data-line-number="73">)</a>
+<a class="sourceLine" id="cb8-74" data-line-number="74">```</a></code></pre></div>
 </div>
 <div id="step-3-publishing-the-exam-to-shinyapps-io" class="section level2">
 <h2 class="hasAnchor">
@@ -360,6 +404,38 @@ examinr=&gt;</code></pre>
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">'rsconnect'</span><span class="op">)</span></code></pre></div>
 <p>You need to authorize RStudio to publish documents to your shinyapps.io account by following the instructions in the <a href="https://shiny.rstudio.com/articles/shinyapps.html">shiny documentation</a>.</p>
 <p>Once you completed the exam document, click on <em>Publish Document…</em> in the top right corner of the RStudio IDE. On the left the <em>.Rmd</em> file, the database credentials (<em>www/pgauth.yaml</em>) and any other resource file the exam needs. On the right, select your shinyapps.io account and set the name of the exam and click <em>Publish</em>.</p>
+</div>
+<div id="scaling-updown-to-meet-your-demand" class="section level2">
+<h2 class="hasAnchor">
+<a href="#scaling-updown-to-meet-your-demand" class="anchor"></a>Scaling up/down to meet your demand</h2>
+<p>The database instance on AWS RDS and the shiny server on shinyapps.io can be scaled up if your exam needs to be accessed by a larger number of learners. You can also monitor the load of the DB instance and your shiny app to decide if more resources are needed for your number of learners. Note, however, that scaling the shiny server or DB instance up/down will take them offline for several minutes, making the exam inaccessible during this time. If you are not sure if your number of learners will require more resources than available for free, it is suggested to administer a low-stakes exam to your learners and monitor the load of the DB instance and shiny server. If you notice the any of the services buckle under the load, you have to consider scaling up the resources.</p>
+<p>In most use-cases it would also make sense to scale up resources for the duration of the actual exam (when many learners access the exam at the same time) and scale back down after the exam. Grading and accessing feedback are typically less demanding as the load is spread more over time. In many cases, a large number of learners submits the exam at the same time, leading to a very high load on the database and shiny server for a brief moment. Being able to handle these substantial spikes is important for a smooth exam experience. After this rush, however, demand will be minimal.</p>
+<div id="scaling-the-db-instance" class="section level3">
+<h3 class="hasAnchor">
+<a href="#scaling-the-db-instance" class="anchor"></a>Scaling the DB instance</h3>
+<p>AWS RDS offers a wide range of instance sizes. The free tier applies only to the smallest instance (currently <code>db.t3.micro</code>). For most exams, “burstable” instance classes are sufficient and much cheaper than standard or optimized instance classes.</p>
+<p>You can also stop the DB instance during times where no exam needs to be accessible. You will not be billed for computing time while the instance is stopped, but the charges for storage will continue. The size of the exam data, however, is small and would not incur high costs.</p>
+</div>
+<div id="scaling-the-shiny-server" class="section level3">
+<h3 class="hasAnchor">
+<a href="#scaling-the-shiny-server" class="anchor"></a>Scaling the shiny server</h3>
+<p>Your shinyapps.io account gives you the option to purchase monthly or yearly plans. You would only get more resources when subscribing to at least the <em>Basic</em> plan. These plans allow you to use more than 1 instance and more than 1 worker process per instance for your exam.</p>
+<p>To increase the number of instances/worker processes for your exam, go to your exam shiny app on shinyapps.io and click on <em>Settings</em>. Here you have three main knobs to increase the number of learners you can serve simultaneously:</p>
+<ul>
+<li>Under <em>General</em>, you can select a larger instance size; the more memory the more learners you can serve.</li>
+<li>Under <em>Advanced</em>, you can set:
+<ul>
+<li>The start count under instance settings determines how many instances are started at the beginning. If you expect all your learners to access the exam at the same time, this should be set to the maximum value (depends on your plan). Note that a larger number of instances depletes your allocated number of active hours more quickly.</li>
+<li>The maximum number of worker processes (up to 10). All these processes run in the same instance, so 10 processes may even slow down the server. It is suggested to use 3 — 6 processes.</li>
+</ul>
+</li>
+</ul>
+<p>You should ensure that your plan allows you to have enough instances number of worker processes such that your exam can serve the expected number of learners:</p>
+<p><span class="math display">\[
+\text{Number of learners} &gt; \text{Max Worker Processes} \times \text{Maximum Instances Limit} \times \text{Max Connections}
+\]</span></p>
+<p>The <a href="https://docs.rstudio.com/shinyapps.io/applications.html">shinyapps.io user guide</a> has comprehensive information on setting and tuning application performance.</p>
+</div>
 </div>
   </div>
 
