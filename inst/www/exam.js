@@ -27,18 +27,6 @@ exports.utils = function () {
     return prefix + Math.random().toString(36).slice(2);
   }
 
-  function storeGet(key) {
-    return JSON.parse(window.localStorage.getItem('examinr_' + key));
-  }
-
-  function storeSet(key, value) {
-    return window.localStorage.setItem('examinr_' + key, JSON.stringify(value));
-  }
-
-  function storeRemove(key) {
-    return window.localStorage.removeItem('examinr_' + key);
-  }
-
   function initNumericInputs() {
     var numRegexp = /^-?(\d*\.)?\d+$/;
     $('.examinr-q-numeric input[type=text]').each(function () {
@@ -66,15 +54,64 @@ exports.utils = function () {
   });
   return {
     /**
-     * Enable or disable the high-contrast theme. If the argument is missing, the theme is determined based
-     * on the user's preference or the user-agent settings.
-     *
-     * @param {boolean|undefined} enabled
+     * A storage for objects bound to the current attempt.
      */
-    store: {
-      get: storeGet,
-      set: storeSet,
-      rem: storeRemove
+    attemptStorage: {
+      /**
+       * Get the item associated with the given key.
+       *
+       * @param {DOMString} key identifier for the object.
+       * @return object associated with the given key.
+       */
+      getItem: function getItem(key) {
+        return JSON.parse(window.localStorage.getItem('examinr_' + key));
+      },
+
+      /**
+       * Store an item in the storage.
+       *
+       * @param {DOMString} key identifier for the object.
+       * @param {*} value JSON-serializable object to be associated with the key.
+       */
+      setItem: function setItem(key, value) {
+        return window.localStorage.setItem('examinr_' + key, JSON.stringify(value));
+      },
+
+      /**
+       * Delete an item from storage.
+       *
+       * @param {DOMString} key identifier for the object.
+       */
+      removeItem: function removeItem(key) {
+        return window.localStorage.removeItem('examinr_' + key);
+      },
+
+      /*
+       * Delete all items from storage.
+       */
+      clear: function clear() {
+        for (var i = window.localStorage.length - 1; i >= 0; --i) {
+          var key = window.localStorage.key(i);
+
+          if (key && key.startsWith('examinr_')) {
+            window.localStorage.removeItem(key);
+          }
+        }
+      },
+
+      /**
+       * Iterate over all keys in storage.
+       * @param {Function} callback function being called for each key in the store given as first argument.
+       */
+      keys: function keys(callback) {
+        for (var i = window.localStorage.length - 1; i >= 0; --i) {
+          var key = window.localStorage.key(i);
+
+          if (key && key.startsWith('examinr_')) {
+            callback(key.substring(8));
+          }
+        }
+      }
     },
 
     /**
@@ -83,6 +120,28 @@ exports.utils = function () {
      */
     formatDate: function formatDate(timestamp) {
       return new Date(timestamp).toLocaleString(lang);
+    },
+
+    /**
+     * Create a function which calls the given function repeatedly until it returns `true`.
+     *
+     * @param {function} func function to call repeatedly until it returns true.
+     * @param {integer} delay delay in ms
+     */
+    autoRetry: function autoRetry(func, delay, immediately) {
+      return function () {
+        var context = this;
+        var args = arguments;
+        var requireRetry = !immediately || func.apply(context, args) !== true;
+
+        if (requireRetry) {
+          var timerId = window.setInterval(function () {
+            if (func.apply(context, args) === true) {
+              window.clearInterval(timerId);
+            }
+          }, delay);
+        }
+      };
     },
 
     /**
@@ -245,14 +304,14 @@ exports.accessibility = function () {
   }
 
   function useHighContrast() {
-    var stored = exports.utils.store.get('highContrast');
+    var stored = window.localStorage.getItem('examinrHighContrast');
 
     if (stored === null) {
       // Determine based on the user-agent settings.
       return !(evalMediaQueryList(window.matchMedia('not speech')) && evalMediaQueryList(window.matchMedia('(monochrome: 0)')) && evalMediaQueryList(window.matchMedia('(forced-colors: none)')) && evalMediaQueryList(window.matchMedia('(inverted-colors: none)')) && evalMediaQueryList(window.matchMedia('not (prefers-contrast: more)')));
     }
 
-    return stored !== false;
+    return stored !== 'no';
   }
   /**
   * Enable or disable the high-contrast theme. If the argument is missing, the theme is determined based
@@ -275,9 +334,8 @@ exports.accessibility = function () {
       enabled = false;
     }
 
-    exports.utils.store.set('highContrast', enabled);
+    window.localStorage.setItem('examinrHighContrast', enabled ? 'yes' : 'no');
     exports.exercises.highContrastTheme(enabled);
-    exports.utils.store.set('highContrast', enabled);
   }
 
   $(function () {
@@ -308,6 +366,122 @@ exports.accessibility = function () {
     ariaDescribedBy: function ariaDescribedBy(el, labelEl) {
       ariaAssociate('describedby', el, labelEl);
     }
+  };
+}();
+
+exports.question = function () {
+  'use strict';
+
+  var kDebounceEditorChange = 250;
+  var kDelaySetMcQuestion = 250;
+
+  function onMcChange(event) {
+    // Only handle the change if it is triggered by a checkbox or radio button.
+    if ($(event.target).filter('input').length) {
+      var question = $(event.delegateTarget);
+      var store = {
+        id: question.attr('id'),
+        val: question.find(':checked').map(function (ind, cb) {
+          return cb.value;
+        }).get()
+      }; // window.console.debug('Storing MC question with id ' + store.id + ': [' + store.val.join(', ') + ']', event)
+
+      exports.utils.attemptStorage.setItem('qinput_mc_' + store.id, store);
+    }
+  }
+
+  function loadFromAttemptStorage() {
+    // Recover input values from the browser-local attempt storage
+    exports.utils.attemptStorage.keys(function (key) {
+      if (key.startsWith('qinput_text_')) {
+        var store = exports.utils.attemptStorage.getItem(key); // window.console.debug('Setting text question with id ' + store.id + ' to "' + store.val + '"')
+
+        $('#' + store.id).val(store.val);
+      } else if (key.startsWith('qinput_mc_')) {
+        var _store = exports.utils.attemptStorage.getItem(key);
+
+        var question = $('#' + _store.id);
+
+        if (_store.val && _store.val.length) {
+          // The MC question is empty at first and will be updated by the server-side code.
+          // The event is fired *before* the input is updated, but the items must be checked only after the input
+          // has finished updating. Delay checking the items until all of them are actually present.
+          question.one('shiny:updateinput', exports.utils.autoRetry(function () {
+            // window.console.debug('Setting MC question with id ' + store.id + ' to [' + store.val.join(', ') + ']')
+            var allItemsPresent = true;
+
+            _store.val.forEach(function (value) {
+              var inputEl = question.find('input[value="' + value + '"]');
+
+              if (inputEl.length === 1) {
+                inputEl.prop('checked', true);
+              } else {
+                allItemsPresent = false;
+              }
+            });
+
+            return allItemsPresent;
+          }, kDelaySetMcQuestion, true));
+        }
+      } else if (key.startsWith('qinput_exercise_')) {
+        var _store2 = exports.utils.attemptStorage.getItem(key); // window.console.debug('Setting code editor for question ' + store.qlabel + ' to\n```' + store.val + '\n```')
+
+
+        var exercise = $('.examinr-question.examinr-exercise[data-questionlabel="' + _store2.qlabel + '"]');
+        var editor = exercise.data('editor');
+
+        if (editor) {
+          editor.getSession().setValue(_store2.val);
+          editor.resize(true);
+        }
+      }
+    }); // Monitor changes to inputs and save them to the browser-local attempt storage.
+
+    $('.examinr-question .shiny-bound-input.shiny-input-checkboxgroup').change(onMcChange);
+    $('.examinr-question .shiny-bound-input.shiny-input-radiogroup').change(onMcChange);
+    $('.examinr-question input.shiny-bound-input, .examinr-question textarea.shiny-bound-input').change(function () {
+      var question = $(this);
+      var store = {
+        id: question.attr('id'),
+        val: question.val()
+      };
+
+      if (store.val || store.val === '0') {
+        // window.console.debug('Storing text input for id ' + store.id + ': "' + store.val + '"')
+        exports.utils.attemptStorage.setItem('qinput_text_' + store.id, store);
+      } else {
+        // window.console.debug('Deleting text input for id ' + store.id + ' from storage.')
+        exports.utils.attemptStorage.removeItem('qinput_text_' + store.id);
+      }
+    });
+    $('.examinr-question.examinr-exercise.shiny-bound-input').each(function () {
+      var exercise = $(this);
+      var editor = exercise.data('editor');
+      var store = {
+        qlabel: exercise.data('questionlabel'),
+        val: null
+      };
+
+      var storeEditorValue = function storeEditorValue(event) {
+        store.val = exercise.data('editor').getSession().getValue();
+
+        if (store.val || store.val === '0') {
+          // window.console.debug('Storing code for exercise ' + store.qlabel + ' to\n```' + store.val + '\n```')
+          exports.utils.attemptStorage.setItem('qinput_exercise_' + store.qlabel, store);
+        } else {
+          // window.console.debug('Deleting code for exercise ' + store.qlabel)
+          exports.utils.attemptStorage.removeItem('qinput_exercise_' + store.qlabel);
+        }
+      };
+
+      if (editor) {
+        editor.on('change', exports.utils.debounce(storeEditorValue, kDebounceEditorChange, false));
+      }
+    });
+  }
+
+  return {
+    restoreFromStorage: loadFromAttemptStorage
   };
 }();
 
@@ -541,6 +715,7 @@ exports.attempt = function () {
     }
 
     if (attempt && attempt.active) {
+      // window.console.debug('Attempt is active:', attempt)
       $('main').show().trigger('shown');
       progressEl.show();
 
@@ -562,6 +737,7 @@ exports.attempt = function () {
         timelimit = Number.POSITIVE_INFINITY;
       }
     } else {
+      // window.console.debug('Attempt is inactive.')
       $('main').hide();
       exports.status.remove(progressEl);
       exports.status.setContext();
@@ -681,6 +857,234 @@ exports.attempt = function () {
           progressEl.find('.progress-bar').attr('aria-valuenow', currentSectionNr).width(Math.round(100 * currentSectionNr / config.totalSections) + '%');
         }
       }
+    }
+  };
+}();
+/*
+ * Some parts of this file are dervied from the learnr project, which is licensed under the Apache 2.0 license.
+ * Original work Copyright 2019 RStudio
+ * Derived work Copyright 2020 David Kepplinger
+ */
+
+
+exports.exercises = function () {
+  'use strict';
+
+  var kMinLines = 5;
+  var kMaxDefaultLines = 20;
+  var kThemeMonochrome = 'ace/theme/monochrome';
+  var kThemeDefault = 'ace/theme/textmate';
+  var kRetryUpdateHeightDelay = 250;
+  var currentTheme = kThemeMonochrome;
+  var exerciseRunButtonEnabled = true;
+
+  function attachAceEditor(id, code) {
+    var editor = ace.edit(id);
+    editor.setHighlightActiveLine(false);
+    editor.setShowPrintMargin(false);
+    editor.setShowFoldWidgets(false);
+    editor.setBehavioursEnabled(true);
+    editor.renderer.setDisplayIndentGuides(false);
+    editor.setTheme(currentTheme);
+    editor.$blockScrolling = Infinity;
+    editor.session.setMode('ace/mode/r');
+    editor.session.getSelection().clearSelection();
+    editor.setValue(code, -1);
+    return editor;
+  }
+
+  function exerciseRunning(outputContainer, running) {
+    if (typeof running === 'undefined') {
+      running = !exerciseRunButtonEnabled;
+    }
+
+    exports.utils.toggleShim(outputContainer, running);
+    exerciseRunButtonEnabled = running === false;
+    $('.examinr-run-button').prop('disabled', !exerciseRunButtonEnabled);
+  }
+
+  function initializeExerciseEditor() {
+    var exercise = $(this);
+    var exerciseOptions = JSON.parse(exercise.children('script[type="application/json"]').detach().text() || '{}');
+    var code = '';
+    exercise.children('pre').each(function () {
+      code += $(this).children('code').text() + '\n';
+    }).remove();
+    var codeLines = code.split(/\r?\n/).length;
+    var lines = exerciseOptions.lines ? Math.max(1, exerciseOptions.lines) : Math.min(Math.max(kMinLines, codeLines), kMaxDefaultLines);
+
+    if (codeLines < lines) {
+      code += '\n'.repeat(lines - codeLines);
+    }
+
+    var editorId = exerciseOptions.inputId + '-editor';
+    var pointsLabel = exerciseOptions.points ? '<span class="examinr-points badge badge-secondary">' + exerciseOptions.points + '</span>' : '';
+    var messageStrings = exports.status.getMessage('exercise') || {};
+    var exercisePanel = $('<div class="card">' + '<h6 class="card-header">' + (exerciseOptions.title || '') + pointsLabel + '</h6>' + '<div class="card-body">' + '<div id="' + editorId + '" class="examinr-exercise-editor" role="textbox" contenteditable="true" ' + 'aria-multiline="true" tabindex=0 ></div>' + '</div>' + '<div class="card-footer text-muted">' + '<button type="button" class="btn btn-secondary btn-sm examinr-run-button float-right">' + '<span class="icon"><svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-play-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg></span>' + exerciseOptions.buttonLabel + '</button>' + '<div class="examinr-exercise-status">' + messageStrings.notYetRun + '</div>' + '</div>' + '</div>');
+    var outputContainer = $('<div class="examinr-exercise-output card bg-light">' + (messageStrings.outputTitle ? '<div class="card-header text-muted small">' + messageStrings.outputTitle + '</div>' : '') + '<div class="card-body p-3" role="status"></div>' + '</div>');
+    var exerciseEditor = exercise.find('#' + editorId);
+    exercise.append(exercisePanel).append(outputContainer); // make exercise more accessible
+
+    exports.accessibility.ariaLabelledBy(exercise, exercisePanel.find('.card-header'));
+    exports.accessibility.ariaAssociate('controls', exercisePanel.find('.examinr-run-button'), outputContainer.find('.card-body'));
+    exerciseEditor.attr('aria-label', exerciseOptions.inputLabel);
+    exerciseEditor.children().attr('aria-hidden', 'true');
+
+    if (!messageStrings.notYetRun) {
+      exercise.find('.examinr-exercise-status').hide();
+    } else {
+      exports.accessibility.ariaDescribedBy(exercisePanel, exercise.find('.examinr-exercise-status'));
+    }
+
+    exercise.find('.examinr-exercise-output').hide();
+    var runCodeButton = exercise.find('.examinr-run-button'); // Proxy a "run code" event through the button to also trigger shiny input events.
+
+    var triggerClick = function triggerClick() {
+      runCodeButton.click();
+    };
+
+    var editor = attachAceEditor(editorId, code);
+    editor.setFontSize(0.8125 * parseFloat(exercise.find('.card-body').css('font-size')));
+    editor.commands.addCommand({
+      name: 'run_rcode',
+      bindKey: {
+        win: 'Ctrl+Enter',
+        mac: 'Command+Enter'
+      },
+      exec: triggerClick
+    });
+    editor.commands.addCommand({
+      name: 'run_rcode-shift',
+      bindKey: {
+        win: 'Ctrl+Shift+Enter',
+        mac: 'Command+Shift+Enter'
+      },
+      exec: triggerClick
+    });
+
+    var updateAceHeight = function updateAceHeight() {
+      editor.setOptions({
+        minLines: lines,
+        maxLines: lines
+      });
+    };
+
+    updateAceHeight();
+    runCodeButton.click(function () {
+      editor.focus();
+    });
+    exercise.data({
+      editor: editor,
+      options: exerciseOptions
+    });
+    exercise.parents('section').on('shown', exports.utils.autoRetry(function () {
+      // window.console.debug('Resize editor ' + exerciseOptions.inputId + ' after section is shown.')
+      updateAceHeight();
+      editor.resize(true);
+      return $(editor.container).height() > 0;
+    }, kRetryUpdateHeightDelay, true));
+  }
+
+  function initializeEditorBindings() {
+    var inputBindings = new Shiny.InputBinding();
+    $.extend(inputBindings, {
+      find: function find(scope) {
+        return $(scope).find('.examinr-exercise');
+      },
+      getId: function getId(exercise) {
+        return $(exercise).data('options').inputId;
+      },
+      subscribe: function subscribe(exercise, callback) {
+        exercise = $(exercise);
+        exercise.find('.examinr-run-button').on('click.examinrExerciseInputBinding', function () {
+          if (exerciseRunButtonEnabled) {
+            exercise.data('sendData', true);
+            exerciseRunning(exercise.find('.examinr-exercise-output'), true);
+            callback(true);
+          }
+        });
+      },
+      unsubscribe: function unsubscribe(exercise) {
+        $(exercise).find('.examinr-run-button').off('.examinrExerciseInputBinding');
+      },
+      getValue: function getValue(exercise) {
+        exercise = $(exercise);
+
+        if (exercise.data('sendData') !== true) {
+          return null;
+        }
+
+        exercise.data('sendData', false);
+        return {
+          label: exercise.data('options').label,
+          code: exercise.data('editor').getSession().getValue(),
+          timestamp: new Date().getTime()
+        };
+      },
+      setValue: function setValue(exercise, value) {
+        $(exercise).data('editor').getSession().setValue(value);
+      }
+    });
+    Shiny.inputBindings.register(inputBindings, 'examinr.exerciseInputBinding');
+    var outputBindings = new Shiny.OutputBinding();
+    $.extend(outputBindings, {
+      find: function find(scope) {
+        return $(scope).find('.examinr-exercise');
+      },
+      getId: function getId(exercise) {
+        return $(exercise).data('options').outputId;
+      },
+      renderValue: function renderValue(exercise, data) {
+        exercise = $(exercise);
+
+        if (data.result) {
+          var outputContainer = exercise.find('.examinr-exercise-output').show().find('.card-body');
+          outputContainer.html(data.result);
+          outputContainer.find('.kable-table table').addClass('table table-striped table-sm');
+        } else {
+          exercise.find('.examinr-exercise-output').hide();
+        }
+
+        if (data.status) {
+          var footerClass = data.status_class && data.status_class !== 'info' ? 'alert-' + data.status_class : 'text-muted';
+          exercise.find('.card-footer').removeClass('text-muted').removeClass('alert-success').removeClass('alert-warning').removeClass('alert-danger').addClass(footerClass);
+          exercise.find('.examinr-exercise-status').show().html(data.status);
+        } else {
+          exercise.find('.examinr-exercise-status').hide().html('');
+        }
+
+        exerciseRunning(exercise.find('.examinr-exercise-output'), false);
+      },
+      renderError: function renderError(exercise, error) {
+        exercise = $(exercise);
+        exerciseRunning(exercise.find('.examinr-exercise-output'), false);
+        exercise.find('.examinr-exercise-output').hide();
+        exercise.find('.examinr-exercise-status').show().text(error.message);
+      },
+      clearError: function clearError(exercise) {
+        exercise = $(exercise);
+        exerciseRunning(exercise.find('.examinr-exercise-output'), false);
+        exercise.find('.examinr-exercise-output').hide();
+        exercise.find('.examinr-exercise-status').hide();
+      }
+    });
+    Shiny.outputBindings.register(outputBindings, 'examinr.exerciseOutputBinding');
+  }
+
+  $(function () {
+    $('.examinr-exercise').each(initializeExerciseEditor);
+    initializeEditorBindings();
+  });
+  return {
+    highContrastTheme: function highContrastTheme(enabled) {
+      currentTheme = enabled ? kThemeMonochrome : kThemeDefault;
+      $('.examinr-exercise').each(function () {
+        var editor = $(this).data('editor');
+
+        if (editor) {
+          editor.setTheme(currentTheme);
+        }
+      });
     }
   };
 }();
@@ -1190,231 +1594,6 @@ exports.feedback = function () {
  */
 
 
-exports.exercises = function () {
-  'use strict';
-
-  var kMinLines = 5;
-  var kMaxDefaultLines = 20;
-  var kThemeMonochrome = 'ace/theme/monochrome';
-  var kThemeDefault = 'ace/theme/textmate';
-  var currentTheme = kThemeMonochrome;
-  var exerciseRunButtonEnabled = true;
-
-  function attachAceEditor(id, code) {
-    var editor = ace.edit(id);
-    editor.setHighlightActiveLine(false);
-    editor.setShowPrintMargin(false);
-    editor.setShowFoldWidgets(false);
-    editor.setBehavioursEnabled(true);
-    editor.renderer.setDisplayIndentGuides(false);
-    editor.setTheme(currentTheme);
-    editor.$blockScrolling = Infinity;
-    editor.session.setMode('ace/mode/r');
-    editor.session.getSelection().clearSelection();
-    editor.setValue(code, -1);
-    return editor;
-  }
-
-  function exerciseRunning(outputContainer, running) {
-    if (typeof running === 'undefined') {
-      running = !exerciseRunButtonEnabled;
-    }
-
-    exports.utils.toggleShim(outputContainer, running);
-    exerciseRunButtonEnabled = running === false;
-    $('.examinr-run-button').prop('disabled', !exerciseRunButtonEnabled);
-  }
-
-  function initializeExerciseEditor() {
-    var exercise = $(this);
-    var exerciseOptions = JSON.parse(exercise.children('script[type="application/json"]').detach().text() || '{}');
-    var code = '';
-    exercise.children('pre').each(function () {
-      code += $(this).children('code').text() + '\n';
-    }).remove();
-    var codeLines = code.split(/\r?\n/).length;
-    var lines = exerciseOptions.lines ? Math.max(1, exerciseOptions.lines) : Math.min(Math.max(kMinLines, codeLines), kMaxDefaultLines);
-
-    if (codeLines < lines) {
-      code += '\n'.repeat(lines - codeLines);
-    }
-
-    var editorId = exerciseOptions.inputId + '-editor';
-    var pointsLabel = exerciseOptions.points ? '<span class="examinr-points badge badge-secondary">' + exerciseOptions.points + '</span>' : '';
-    var messageStrings = exports.status.getMessage('exercise') || {};
-    var exercisePanel = $('<div class="card">' + '<h6 class="card-header">' + (exerciseOptions.title || '') + pointsLabel + '</h6>' + '<div class="card-body">' + '<div id="' + editorId + '" class="examinr-exercise-editor" role="textbox" contenteditable="true" ' + 'aria-multiline="true" tabindex=0 ></div>' + '</div>' + '<div class="card-footer text-muted">' + '<button type="button" class="btn btn-secondary btn-sm examinr-run-button float-right">' + '<span class="icon"><svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-play-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg></span>' + exerciseOptions.buttonLabel + '</button>' + '<div class="examinr-exercise-status">' + messageStrings.notYetRun + '</div>' + '</div>' + '</div>');
-    var outputContainer = $('<div class="examinr-exercise-output card bg-light">' + (messageStrings.outputTitle ? '<div class="card-header text-muted small">' + messageStrings.outputTitle + '</div>' : '') + '<div class="card-body p-3" role="status"></div>' + '</div>');
-    var exerciseEditor = exercise.find('#' + editorId);
-    exercise.append(exercisePanel).append(outputContainer); // make exercise more accessible
-
-    exports.accessibility.ariaLabelledBy(exercise, exercisePanel.find('.card-header'));
-    exports.accessibility.ariaAssociate('controls', exercisePanel.find('.examinr-run-button'), outputContainer.find('.card-body'));
-    exerciseEditor.attr('aria-label', exerciseOptions.inputLabel);
-    exerciseEditor.children().attr('aria-hidden', 'true');
-
-    if (!messageStrings.notYetRun) {
-      exercise.find('.examinr-exercise-status').hide();
-    } else {
-      exports.accessibility.ariaDescribedBy(exercisePanel, exercise.find('.examinr-exercise-status'));
-    }
-
-    exercise.find('.examinr-exercise-output').hide();
-    var runCodeButton = exercise.find('.examinr-run-button'); // Proxy a "run code" event through the button to also trigger shiny input events.
-
-    var triggerClick = function triggerClick() {
-      runCodeButton.click();
-    };
-
-    var editor = attachAceEditor(editorId, code);
-    editor.setFontSize(0.8125 * parseFloat(exercise.find('.card-body').css('font-size')));
-    editor.commands.addCommand({
-      name: 'run_rcode',
-      bindKey: {
-        win: 'Ctrl+Enter',
-        mac: 'Command+Enter'
-      },
-      exec: triggerClick
-    });
-    editor.commands.addCommand({
-      name: 'run_rcode-shift',
-      bindKey: {
-        win: 'Ctrl+Shift+Enter',
-        mac: 'Command+Shift+Enter'
-      },
-      exec: triggerClick
-    });
-
-    var updateAceHeight = function updateAceHeight() {
-      editor.setOptions({
-        minLines: lines,
-        maxLines: lines
-      });
-    };
-
-    updateAceHeight();
-    editor.getSession().on('change', updateAceHeight);
-    runCodeButton.click(function () {
-      editor.focus();
-    });
-    exercise.data({
-      editor: editor,
-      options: exerciseOptions
-    });
-    exercise.parents('section').on('shown', function () {
-      editor.resize(true);
-    });
-  }
-
-  function initializeEditorBindings() {
-    var inputBindings = new Shiny.InputBinding();
-    $.extend(inputBindings, {
-      find: function find(scope) {
-        return $(scope).find('.examinr-exercise');
-      },
-      getId: function getId(exercise) {
-        return $(exercise).data('options').inputId;
-      },
-      subscribe: function subscribe(exercise, callback) {
-        exercise = $(exercise);
-        exercise.find('.examinr-run-button').on('click.examinrExerciseInputBinding', function () {
-          if (exerciseRunButtonEnabled) {
-            exercise.data('sendData', true);
-            exerciseRunning(exercise.find('.examinr-exercise-output'), true);
-            callback(true);
-          }
-        });
-      },
-      unsubscribe: function unsubscribe(exercise) {
-        $(exercise).find('.examinr-run-button').off('.examinrExerciseInputBinding');
-      },
-      getValue: function getValue(exercise) {
-        exercise = $(exercise);
-
-        if (exercise.data('sendData') !== true) {
-          return null;
-        }
-
-        exercise.data('sendData', false);
-        return {
-          label: exercise.data('options').label,
-          code: exercise.data('editor').getSession().getValue(),
-          timestamp: new Date().getTime()
-        };
-      },
-      setValue: function setValue(exercise, value) {
-        $(exercise).data('editor').getSession().setValue(value);
-      }
-    });
-    Shiny.inputBindings.register(inputBindings, 'examinr.exerciseInputBinding');
-    var outputBindings = new Shiny.OutputBinding();
-    $.extend(outputBindings, {
-      find: function find(scope) {
-        return $(scope).find('.examinr-exercise');
-      },
-      getId: function getId(exercise) {
-        return $(exercise).data('options').outputId;
-      },
-      renderValue: function renderValue(exercise, data) {
-        exercise = $(exercise);
-
-        if (data.result) {
-          var outputContainer = exercise.find('.examinr-exercise-output').show().find('.card-body');
-          outputContainer.html(data.result);
-          outputContainer.find('.kable-table table').addClass('table table-striped table-sm');
-        } else {
-          exercise.find('.examinr-exercise-output').hide();
-        }
-
-        if (data.status) {
-          var footerClass = data.status_class && data.status_class !== 'info' ? 'alert-' + data.status_class : 'text-muted';
-          exercise.find('.card-footer').removeClass('text-muted').removeClass('alert-success').removeClass('alert-warning').removeClass('alert-danger').addClass(footerClass);
-          exercise.find('.examinr-exercise-status').show().html(data.status);
-        } else {
-          exercise.find('.examinr-exercise-status').hide().html('');
-        }
-
-        exerciseRunning(exercise.find('.examinr-exercise-output'), false);
-      },
-      renderError: function renderError(exercise, error) {
-        exercise = $(exercise);
-        exerciseRunning(exercise.find('.examinr-exercise-output'), false);
-        exercise.find('.examinr-exercise-output').hide();
-        exercise.find('.examinr-exercise-status').show().text(error.message);
-      },
-      clearError: function clearError(exercise) {
-        exercise = $(exercise);
-        exerciseRunning(exercise.find('.examinr-exercise-output'), false);
-        exercise.find('.examinr-exercise-output').hide();
-        exercise.find('.examinr-exercise-status').hide();
-      }
-    });
-    Shiny.outputBindings.register(outputBindings, 'examinr.exerciseOutputBinding');
-  }
-
-  $(function () {
-    $('.examinr-exercise').each(initializeExerciseEditor);
-    initializeEditorBindings();
-  });
-  return {
-    highContrastTheme: function highContrastTheme(enabled) {
-      currentTheme = enabled ? kThemeMonochrome : kThemeDefault;
-      $('.examinr-exercise').each(function () {
-        var editor = $(this).data('editor');
-
-        if (editor) {
-          editor.setTheme(currentTheme);
-        }
-      });
-    }
-  };
-}();
-/*
- * Some parts of this file are dervied from the learnr project, which is licensed under the Apache 2.0 license.
- * Original work Copyright 2019 RStudio
- * Derived work Copyright 2020 David Kepplinger
- */
-
-
 (function () {
   'use strict';
 
@@ -1594,19 +1773,17 @@ exports.exercises = function () {
 exports.sections = function () {
   'use strict';
 
-  var recalculatedDelay = 250;
+  var kRecalculatedDelay = 500;
   var currentSectionEl;
   var currentSection = {};
   var actualSections;
-
-  function finishedRecalculating() {
-    exports.utils.toggleShim($('body'), false);
-  }
-
   Shiny.addCustomMessageHandler('__.examinr.__-sectionChange', function (section) {
     if (section) {
+      // window.console.debug('Section changed to:', section)
       if (section.feedback === true) {
-        // Redirect to the feedback
+        // Clear attempt storage
+        exports.utils.attemptStorage.clear(); // Redirect to the feedback
+
         if (window.location.search) {
           window.location.search = window.location.search + '&display=feedback';
         } else {
@@ -1621,29 +1798,30 @@ exports.sections = function () {
       }
 
       currentSection = section;
-      currentSectionEl = $('#' + currentSection.id).parent().show().attr('role', 'main').trigger('shown');
-      var outputElements = currentSectionEl.find('.shiny-bound-output');
-      var recalculating = outputElements.length;
 
-      if (recalculating > 0) {
-        // Assume that all outputs need to be recalculated.
-        // If not, call finishedRecalculating() after a set delay.
-        var recalculatingTimerId = window.setTimeout(finishedRecalculating, recalculatedDelay);
-        outputElements.one('shiny:recalculated', function () {
-          --recalculating;
-
-          if (recalculating <= 0) {
-            // All outputs have been recalculated.
-            finishedRecalculating();
-          } else {
-            // Some outputs are still to be recalculated. Wait for them a short while, otherwise call
-            // finishedRecalculating()
-            window.clearTimeout(recalculatingTimerId);
-            recalculatingTimerId = window.setTimeout(finishedRecalculating, recalculatedDelay);
-          }
-        });
+      if (currentSection === true) {
+        currentSectionEl = $('section.level1');
       } else {
-        finishedRecalculating();
+        currentSectionEl = $('#' + currentSection.id).parent();
+        currentSectionEl.attr('role', 'main');
+      }
+
+      currentSectionEl.show().trigger('shown');
+
+      if (section.attempt_is_finished) {
+        exports.utils.attemptStorage.clear();
+      } else {
+        exports.question.restoreFromStorage();
+      }
+
+      var outputElements = currentSectionEl.find('.shiny-bound-output');
+
+      if (outputElements.length > 0) {
+        outputElements.one('shiny:recalculated', exports.utils.debounce(function () {
+          exports.utils.toggleShim($('body'), false);
+        }, kRecalculatedDelay, false));
+      } else {
+        exports.utils.toggleShim($('body'), false);
       }
 
       exports.status.resetMessages();

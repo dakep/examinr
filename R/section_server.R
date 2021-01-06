@@ -139,7 +139,12 @@ observe_section_change <- function (x, section_id = NULL, ..., label = NULL, env
 
 #' @importFrom shiny getDefaultReactiveDomain
 get_current_section <- function (session = getDefaultReactiveDomain()) {
-  get_session_env(session)$section_state$current
+  session_env <- get_session_env(session)
+  current_section <- session_env$section_state$current
+  if (is.list(current_section)) {
+    current_section$attempt_is_finished <- identical(current_section$id, session_env$last_section_id)
+  }
+  return(current_section)
 }
 
 #' @importFrom stringr str_detect fixed str_remove
@@ -224,7 +229,7 @@ save_section_data <- function (session, btn_id = NULL) {
 
       # Check if this is the final section (or the last section with a button)
       if (isTRUE(current_section) || identical(current_section_id, session_env$last_section_id)) {
-        finish_current_attempt(session)
+        return(finish_current_attempt(session))
       }
     } else {
       # In case of an error, give the user the option to retry, but delay the trigger for 2 seconds to prevent
@@ -234,7 +239,7 @@ save_section_data <- function (session, btn_id = NULL) {
       return(FALSE)
     }
   }
-  return (TRUE)
+  return(TRUE)
 }
 
 goto_next_section <- function () {

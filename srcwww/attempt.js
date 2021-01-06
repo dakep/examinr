@@ -19,6 +19,7 @@ exports.attempt = (function () {
       config.gracePeriod = attempt.gracePeriod
     }
     if (attempt && attempt.active) {
+      // window.console.debug('Attempt is active:', attempt)
       $('main').show().trigger('shown')
       progressEl.show()
 
@@ -37,6 +38,7 @@ exports.attempt = (function () {
         timelimit = Number.POSITIVE_INFINITY
       }
     } else {
+      // window.console.debug('Attempt is inactive.')
       $('main').hide()
       exports.status.remove(progressEl)
       exports.status.setContext()

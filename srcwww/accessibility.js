@@ -23,7 +23,7 @@ exports.accessibility = (function () {
   }
 
   function useHighContrast () {
-    const stored = exports.utils.store.get('highContrast')
+    const stored = window.localStorage.getItem('examinrHighContrast')
     if (stored === null) {
       // Determine based on the user-agent settings.
       return !(evalMediaQueryList(window.matchMedia('not speech')) &&
@@ -32,7 +32,7 @@ exports.accessibility = (function () {
         evalMediaQueryList(window.matchMedia('(inverted-colors: none)')) &&
         evalMediaQueryList(window.matchMedia('not (prefers-contrast: more)')))
     }
-    return (stored !== false)
+    return (stored !== 'no')
   }
 
   /**
@@ -52,9 +52,8 @@ exports.accessibility = (function () {
       $('html').removeClass('high-contrast')
       enabled = false
     }
-    exports.utils.store.set('highContrast', enabled)
+    window.localStorage.setItem('examinrHighContrast', enabled ? 'yes' : 'no')
     exports.exercises.highContrastTheme(enabled)
-    exports.utils.store.set('highContrast', enabled)
   }
 
   $(function () {

@@ -1,18 +1,17 @@
 exports.sections = (function () {
   'use strict'
 
-  const recalculatedDelay = 250
+  const kRecalculatedDelay = 500
   let currentSectionEl
   let currentSection = {}
   let actualSections
 
-  function finishedRecalculating () {
-    exports.utils.toggleShim($('body'), false)
-  }
-
   Shiny.addCustomMessageHandler('__.examinr.__-sectionChange', function (section) {
     if (section) {
+      // window.console.debug('Section changed to:', section)
       if (section.feedback === true) {
+        // Clear attempt storage
+        exports.utils.attemptStorage.clear()
         // Redirect to the feedback
         if (window.location.search) {
           window.location.search = window.location.search + '&display=feedback'
@@ -27,31 +26,27 @@ exports.sections = (function () {
         $('section.level1').hide()
       }
       currentSection = section
-      currentSectionEl = $('#' + currentSection.id).parent()
-        .show()
-        .attr('role', 'main')
-        .trigger('shown')
+      if (currentSection === true) {
+        currentSectionEl = $('section.level1')
+      } else {
+        currentSectionEl = $('#' + currentSection.id).parent()
+        currentSectionEl.attr('role', 'main')
+      }
+      currentSectionEl.show().trigger('shown')
+
+      if (section.attempt_is_finished) {
+        exports.utils.attemptStorage.clear()
+      } else {
+        exports.question.restoreFromStorage()
+      }
 
       const outputElements = currentSectionEl.find('.shiny-bound-output')
-      let recalculating = outputElements.length
-      if (recalculating > 0) {
-        // Assume that all outputs need to be recalculated.
-        // If not, call finishedRecalculating() after a set delay.
-        let recalculatingTimerId = window.setTimeout(finishedRecalculating, recalculatedDelay)
-        outputElements.one('shiny:recalculated', function () {
-          --recalculating
-          if (recalculating <= 0) {
-            // All outputs have been recalculated.
-            finishedRecalculating()
-          } else {
-            // Some outputs are still to be recalculated. Wait for them a short while, otherwise call
-            // finishedRecalculating()
-            window.clearTimeout(recalculatingTimerId)
-            recalculatingTimerId = window.setTimeout(finishedRecalculating, recalculatedDelay)
-          }
-        })
+      if (outputElements.length > 0) {
+        outputElements.one('shiny:recalculated', exports.utils.debounce(function () {
+          exports.utils.toggleShim($('body'), false)
+        }, kRecalculatedDelay, false))
       } else {
-        finishedRecalculating()
+        exports.utils.toggleShim($('body'), false)
       }
 
       exports.status.resetMessages()

@@ -328,6 +328,7 @@ initialize_attempt <- function (session, exam_id, exam_version) {
     session <- getDefaultReactiveDomain()
     current_section <- get_current_section(session)
     status <- get_session_env(session)$attempt_state$status
+
     # Notify the client if the status is still valid or the attempt changed due to a timeout
     if (isTRUE(status) || identical(status, 'timeout')) {
       send_message('attemptStatus', session = session,
@@ -420,7 +421,8 @@ finish_current_attempt <- function (session = getDefaultReactiveDomain(), timeou
       }
     }
 
-    sp_finish_attempt(current_attempt$id, Sys.time())
+    return(sp_finish_attempt(current_attempt$id, Sys.time()))
   }
+  return(FALSE)
 }
 

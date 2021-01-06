@@ -16,18 +16,6 @@ exports.utils = (function () {
     return prefix + Math.random().toString(36).slice(2)
   }
 
-  function storeGet (key) {
-    return JSON.parse(window.localStorage.getItem('examinr_' + key))
-  }
-
-  function storeSet (key, value) {
-    return window.localStorage.setItem('examinr_' + key, JSON.stringify(value))
-  }
-
-  function storeRemove (key) {
-    return window.localStorage.removeItem('examinr_' + key)
-  }
-
   function initNumericInputs () {
     const numRegexp = /^-?(\d*\.)?\d+$/
     $('.examinr-q-numeric input[type=text]').each(function () {
@@ -56,15 +44,62 @@ exports.utils = (function () {
 
   return {
     /**
-     * Enable or disable the high-contrast theme. If the argument is missing, the theme is determined based
-     * on the user's preference or the user-agent settings.
-     *
-     * @param {boolean|undefined} enabled
+     * A storage for objects bound to the current attempt.
      */
-    store: {
-      get: storeGet,
-      set: storeSet,
-      rem: storeRemove
+    attemptStorage: {
+      /**
+       * Get the item associated with the given key.
+       *
+       * @param {DOMString} key identifier for the object.
+       * @return object associated with the given key.
+       */
+      getItem: function (key) {
+        return JSON.parse(window.localStorage.getItem('examinr_' + key))
+      },
+
+      /**
+       * Store an item in the storage.
+       *
+       * @param {DOMString} key identifier for the object.
+       * @param {*} value JSON-serializable object to be associated with the key.
+       */
+      setItem: function (key, value) {
+        return window.localStorage.setItem('examinr_' + key, JSON.stringify(value))
+      },
+
+      /**
+       * Delete an item from storage.
+       *
+       * @param {DOMString} key identifier for the object.
+       */
+      removeItem: function (key) {
+        return window.localStorage.removeItem('examinr_' + key)
+      },
+
+      /*
+       * Delete all items from storage.
+       */
+      clear: function () {
+        for (var i = window.localStorage.length - 1; i >= 0; --i) {
+          const key = window.localStorage.key(i)
+          if (key && key.startsWith('examinr_')) {
+            window.localStorage.removeItem(key)
+          }
+        }
+      },
+
+      /**
+       * Iterate over all keys in storage.
+       * @param {Function} callback function being called for each key in the store given as first argument.
+       */
+      keys: function (callback) {
+        for (var i = window.localStorage.length - 1; i >= 0; --i) {
+          const key = window.localStorage.key(i)
+          if (key && key.startsWith('examinr_')) {
+            callback(key.substring(8))
+          }
+        }
+      }
     },
 
     /**
@@ -73,6 +108,27 @@ exports.utils = (function () {
      */
     formatDate: function (timestamp) {
       return new Date(timestamp).toLocaleString(lang)
+    },
+
+    /**
+     * Create a function which calls the given function repeatedly until it returns `true`.
+     *
+     * @param {function} func function to call repeatedly until it returns true.
+     * @param {integer} delay delay in ms
+     */
+    autoRetry: function (func, delay, immediately) {
+      return function () {
+        const context = this
+        const args = arguments
+        const requireRetry = !immediately || (func.apply(context, args) !== true)
+        if (requireRetry) {
+          const timerId = window.setInterval(function () {
+            if (func.apply(context, args) === true) {
+              window.clearInterval(timerId)
+            }
+          }, delay)
+        }
+      }
     },
 
     /**

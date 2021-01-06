@@ -10,6 +10,7 @@ exports.exercises = (function () {
   const kMaxDefaultLines = 20
   const kThemeMonochrome = 'ace/theme/monochrome'
   const kThemeDefault = 'ace/theme/textmate'
+  const kRetryUpdateHeightDelay = 250
 
   let currentTheme = kThemeMonochrome
   let exerciseRunButtonEnabled = true
@@ -128,7 +129,6 @@ exports.exercises = (function () {
       })
     }
     updateAceHeight()
-    editor.getSession().on('change', updateAceHeight)
 
     runCodeButton.click(function () {
       editor.focus()
@@ -139,9 +139,12 @@ exports.exercises = (function () {
       options: exerciseOptions
     })
 
-    exercise.parents('section').on('shown', function () {
+    exercise.parents('section').on('shown', exports.utils.autoRetry(function () {
+      // window.console.debug('Resize editor ' + exerciseOptions.inputId + ' after section is shown.')
+      updateAceHeight()
       editor.resize(true)
-    })
+      return $(editor.container).height() > 0
+    }, kRetryUpdateHeightDelay, true))
   }
 
   function initializeEditorBindings () {
