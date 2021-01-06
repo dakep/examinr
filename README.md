@@ -56,6 +56,8 @@ devtools::install_github("dakep/examinr")
   - Interfaces for grading (for instructors) and for accessing feedback
     (for users).
   - High-contrast theme and screen-reader friendly output
+  - Users’ inputs are also stored in their browser to allow restoring
+    input values after a reload or in case of server issues.
 
 ## Features to be added
 
@@ -63,10 +65,9 @@ The package is still in a development phase and some features are not
 yet available, most notably the following:
 
   - File upload question.
-  - Re-populate input values from client-side storage after page reload.
   - Multiple text inputs per text question.
   - Improved rendering of help pages.
-  - Support of auto-grading for code exercises.
+  - Support auto-grading of code exercises.
 
 If you are looking for specific features which are not yet supported by
 examinr and not yet requested, please create an
