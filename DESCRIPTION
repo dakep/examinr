@@ -21,7 +21,6 @@ Imports:
   jsonlite,
   knitr (>= 1.23),
   commonmark,
-  xml2,
   ellipsis,
   htmltools,
   stringr,
@@ -57,6 +56,7 @@ Collate:
     'status_messages.R'
     'third_party_libs.R'
     'utilities.R'
+    'utilities_md_as_html.R'
 Encoding: UTF-8
 LazyData: true
 Language: en-US

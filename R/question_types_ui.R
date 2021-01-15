@@ -253,7 +253,7 @@ prepare_title <- function (title, static_title) {
   }
 
   if (static_title) {
-    return(render_markdown_as_html(title, use_rmarkdown = FALSE))
+    return(md_as_html(title, use_rmarkdown = FALSE))
   }
   return(title)
 }

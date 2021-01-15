@@ -185,7 +185,7 @@ send_feedback <- function (attempt, all_attempts, session) {
           feedback <- attempt$points[[qid]] %||% feedback_cache[[qid]] %||% list()
 
           comment_html <- if (!is.null(feedback$comment)) {
-            render_markdown_as_html(feedback$comment, use_rmarkdown = FALSE)
+            md_as_html(feedback$comment, use_rmarkdown = FALSE)
           } else {
             NULL
           }
