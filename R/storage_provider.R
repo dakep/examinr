@@ -484,7 +484,6 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
         DBI::dbCommit(conn)
         isTRUE(affected_rows == 1L)
       }, error = function (e) {
-        tryCatch(DBI::dbClearResult(stmt), error = function (...) {}, warning = function (...) {})
         tryCatch(DBI::dbRollback(conn), error = function (...) {}, warning = function (...) {})
         warn(paste("Cannot save section data:", cnd_message(e)))
         return(FALSE)

@@ -249,6 +249,7 @@ ordered_attempts <- function (user, exam_metadata, only_finished = TRUE) {
 }
 
 #' @importFrom rlang warn cnd_message
+#' @importFrom utils write.csv
 grades_download_handler <- function (exam_metadata, req) {
   if (identical(req$REQUEST_METHOD, 'GET')) {
     tryCatch({
