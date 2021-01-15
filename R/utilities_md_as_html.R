@@ -13,6 +13,7 @@
 #' @importFrom rmarkdown render output_format html_fragment
 #' @importFrom commonmark markdown_html
 #' @importFrom stringr str_trim str_remove str_detect str_replace_all regex str_sub
+#' @importFrom rlang parse_expr
 md_as_html <- function (text, use_rmarkdown = 'auto', env = parent.frame(), mathjax_dollar = TRUE) {
   if (string_is_html(text)) {
     return(text)
