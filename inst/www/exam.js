@@ -1800,7 +1800,7 @@ exports.sections = function () {
       currentSection = section;
 
       if (currentSection === true) {
-        currentSectionEl = $('section.level1');
+        currentSectionEl = $('section.level1:not(.examinr-final-remarks)');
       } else {
         currentSectionEl = $('#' + currentSection.id).parent();
         currentSectionEl.attr('role', 'main');
@@ -1898,7 +1898,7 @@ exports.sections = function () {
       exports.accessibility.ariaLabelledBy($('main'), $('h1.title')); // Hide the last section (used for final remarks)
 
       if (sectionsConfig.hideLastSection) {
-        actualSections.last().hide();
+        actualSections.last().hide().addClass('examinr-final-remarks');
         actualSections = actualSections.slice(0, -1);
       } // Show the button in the last visible section
 
