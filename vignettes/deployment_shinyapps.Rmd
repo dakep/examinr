@@ -166,9 +166,9 @@ If you have the `psql` command line utilities installed, you can add the role by
 ```sh
 psql \
   --host=DB_instance_endpoint \
-  --port=5432
+  --port=5432 \
   --username=postgres \
-  --database=examinr
+  --dbname=examinr
 ```
 
 This opens a shell where you can enter SQL and `psql` commands:
@@ -199,9 +199,9 @@ If using the `psql` command line utilities, connect to the `examinr` database wi
 ```sh
 psql \
   --host=DB_instance_endpoint \
-  --port=5432
+  --port=5432 \
   --username=postgres \
-  --database=examinr
+  --dbname=examinr
 ```
 
 Either in the query tool (if using pgAdmin 4) or in the `psql` shell, run the following SQL commands:

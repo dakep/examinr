@@ -375,8 +375,12 @@ exports.question = function () {
   var kDebounceEditorChange = 250;
   var kDelaySetMcQuestion = 250;
 
-  function onMcChange(event) {
-    // Only handle the change if it is triggered by a checkbox or radio button.
+  function onMcChange(event, extra) {
+    if (extra && extra.autofill) {
+      return;
+    } // Only handle the change if it is triggered by a checkbox or radio button.
+
+
     if ($(event.target).filter('input').length) {
       var question = $(event.delegateTarget);
       var store = {
@@ -384,8 +388,7 @@ exports.question = function () {
         val: question.find(':checked').map(function (ind, cb) {
           return cb.value;
         }).get()
-      }; // window.console.debug('Storing MC question with id ' + store.id + ': [' + store.val.join(', ') + ']', event)
-
+      };
       exports.utils.attemptStorage.setItem('qinput_mc_' + store.id, store);
     }
   }
@@ -396,7 +399,9 @@ exports.question = function () {
       if (key.startsWith('qinput_text_')) {
         var store = exports.utils.attemptStorage.getItem(key); // window.console.debug('Setting text question with id ' + store.id + ' to "' + store.val + '"')
 
-        $('#' + store.id).val(store.val);
+        $('#' + store.id).val(store.val).trigger('change', [{
+          autofill: true
+        }]);
       } else if (key.startsWith('qinput_mc_')) {
         var _store = exports.utils.attemptStorage.getItem(key);
 
@@ -414,7 +419,9 @@ exports.question = function () {
               var inputEl = question.find('input[value="' + value + '"]');
 
               if (inputEl.length === 1) {
-                inputEl.prop('checked', true);
+                inputEl.prop('checked', true).trigger('change', [{
+                  autofill: true
+                }]);
               } else {
                 allItemsPresent = false;
               }
@@ -439,7 +446,11 @@ exports.question = function () {
 
     $('.examinr-question .shiny-bound-input.shiny-input-checkboxgroup').change(onMcChange);
     $('.examinr-question .shiny-bound-input.shiny-input-radiogroup').change(onMcChange);
-    $('.examinr-question input.shiny-bound-input, .examinr-question textarea.shiny-bound-input').change(function () {
+    $('.examinr-question input.shiny-bound-input, .examinr-question textarea.shiny-bound-input').change(function (event, extra) {
+      if (extra && extra.autofill) {
+        return;
+      }
+
       var question = $(this);
       var store = {
         id: question.attr('id'),
