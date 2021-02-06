@@ -13,7 +13,7 @@ articles:
   navigation: navigation.html
   question_types: question_types.html
   randomized_exam: randomized_exam.html
-last_built: 2021-02-06T17:07Z
+last_built: 2021-02-06T17:09Z
 urls:
   reference: https://dakep.github.io/examinr/reference
   article: https://dakep.github.io/examinr/articles
