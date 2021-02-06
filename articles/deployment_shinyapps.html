@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">examinr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.2</span>
       </span>
     </div>
 
@@ -252,9 +252,9 @@
 <p>If you have the <code>psql</code> command line utilities installed, you can add the role by starting the <code>psql</code> shell with (replace <em>DB_instance_endpoint</em> with the endpoint URL of the DB instance):</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ex">psql</span> \</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">  --host=DB_instance_endpoint \</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">  --port=5432</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="ex">--username</span>=postgres \</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">  --database=examinr</a></code></pre></div>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  --port=5432 \</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  --username=postgres \</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  --dbname=examinr</a></code></pre></div>
 <p>This opens a shell where you can enter SQL and <code>psql</code> commands:</p>
 <pre><code>psql (12.1, server 12.4)
 SSL connection (protocol: TLSv1.2, cipher: ECDHE-RSA-AES256-GCM-SHA384, bits: 256, compression: off)
@@ -275,9 +275,9 @@ examinr=&gt;</code></pre>
 <p>If using the <code>psql</code> command line utilities, connect to the <code>examinr</code> database with:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode sh"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ex">psql</span> \</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  --host=DB_instance_endpoint \</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">  --port=5432</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="ex">--username</span>=postgres \</a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">  --database=examinr</a></code></pre></div>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  --port=5432 \</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  --username=postgres \</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  --dbname=examinr</a></code></pre></div>
 <p>Either in the query tool (if using pgAdmin 4) or in the <code>psql</code> shell, run the following SQL commands:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">CREATE</span> <span class="kw">TABLE</span> attempts (</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  attempt_id   uuid              <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</a>

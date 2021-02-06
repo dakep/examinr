@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">examinr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.2</span>
       </span>
     </div>
 
@@ -182,7 +182,7 @@
                   maxSize <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>
 
 <span class="co"># Close all connections in the pool shiny stops</span>
-<span class="fu">shiny</span><span class="fu">::</span><span class="fu"><a href="https://shiny.rstudio.com/reference/shiny/latest/onStop.html">onStop</a></span><span class="op">(</span><span class="kw">function</span> <span class="op">(</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/pkg/pool/man/Pool-class.html">poolClose</a></span><span class="op">(</span><span class="va">db_pool</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span>
+<span class="fu">shiny</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/onStop.html">onStop</a></span><span class="op">(</span><span class="kw">function</span> <span class="op">(</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/pkg/pool/man/Pool-class.html">poolClose</a></span><span class="op">(</span><span class="va">db_pool</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span>
 
 <span class="co"># Use this database as storage for the exam</span>
 <span class="fu"><a href="../reference/exam_config.html">exam_config</a></span><span class="op">(</span>storage_provider <span class="op">=</span> <span class="fu"><a href="../reference/dbi_storage_provider.html">dbi_storage_provider</a></span><span class="op">(</span><span class="va">db_pool</span>, <span class="st">'attempts'</span>, <span class="st">'section_data'</span><span class="op">)</span><span class="op">)</span></code></pre></div>
