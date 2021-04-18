@@ -87,8 +87,7 @@ exam_document <- function (id = 'exam', version = '0.1', use_cdn = FALSE, render
                         feedback = feedback,
                         render = match.arg(render),
                         progressive = isTRUE(progressive),
-                        order = match.arg(order),
-                        section_btn_label = get_status_message('sections')$nextButtonLabel)
+                        order = match.arg(order))
   # build pandoc args
   pandoc_args <- c('--standalone', '--section-divs', '--variable', 'enable-high-contrast:1')
 

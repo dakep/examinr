@@ -55,7 +55,7 @@ create_exam_rmd <- function (input_rmd, static_chunks, exam_metadata, section_co
   }
 
   write_section_end <- function (section_name, section_id) {
-    btn_label <- section_config_overrides[[section_name]]$btn_label %||% exam_metadata$section_btn_label
+    btn_label <- section_config_overrides[[section_name]]$btn_label %||% get_status_message('sections')$nextButtonLabel
 
     if (!is.na(btn_label)) {
       btn_label <- paste('"', btn_label, '"', sep =  '')
