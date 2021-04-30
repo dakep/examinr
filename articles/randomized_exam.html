@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">examinr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.3</span>
       </span>
     </div>
 
@@ -215,7 +215,7 @@
 <div class="sourceCode" id="cb3"><pre class="sourceCode markdown"><code class="sourceCode markdown"><a class="sourceLine" id="cb3-1" data-line-number="1">```{r}</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"><span class="fu"># ...</span></a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">```</a></code></pre></div>
-<p>If the section contains only inline R chunks, examinr uses <code><a href="https://rdrr.io/pkg/commonmark/man/commonmark.html">commonmark::markdown_html()</a></code> to parse the markdown to HTML. Whenever a section contains R code blocks, however, <code><a href="https://rdrr.io/pkg/rmarkdown/man/render.html">rmarkdown::render()</a></code> function is invoked which is much slower. This will be important if many users access the exam at the same time and the same R process.</p>
+<p>If the section contains only inline R chunks, examinr uses <code><a href="https://rdrr.io/pkg/commonmark/man/commonmark.html">commonmark::markdown_html()</a></code> to parse the markdown to HTML. Whenever a section contains R code blocks, however, <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/render.html">rmarkdown::render()</a></code> function is invoked which is much slower. This will be important if many users access the exam at the same time and the same R process.</p>
 </div>
 </div>
 </div>

@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">examinr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.3</span>
       </span>
     </div>
 
@@ -125,9 +125,9 @@
 <div id="creating-an-exam-document" class="section level2">
 <h2 class="hasAnchor">
 <a href="#creating-an-exam-document" class="anchor"></a>Creating an exam document</h2>
-<p>You can create a new exam document from the provided R markdown template by following the <a href="https://rstudio.github.io/rstudio-extensions/rmarkdown_templates.html">instructions for RStudio</a> or using the <code><a href="https://rdrr.io/pkg/rmarkdown/man/draft.html">rmarkdown::draft</a></code> function:</p>
+<p>You can create a new exam document from the provided R markdown template by following the <a href="https://rstudio.github.io/rstudio-extensions/rmarkdown_templates.html">instructions for RStudio</a> or using the <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html">rmarkdown::draft</a></code> function:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">rmarkdown</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/rmarkdown/man/draft.html">draft</a></span><span class="op">(</span><span class="st">"newexam.Rmd"</span>, template <span class="op">=</span> <span class="st">"exam"</span>, package <span class="op">=</span> <span class="st">"examinr"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="fu">rmarkdown</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html">draft</a></span><span class="op">(</span><span class="st">"newexam.Rmd"</span>, template <span class="op">=</span> <span class="st">"exam"</span>, package <span class="op">=</span> <span class="st">"examinr"</span><span class="op">)</span></code></pre></div>
 <p>Exams are standard R markdown documents and are configured via the YAML front-matter. Let us consider the following simple exam document:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode md"><code class="sourceCode markdown"><a class="sourceLine" id="cb2-1" data-line-number="1">---</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">title: "Online exam with examinr"</a>
