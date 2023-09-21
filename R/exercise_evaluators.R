@@ -40,6 +40,6 @@ future_evaluator <- function (expr, envir, label, timelimit, ...) {
     })
   })
   return(future(expr = future_expr, substitute = FALSE, envir = baseenv(), seed = NULL,
-                local = TRUE, stdout = FALSE,
+                stdout = FALSE,
                 globals = list(expr = expr, envir = envir, label = label, timelimit = timelimit)))
 }
