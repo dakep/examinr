@@ -1,4 +1,6 @@
 $high-contrast-theme: true !default;
+$monospace-font: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+$code-color-default: #003B4F;
 
 .title {
   text-align: center;
@@ -361,4 +363,136 @@ body > .examinr-recompute-overlay > .examinr-recompute {
 select.is-not-finished {
   background-color: theme-color-level('warning', $alert-bg-level);
   color: theme-color-level('warning', $alert-color-level);
+}
+
+/* Code styles */
+pre {
+  & > code {
+    display: block;
+    background-color: transparent;
+    font-size: inherit;
+    color: inherit;
+    word-break: normal;
+    padding: .125rem .25rem;
+    word-wrap: break-word;
+
+    &.sourceCode {
+      white-space: pre;
+      position: relative;
+      color: inherit;
+      text-decoration: inherit;
+
+      & > span:empty {
+        height: 1.2em;
+      }
+
+      & > span {
+        display: inline-block;
+        line-height: 1.25;
+        & > a:first-child::before {
+          text-decoration: none;
+        }
+      }
+    }
+  }
+}
+.sourceCode {
+  overflow: visible;
+}
+
+pre.sourceCode,
+code.sourceCode {
+  position: relative;
+}
+
+div.sourceCode {
+  margin: 1em 0;
+  overflow-y: hidden;
+  background-color: rgba(233,236,239,.65);
+  border: 1px solid rgba(233,236,239,.65);
+  border-radius: .25rem;
+}
+
+pre.sourceCode {
+  margin: 0;
+  border: none;
+  font-size: .875em;
+  overflow: visible !important;
+  padding: .4em;
+  background-color: transparent;
+}
+
+pre > code.sourceCode > span,
+div.sourceCode,
+div.sourceCode pre.sourceCode {
+  color: $code-color-default;
+  font-family: $monospace-font;
+}
+
+code {
+  font-family: $monospace-font;
+
+  span,
+  span.ot,
+  span.cf,
+  span.kw,
+  &.sourceCode > span {
+    color: $code-color-default;
+  }
+
+  span.at {
+    color: #657422;
+  }
+
+  span.ss,
+  span.st,
+  span.vs,
+  span.ch {
+    color: #20794D;
+  }
+
+  span.an,
+  span.op,
+  span.co,
+  span.sc,
+  span.in {
+    color: #5E5E5E;
+  }
+
+  span.fu {
+    color: #4758AB;
+  }
+
+  span.er,
+  span.al,
+  span.dt,
+  span.fl,
+  span.dv,
+  span.pp,
+  span.bn {
+    color: #AD0000;
+  }
+
+  span.va {
+    color: #111111;
+  }
+
+  span.wa,
+  span.do {
+    color: #5E5E5E;
+    font-style: italic;
+  }
+
+  span.im {
+    color: #00769E;
+  }
+
+  span.cv {
+    color: #5E5E5E;
+    font-style: italic;
+  }
+
+  span.cn {
+    color: #8f5902;
+  }
 }

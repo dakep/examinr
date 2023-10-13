@@ -9,12 +9,15 @@
 ## @param env if use_rmarkdown is TRUE, environment in which the markdown is rendered (parameter
 ##   `rmarkdown::render(envir=)`).
 ## @param mathjax_dollar translate "$" and "$$" blocks into mathjax's "\\(" and "\\[".
+## @param id_prefix prefix for IDs generated in the HTML fragment. If
+##   missing a random string of the form "fragment-%s" is used.
 ## @return a HTML container with the parsed markdown.
 #' @importFrom rmarkdown render output_format html_fragment
 #' @importFrom commonmark markdown_html
 #' @importFrom stringr str_trim str_remove str_detect str_replace_all regex str_sub
 #' @importFrom rlang parse_expr
-md_as_html <- function (text, use_rmarkdown = 'auto', env = parent.frame(), mathjax_dollar = TRUE) {
+md_as_html <- function (text, use_rmarkdown = 'auto', env = parent.frame(), mathjax_dollar = TRUE,
+                        id_prefix) {
   if (string_is_html(text)) {
     return(text)
   }
@@ -38,7 +41,14 @@ md_as_html <- function (text, use_rmarkdown = 'auto', env = parent.frame(), math
       mdfile <- file.path(tmpfolder, 'file.Rmd')
       writeLines(text, mdfile)
 
-      fragment_format <- output_format(pandoc = list(to = 'html5', args = c('--metadata', 'pagetitle="Fragment"')),
+      if (missing(id_prefix)) {
+        id_prefix <- random_ui_id('fragment')
+      }
+
+      fragment_format <- output_format(pandoc = list(to = 'html5',
+                                                     args = c('--metadata', 'pagetitle="Fragment"',
+                                                              '--highlight-style', 'tango',
+                                                              '--id-prefix', id_prefix)),
                                        knitr = NULL, base_format = html_fragment())
 
       rendered_file <- render(mdfile, output_format = fragment_format, envir = env %||% parent.frame(), quiet = TRUE)

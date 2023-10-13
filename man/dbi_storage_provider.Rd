@@ -62,7 +62,9 @@ Exam data is stored in a table which requires the following columns:
 do not accept numeric input for timestamps. For these database systems, it is best to create the columns of type
 \verb{double precision}.
 
-A sample definition of the tables for PostgreSQL is as follows:\preformatted{CREATE TABLE attempts (
+A sample definition of the tables for PostgreSQL is as follows:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{CREATE TABLE attempts (
   attempt_id UUID PRIMARY KEY,
   user_id character varying(256) NOT NULL,
   exam_id character varying(64) NOT NULL,
@@ -86,7 +88,7 @@ CREATE TABLE section_data (
 
 CREATE INDEX section_data_index ON section_data
   (attempt_id, section);
-}
+}\if{html}{\out{</div>}}
 }
 \seealso{
 Other storage configuration: 

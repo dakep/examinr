@@ -92,20 +92,20 @@ attribute \code{answer}. This number is compared against the user's answer using
 }
 \section{Functions}{
 \itemize{
-\item \code{comp_abs}: compare the user input and the correct answer in absolute terms
+\item \code{comp_abs()}: compare the user input and the correct answer in absolute terms
 (returns \code{abs(input - answer) < tol}).
 
-\item \code{comp_rel}: compare the user input and the correct answer in relative terms
+\item \code{comp_rel()}: compare the user input and the correct answer in relative terms
 (returns \code{abs(input / answer - 1) < tol}).
 
-\item \code{comp_digits}: allow the last digit vary by +/- \code{pm}. For answers greater than 1 (in absolute value),
+\item \code{comp_digits()}: allow the last digit vary by +/- \code{pm}. For answers greater than 1 (in absolute value),
 \code{digits} is the number of digits after the decimal point and an absolute tolerance of
 of \code{tol = pm * 10^-digits} is used.
 For answers less than 1, \code{digits} is the number of significant digits and an
 absolute tolerance of \code{tol = pm * 10^(-shift)} is used (\code{shift} is taken such that
 the last sign. digit can vary by +/- \code{pm}). Returns \code{abs(input - answer) < tol}).
-}}
 
+}}
 \seealso{
 Other exam question types: 
 \code{\link{mc_question}()}

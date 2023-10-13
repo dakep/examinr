@@ -6,3 +6,9 @@ node_modules
 package-lock.json
 tools/tmp_concat
 docs
+examinr_autocompletion_sandbox
+renv
+renv.lock
+.Rprofile
+.Rhistory
+tests/test-exam

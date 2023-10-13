@@ -16,6 +16,13 @@ opts_hook_possible_exercise_initial_pass <- function (options, ...) {
 
     knit_meta_add(list(structure(options$label, class = 'examinr_question_label')))
 
+    if (isTRUE(options$exercise.setup)) {
+      options$exercise.setup <- paste(options$label, 'setup', sep = '-')
+    }
+    if (isTRUE(options$exercise.solution)) {
+      options$exercise.solution <- paste(options$label, 'solution', sep = '-')
+    }
+
     # Collect the support chunks
     support_code <- list(setup = extract_support_code(options$exercise.setup),
                          solution = extract_support_code(options$exercise.solution))

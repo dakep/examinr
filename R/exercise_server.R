@@ -11,35 +11,43 @@ exercise_chunk_server <- function (exercise_data) {
   })
 
   register_static_autograder(exercise_data$input_id, max_points = exercise_data$points,
-                             solution = paste(exercise_data$support_code$solution, collapse = '\n'), session = session)
+                             solution = paste(exercise_data$support_code$solution, collapse = '\n'),
+                             session = session)
 
   observeEvent(session$input[[exercise_data$input_id]], {
     input_data <- session$input[[exercise_data$input_id]]
 
-    # First do some preliminary checks of the code
-    check_result <- check_exercise_code(input_data, exercise_data)
-    if (!is.null(check_result)) {
-      # The checks have not passed. Update the output and be done.
-      session$output[[exercise_data$output_id]] <- render_exercise_result(check_result)
-    } else {
-      # The checks have passed. Evaluate the code.
-      timelimit <- exercise_data$timelimit %||% 1  # ensure that there is a time limit set!
-      endtime <- Sys.time() + timelimit
-
-      promise <- exercise_promise(input_data, exercise_data, session, timelimit)
-      if (!is.promising(promise)) {
-        warn(sprintf("Exercise evaluator for exercise %s does not yield a promise.", exercise_data$label))
-        session$output[[exercise_data$output_id]] <- render_exercise_result(exercise_result_error())
+    if (isTRUE(input_data$evaluate)) {
+      # First do some preliminary checks of the code
+      check_result <- check_exercise_code(input_data, exercise_data)
+      if (!is.null(check_result)) {
+        # The checks have not passed. Update the output and be done.
+        session$output[[exercise_data$output_id]] <- render_exercise_result(check_result)
       } else {
-        then(promise, onFulfilled = function (value) {
-          session$output[[exercise_data$output_id]] <- render_exercise_result(value)
-        }, onRejected = function (error) {
-          warn(sprintf("Exercise evaluator for exercise %s raises an error: %s", exercise_data$label),
-               cnd_message(error))
-          session$output[[exercise_data$output_id]] <- render_exercise_result(exercise_result_error())
-        })
+        # The checks have passed. Evaluate the code.
+        timelimit <- exercise_data$timelimit %||% 1  # ensure that there is a time limit set!
+        endtime <- Sys.time() + timelimit
+
+        promise <- exercise_promise(input_data, exercise_data, session, timelimit)
+        if (!is.promising(promise)) {
+          warn(sprintf("Exercise evaluator for exercise %s does not yield a promise.",
+                       exercise_data$label))
+          session$output[[exercise_data$output_id]] <- render_exercise_result(
+            exercise_result_error())
+        } else {
+          then(promise, onFulfilled = function (value) {
+            session$output[[exercise_data$output_id]] <- render_exercise_result(value)
+          }, onRejected = function (error) {
+            warn(sprintf("Exercise evaluator for exercise %s raises an error: %s",
+                         exercise_data$label),
+                 cnd_message(error))
+            session$output[[exercise_data$output_id]] <- render_exercise_result(
+              exercise_result_error())
+          })
+        }
       }
     }
+
   })
 }
 

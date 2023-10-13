@@ -1,114 +1,116 @@
-exports.attempt = (function () {
-  'use strict'
+'use strict'
 
-  let config = {}
-  let timelimitTimer
-  let timelimit = Number.POSITIVE_INFINITY
-  let timerIsShown = false
+// const $ = require('jquery')
+const status = require('./status')
+let config = {}
+let timelimitTimer
+let timelimit = Number.POSITIVE_INFINITY
+let timerIsShown = false
 
-  const progressEl = $('<div class="examinr-progress" role="status"></div>')
+const progressEl = $('<div class="examinr-progress" role="status"></div>')
 
-  /** Update the current attempt information.
-   *
-   * @param {object} attempt an object with the following properties:
-   *   - {boolean} active whether there is an active attempt.
-   *   - {integer} timelimit the timestamp (in seconds) when the current attempt is closed.
-   */
-  Shiny.addCustomMessageHandler('__.examinr.__-attemptStatus', function (attempt) {
-    if (attempt.gracePeriod) {
-      config.gracePeriod = attempt.gracePeriod
-    }
-    if (attempt && attempt.active) {
-      // window.console.debug('Attempt is active:', attempt)
-      $('main').show().trigger('shown')
-      progressEl.show()
-
-      if (attempt.timelimit !== 0 && (!attempt.timelimit || attempt.timelimit === 'Inf')) {
-        attempt.timelimit = Number.POSITIVE_INFINITY
-      }
-      try {
-        timelimit = new Date(attempt.timelimit * 1000)
-        if (timelimitTimer) {
-          window.clearTimeout(timelimitTimer)
-          timelimitTimer = false
-        }
-        updateTimeLeft()
-      } catch (e) {
-        window.console.warn('Cannot set timelimit for current attempt:', e)
-        timelimit = Number.POSITIVE_INFINITY
-      }
-    } else {
-      // window.console.debug('Attempt is inactive.')
-      $('main').hide()
-      exports.status.remove(progressEl)
-      exports.status.setContext()
-    }
-  })
-
-  function toBase10 (val) {
-    return (val >= 10 ? val.toString(10) : '0' + val.toString(10))
+/** Update the current attempt information.
+ *
+ * @param {object} attempt an object with the following properties:
+ *   - {boolean} active whether there is an active attempt.
+ *   - {integer} timelimit the timestamp (in seconds) when the current attempt is closed.
+ */
+Shiny.addCustomMessageHandler('__.examinr.__-attemptStatus', function (attempt) {
+  if (attempt.gracePeriod) {
+    config.gracePeriod = attempt.gracePeriod
   }
+  if (attempt && attempt.active) {
+    // window.console.debug('Attempt is active:', attempt)
+    $('main').show().trigger('shown')
+    progressEl.show()
 
-  /**
-   * Update the "time left" status.
-   */
-  function updateTimeLeft () {
-    let msLeft = timelimit === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : timelimit - new Date()
-    const timerEl = progressEl.find('.examinr-timer')
-
-    if (!isNaN(msLeft) && msLeft < Number.POSITIVE_INFINITY) {
-      if (msLeft < 1 && msLeft > -1000 * (config.gracePeriod || 1)) {
-        msLeft = 0
+    if (attempt.timelimit !== 0 && (!attempt.timelimit || attempt.timelimit === 'Inf')) {
+      attempt.timelimit = Number.POSITIVE_INFINITY
+    }
+    try {
+      timelimit = new Date(attempt.timelimit * 1000)
+      if (timelimitTimer) {
+        window.clearTimeout(timelimitTimer)
+        timelimitTimer = false
       }
-      if (msLeft >= 0) {
-        const hrsLeft = Math.floor(msLeft / 3600000)
-        const minLeft = Math.floor((msLeft % 3600000) / 60000)
-        const secLeft = Math.floor((msLeft % 60000) / 1000)
+      updateTimeLeft()
+    } catch (e) {
+      window.console.warn('Cannot set timelimit for current attempt:', e)
+      timelimit = Number.POSITIVE_INFINITY
+    }
+  } else {
+    // window.console.debug('Attempt is inactive.')
+    $('main').hide()
+    status.remove(progressEl)
+    status.setContext()
+  }
+})
 
-        if (hrsLeft > 0) {
-          timerEl.children('.hrs').removeClass('ignore').text(toBase10(hrsLeft))
-        } else {
-          timerEl.children('.hrs').addClass('ignore').text('00')
-        }
-        timerEl.children('.min').text(toBase10(minLeft))
-        if (hrsLeft > 0 || minLeft >= 10) {
-          timerEl.children('.min').addClass('nosec')
-          timerEl.children('.sec').hide()
-        } else {
-          timerEl.children('.min').removeClass('nosec')
-          timerEl.children('.sec').show().text(toBase10(secLeft))
-        }
-        timerEl.show()
+function toBase10 (val) {
+  return (val >= 10 ? val.toString(10) : '0' + val.toString(10))
+}
 
-        if (!timerIsShown) {
-          exports.status.fixMainOffset()
-          timerIsShown = true
-        }
+/**
+ * Update the "time left" status.
+ */
+function updateTimeLeft () {
+  let msLeft = timelimit === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : timelimit - new Date()
+  const timerEl = progressEl.find('.examinr-timer')
 
-        if (hrsLeft > 0 || minLeft >= 12) {
-          timelimitTimer = window.setTimeout(updateTimeLeft, 60000) // call every minute
-        } else {
-          if (minLeft < 5) {
-            exports.status.setContext('danger')
-          } else if (minLeft < 10) {
-            exports.status.setContext('warning')
-          }
-          timelimitTimer = window.setTimeout(updateTimeLeft, 1000) // call every second
-        }
+  if (!isNaN(msLeft) && msLeft < Number.POSITIVE_INFINITY) {
+    if (msLeft < 1 && msLeft > -1000 * (config.gracePeriod || 1)) {
+      msLeft = 0
+    }
+    if (msLeft >= 0) {
+      const hrsLeft = Math.floor(msLeft / 3600000)
+      const minLeft = Math.floor((msLeft % 3600000) / 60000)
+      const secLeft = Math.floor((msLeft % 60000) / 1000)
+
+      if (hrsLeft > 0) {
+        timerEl.children('.hrs').removeClass('ignore').text(toBase10(hrsLeft))
       } else {
-        // Time is up. Destroy the interface.
-        $('main').remove()
-        const timeoutMsg = exports.status.getMessage('attemptTimeout')
-        exports.status.showErrorDialog(timeoutMsg.title, timeoutMsg.body, 'none')
+        timerEl.children('.hrs').addClass('ignore').text('00')
+      }
+      timerEl.children('.min').text(toBase10(minLeft))
+      if (hrsLeft > 0 || minLeft >= 10) {
+        timerEl.children('.min').addClass('nosec')
+        timerEl.children('.sec').hide()
+      } else {
+        timerEl.children('.min').removeClass('nosec')
+        timerEl.children('.sec').show().text(toBase10(secLeft))
+      }
+      timerEl.show()
+
+      if (!timerIsShown) {
+        status.fixMainOffset()
+        timerIsShown = true
+      }
+
+      if (hrsLeft > 0 || minLeft >= 12) {
+        timelimitTimer = window.setTimeout(updateTimeLeft, 60000) // call every minute
+      } else {
+        if (minLeft < 5) {
+          status.setContext('danger')
+        } else if (minLeft < 10) {
+          status.setContext('warning')
+        }
+        timelimitTimer = window.setTimeout(updateTimeLeft, 1000) // call every second
       }
     } else {
-      timerEl.hide()
+      // Time is up. Destroy the interface.
+      $('main').remove()
+      const timeoutMsg = status.getMessage('attemptTimeout')
+      status.showErrorDialog(timeoutMsg.title, timeoutMsg.body, 'none')
     }
+  } else {
+    timerEl.hide()
   }
+}
 
-  $(function () {
+module.exports = {
+  init: function () {
     config = JSON.parse($('script.examinr-attempts-config').remove().text() || '{}')
-    const progressMsg = exports.status.getMessage('progress')
+    const progressMsg = status.getMessage('progress')
 
     if (progressMsg) {
       // replace the following format strings:
@@ -137,7 +139,7 @@ exports.attempt = (function () {
           progressEl.html(timerHtml)
         }
 
-        exports.status.append(progressEl)
+        status.append(progressEl)
         updateTimeLeft()
       }
     }
@@ -149,27 +151,25 @@ exports.attempt = (function () {
             config.totalSections + '" style="min-width: 2em;">' +
           '</div>' +
         '</div>')
-      exports.status.append(progressbarEl)
+      status.append(progressbarEl)
     }
-  })
+  },
 
-  return {
-    /**
-     * Update the current section number.
-     * @param {int} currentSectionNr the current section number
-     */
-    updateSection: function (currentSectionNr) {
-      if (!currentSectionNr || isNaN(currentSectionNr) || currentSectionNr < 0 ||
-          currentSectionNr > config.totalSections) {
-        progressEl.hide()
-      } else {
-        progressEl.show().find('.examinr-section-nr').text(currentSectionNr)
-        if (config.progressbar) {
-          progressEl.find('.progress-bar')
-            .attr('aria-valuenow', currentSectionNr)
-            .width(Math.round(100 * currentSectionNr / config.totalSections) + '%')
-        }
+  /**
+   * Update the current section number.
+   * @param {int} currentSectionNr the current section number
+   */
+  updateSection: function (currentSectionNr) {
+    if (!currentSectionNr || isNaN(currentSectionNr) || currentSectionNr < 0 ||
+        currentSectionNr > config.totalSections) {
+      progressEl.hide()
+    } else {
+      progressEl.show().find('.examinr-section-nr').text(currentSectionNr)
+      if (config.progressbar) {
+        progressEl.find('.progress-bar')
+          .attr('aria-valuenow', currentSectionNr)
+          .width(Math.round(100 * currentSectionNr / config.totalSections) + '%')
       }
     }
   }
-}())
+}

@@ -90,7 +90,7 @@ trigger_mathjax <- function(tag, ...) {
     tag <- div(tag, ..., id = id)
   }
 
-  tagList(tag, tags$script(HTML(sprintf('if(window.Exam) { window.Exam.utils.triggerMathJax("%s", %s) }',
+  tagList(tag, tags$script(HTML(sprintf('if(window.Exam && window.Exam.utils) { window.Exam.utils.triggerMathJax("%s", %s) }',
                                         id, is_dummy))))
 }
 

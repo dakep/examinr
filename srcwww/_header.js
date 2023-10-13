@@ -1,3 +1,3 @@
 if (typeof exports === 'undefined') {
-  window.exports = window.Exam = {}
+  window.exports = window.Exam = null
 }

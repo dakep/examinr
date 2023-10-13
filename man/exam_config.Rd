@@ -132,18 +132,22 @@ The seeding function is useful, for example, if a group of users should get the 
 get the same seed for multiple attempts.
 
 The following seeding function, for example, gives the same seed for all users whose id starts with the same letter.
-The seed changes with the attempt, but all users in a group will get the same seed for their 2nd, 3rd, etc, attempt.\preformatted{seeding_function <- function (user, previous_attempts, ...) \{
+The seed changes with the attempt, but all users in a group will get the same seed for their 2nd, 3rd, etc, attempt.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{seeding_function <- function (user, previous_attempts, ...) \{
   group <- substr(user$user_id, 1, 1)
   # take the number of attempts into account
   digest::digest2int(paste(group, length(previous_attempts)))
 \}
-}
+}\if{html}{\out{</div>}}
 
-The next seeding function gives a different seed for every user, but gives the same seed for every 5 attempts.\preformatted{seeding_function <- function (user, previous_attempts, ...) \{
+The next seeding function gives a different seed for every user, but gives the same seed for every 5 attempts.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{seeding_function <- function (user, previous_attempts, ...) \{
   blocks_of_5 <- floor(length(previous_attempts) / 5)
   digest::digest2int(paste(user$user_id, blocks_of_5))
 \}
-}
+}\if{html}{\out{</div>}}
 }
 
 \section{Attempt object}{

@@ -1,15 +1,15 @@
 ace_cdn_resources <- function () {
-  list(base_href = 'https://cdn.jsdelivr.net/npm/ace-builds@1.4.12/src-min-noconflict',
-       version = '1.4.12',
+  list(base_href = 'https://cdn.jsdelivr.net/npm/ace-builds@1.29.0/src-min-noconflict/',
+       version = '1.29.0',
        script = list(
          list(src = 'ace.js',
               crossorigin = "anonymous",
               `data-external` = 1,
-              integrity = 'sha512-/dKd0i2hsDGJ3wt6bxcDYJ2OVlLJ5ESbNfAY6DDtgWzRgapY8kj697G0822znletXHFRKRau/XxlLEWGITPORQ=='),
+              integrity = 'sha512-cxrfBHbaLPI3lVC1iw+ME3/QRho4EOCqZ2VsI5V5qUhgU2iyChWbZhEs5cBlo/STqYZK/TV5NyhLaJj+9EGwbg=='),
          list(src = 'ext-language_tools.js',
               crossorigin = "anonymous",
               `data-external` = 1,
-              integrity = 'sha512-7ImS2lSEfm0F1+W5+GZB2syQZ25HmpjX2wYwaWa8u15F9e2GrHoja313iAPZOYh7ZAIfMHdbNNJi1WnUpeG49Q=='),
+              integrity = 'sha512-WMIrRhl85As2c7/zoDfLnxA9Uc9789+2E62sOmJ0Mv6zazEOdSLOFnbBfxEm5uTD8Nnge3lFO3PVj+DPv1Nivw=='),
          list(src = 'mode-r.js',
               crossorigin = "anonymous",
               `data-external` = 1,
@@ -17,7 +17,7 @@ ace_cdn_resources <- function () {
          list(src = 'theme-textmate.js',
               crossorigin = "anonymous",
               `data-external` = 1,
-              integrity = 'sha512-LVjh1gAshO/oQ0jxbGHe6IDpn26hMls2DAu5xkvZ9DNT/04SkaiwWE8a/1G0o0cbanKqc0ZW2xI9qYedIXy0YA==')))
+              integrity = 'sha512-AGNKkjH7RPAeiMO+odFbruySZShoIEdxRieeMZHfhsfrspxhdmQe0rgSYhqI8RNVhK4Xr6MtdBvedIwt87lcPg==')))
 }
 
 #' @importFrom htmltools htmlDependency

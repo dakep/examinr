@@ -29,10 +29,10 @@ promise object which will eventually evaluate the user's code.
 }
 \section{Functions}{
 \itemize{
-\item \code{future_evaluator}: evaluate user code in a \link[future:future]{future()} promise. See \code{\link[future:plan]{future::plan()}}
+\item \code{future_evaluator()}: evaluate user code in a \link[future:future]{future()} promise. See \code{\link[future:plan]{future::plan()}}
 for details on configuring where/how these promises are resolved.
-}}
 
+}}
 \seealso{
 Other exercise configuration: 
 \code{\link{exercise_options}()}

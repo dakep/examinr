@@ -16,6 +16,7 @@ module.exports = function (grunt) {
         force: true
       },
       src: [
+        path.join(concatDir, 'exam.browserify.js'),
         path.join(concatDir, 'exam.js'),
         path.join(concatDir, 'exam.css'),
         path.join(outputDir, 'exam.min.css'),
@@ -26,6 +27,26 @@ module.exports = function (grunt) {
       ]
     },
 
+    browserify: {
+      examinr: {
+        src: [
+          path.join(inputDir, 'app.js')
+          // path.join(inputDir, 'utils.js'),
+          // path.join(inputDir, 'accessibility.js'),
+          // path.join(inputDir, 'question.js'),
+          // path.join(inputDir, 'status.js'),
+          // path.join(inputDir, 'attempt.js'),
+          // path.join(inputDir, 'exercises.js'),
+          // path.join(inputDir, 'feedback.js'),
+          // path.join(inputDir, 'autocomplete.js'),
+          // path.join(inputDir, 'section_navigation.js'),
+          // path.join(inputDir, 'grading.js'),
+          // path.join(inputDir, 'login.js')
+        ],
+        dest: path.join(concatDir, 'exam.browserify.js')
+      }
+    },
+
     concat: {
       options: {
         sourceMap: true,
@@ -34,25 +55,41 @@ module.exports = function (grunt) {
       examinr: {
         src: [
           path.join(inputDir, '_header.js'),
-          path.join(inputDir, 'utils.js'),
-          path.join(inputDir, 'accessibility.js'),
-          path.join(inputDir, 'question.js'),
-          path.join(inputDir, 'status.js'),
-          path.join(inputDir, 'attempt.js'),
-          path.join(inputDir, 'exercises.js'),
-          path.join(inputDir, 'feedback.js'),
-          path.join(inputDir, 'autocomplete.js'),
-          path.join(inputDir, 'section_navigation.js'),
-          path.join(inputDir, 'grading.js'),
-          path.join(inputDir, 'login.js'),
+          path.join(concatDir, 'exam.browserify.js'),
           path.join(inputDir, 'ace-monochrome.js'),
           path.join(inputDir, 'lib', 'bootstrap', 'js', 'util.js'),
           path.join(inputDir, 'lib', 'bootstrap', 'js', 'modal.js')
         ],
-        dest: path.join(concatDir, 'exam.js'),
-        nonull: true
+        dest: path.join(concatDir, 'exam.js')
       }
     },
+    // concat: {
+    //   options: {
+    //     sourceMap: true,
+    //     separator: ';\n'
+    //   },
+    //   examinr: {
+    //     src: [
+    //       path.join(inputDir, '_header.js'),
+    //       path.join(inputDir, 'utils.js'),
+    //       path.join(inputDir, 'accessibility.js'),
+    //       path.join(inputDir, 'question.js'),
+    //       path.join(inputDir, 'status.js'),
+    //       path.join(inputDir, 'attempt.js'),
+    //       path.join(inputDir, 'exercises.js'),
+    //       path.join(inputDir, 'feedback.js'),
+    //       path.join(inputDir, 'autocomplete.js'),
+    //       path.join(inputDir, 'section_navigation.js'),
+    //       path.join(inputDir, 'grading.js'),
+    //       path.join(inputDir, 'login.js'),
+    //       path.join(inputDir, 'ace-monochrome.js'),
+    //       path.join(inputDir, 'lib', 'bootstrap', 'js', 'util.js'),
+    //       path.join(inputDir, 'lib', 'bootstrap', 'js', 'modal.js')
+    //     ],
+    //     dest: path.join(concatDir, 'exam.js'),
+    //     nonull: true
+    //   }
+    // },
 
     babel: {
       options: {
@@ -62,7 +99,7 @@ module.exports = function (grunt) {
       },
       examinr: {
         src: path.join(concatDir, 'exam.js'),
-        dest: path.join(outputDir, 'exam.js')
+        dest: path.join(outputDir, 'exam.min.js')
       }
     },
 
@@ -117,6 +154,7 @@ module.exports = function (grunt) {
 
   grunt.loadNpmTasks('grunt-contrib-clean')
   grunt.loadNpmTasks('grunt-contrib-concat')
+  grunt.loadNpmTasks('grunt-browserify')
   grunt.loadNpmTasks('grunt-babel')
   grunt.loadNpmTasks('grunt-sass')
   grunt.loadNpmTasks('@lodder/grunt-postcss')
@@ -129,7 +167,7 @@ module.exports = function (grunt) {
 
   grunt.initConfig(gruntConfig)
 
-  grunt.registerTask('default', ['clean', 'concat', 'babel', 'sass', 'postcss', 'uglify'])
+  grunt.registerTask('default', ['clean', 'browserify', 'concat', 'babel', 'sass', 'postcss'])
 
   function readPackageFile () {
     var pkg = grunt.file.readJSON('package.json')

@@ -172,13 +172,28 @@ exam_document <- function (id = 'exam', version = '0.1', use_cdn = FALSE, render
   knitr_options$opts_knit <- c(knitr_options$opts_knit %||% list(), list(examinr.initial_pass = TRUE))
   knitr_options$opts_hooks <- c(knitr_options$opts_hooks %||% list(), list(examinr.exam = opts_hook_exam_format))
 
+  # Additional stuff for the HTML header
+  html_header_extra <- tempfile(fileext = '.html')
+  cat('<script type="application/javascript">',
+      sprintf('const EXAMINR_EXAM_METADATA = %s;', to_json(exam_metadata)),
+      '</script>',
+      sep = '\n',
+      file = html_header_extra)
+
+  pandoc_args <- c(pandoc_args, '--include-in-header', html_header_extra)
+
   out <- output_format(
-    pandoc = pandoc_options(to = 'html5', from = from_rmarkdown(fig_caption, md_extensions), args = pandoc_args),
+    pandoc = pandoc_options(to = 'html5',
+                            from = from_rmarkdown(fig_caption, md_extensions),
+                            args = pandoc_args),
     knitr = knitr_options,
     keep_md = keep_md,
     clean_supporting = TRUE,
     df_print = df_print,
     post_knit = post_knit,
+    on_exit = function (...) {
+      unlink(html_header_extra, recursive = FALSE, force = TRUE)
+    },
     base_format = html_document_base(theme = NULL,
                                      self_contained = self_contained,
                                      mathjax = mathjax,
