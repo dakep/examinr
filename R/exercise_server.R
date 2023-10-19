@@ -1,6 +1,6 @@
 #' @importFrom shiny observeEvent observe invalidateLater isolate getDefaultReactiveDomain
 #' @importFrom promises then is.promising
-#' @importFrom rlang warn cnd_message
+#' @importFrom rlang warn cnd_message local_use_cli
 exercise_chunk_server <- function (exercise_data) {
   exercise_data <- unserialize_object(exercise_data)
   session <- getDefaultReactiveDomain()
@@ -10,8 +10,18 @@ exercise_chunk_server <- function (exercise_data) {
     input_value$code
   })
 
+  solution <- if (!is.null(exercise_data$support_code$solution)) {
+    md_as_html(paste(c('```{r, eval=FALSE, echo=TRUE}',
+                       exercise_data$support_code$solution,
+                       '```'),
+                     collapse = '\n'),
+               use_rmarkdown = TRUE)
+  } else {
+    NULL
+  }
+
   register_static_autograder(exercise_data$input_id, max_points = exercise_data$points,
-                             solution = paste(exercise_data$support_code$solution, collapse = '\n'),
+                             solution = solution,
                              session = session)
 
   observeEvent(session$input[[exercise_data$input_id]], {
@@ -27,6 +37,7 @@ exercise_chunk_server <- function (exercise_data) {
         # The checks have passed. Evaluate the code.
         timelimit <- exercise_data$timelimit %||% 1  # ensure that there is a time limit set!
         endtime <- Sys.time() + timelimit
+        local_use_cli(format = FALSE)
 
         promise <- exercise_promise(input_data, exercise_data, session, timelimit)
         if (!is.promising(promise)) {
@@ -137,12 +148,16 @@ exercise_result_timeout <- function () {
   exercise_result_error(get_status_message('exercise')$timeout)
 }
 
-#' @importFrom rlang is_condition cnd_type cnd_message warn
+#' @importFrom rlang is_condition cnd_type cnd_message warn local_use_cli
+#' @importFrom stringr str_remove_all
 render_exercise_result <- function (result) {
   function () {
+    local_use_cli(format = FALSE)
     if (is_condition(result)) {
       status_class <- switch(cnd_type(result), warning = 'warning', error = 'danger', 'info')
-      return(list(status_class = status_class, status = cnd_message(result)))
+      msg <- md_as_html(str_remove_all(cnd_message(result, prefix = TRUE), r'(\033[\d\[;]+m)'),
+                        use_rmarkdown = FALSE)
+      return(list(status_class = status_class, status = str_replace_all(msg, fixed('\n'), '<br />')))
     }
     if (!inherits(result, 'exminar_exercise_result')) {
       rlang::warn("Exercise result is of wrong type!")
@@ -208,6 +223,7 @@ exercise_promise <- function (input_data, exercise_data, session, timelimit) {
 #' @importFrom stringr str_detect str_starts fixed
 #' @importFrom rmarkdown html_fragment render
 #' @importFrom tools Rd2txt_options
+#' @importFrom rlang local_use_cli
 #' @export
 evaluate_exercise <- function (user_code, support_code, chunk_options, status_messages, envir, label) {
   tmpfile <- tempfile(fileext = '.Rmd')
@@ -228,6 +244,9 @@ evaluate_exercise <- function (user_code, support_code, chunk_options, status_me
 
   # Set package-internal state if necessary
   set_status_messages(status_messages)
+
+  # Make error messages from rlang not use CLI:
+  local_use_cli(format = FALSE)
 
   parent.env(envir) <- globalenv()
 

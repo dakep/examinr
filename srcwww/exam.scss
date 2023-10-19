@@ -2,6 +2,10 @@ $high-contrast-theme: true !default;
 $monospace-font: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 $code-color-default: #003B4F;
 
+section {
+  margin-bottom: map-get($spacers, 5);
+}
+
 .title {
   text-align: center;
 }
@@ -48,6 +52,7 @@ main.container {
 
   h6.card-header {
     font-weight: normal;
+    padding-right: $spacer * 6;
 
     div.shiny-html-output {
       display: inline;
@@ -59,7 +64,9 @@ main.container {
   }
 
   .examinr-points {
-    float: right;
+    position: absolute;
+    top: map-get($spacers, 2);
+    right: map-get($spacers, 2);
 
     .examinr-points-outof::before {
       content: "/";
@@ -224,8 +231,8 @@ div.sourceCode {
 .examinr-exercise {
   .card-header,
   .card-footer {
-    padding-top: map-get($spacers, 1);
-    padding-bottom: map-get($spacers, 1);
+    padding-top: map-get($spacers, 2);
+    padding-bottom: map-get($spacers, 2);
     margin: 0;
   }
 
@@ -351,7 +358,6 @@ body > .examinr-recompute-overlay > .examinr-recompute {
 
   div:not(.input-group-prepend),
   pre {
-    margin-left: map-get($spacers, 3);
     line-height: $line-height-base;
   }
 

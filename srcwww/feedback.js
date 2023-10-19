@@ -538,8 +538,8 @@ feedbackRenderer.push({
     footer.removeClass('alert alert-danger text-muted')
     if (solution) {
       footer.append('<div class="examinr-grading-feedback">' +
-          '<h6>' + status.getMessage('feedback').solutionLabel + '</h6>' +
-          '<pre><code>' + solution + '</code></pre>' +
+          '<h5>' + status.getMessage('feedback').solutionLabel + '</h5>' +
+          solution +
         '</div>')
     }
   }

@@ -5073,6 +5073,9 @@ html .float-none {
     float: none !important;
   }
 }
+html section {
+  margin-bottom: 3rem;
+}
 html .title {
   text-align: center;
 }
@@ -5133,6 +5136,7 @@ html .examinr-question.examinr-mandatory-error .card-footer .alert-link {
 }
 html .examinr-question h6.card-header {
   font-weight: normal;
+  padding-right: 6rem;
 }
 html .examinr-question h6.card-header div.shiny-html-output {
   display: inline;
@@ -5141,7 +5145,9 @@ html .examinr-question .card-body > .form-group {
   margin-bottom: 0;
 }
 html .examinr-question .examinr-points {
-  float: right;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
 }
 html .examinr-question .examinr-points .examinr-points-outof::before {
   content: "/";
@@ -5269,8 +5275,8 @@ html .examinr-exam-status .examinr-timer span.min.nosec:after, html .examinr-exa
 }
 html .examinr-exercise .card-header,
 html .examinr-exercise .card-footer {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
   margin: 0;
 }
 html .examinr-exercise .examinr-exercise-status pre {
@@ -5365,7 +5371,6 @@ html .examinr-grading-feedback:not(:last-child) {
 }
 html .examinr-grading-feedback div:not(.input-group-prepend),
 html .examinr-grading-feedback pre {
-  margin-left: 1rem;
   line-height: 1.5;
 }
 html .examinr-grading-feedback h6 {
@@ -10558,6 +10563,9 @@ html.high-contrast .float-none {
     float: none !important;
   }
 }
+html.high-contrast section {
+  margin-bottom: 3rem;
+}
 html.high-contrast .title {
   text-align: center;
 }
@@ -10618,6 +10626,7 @@ html.high-contrast .examinr-question.examinr-mandatory-error .card-footer .alert
 }
 html.high-contrast .examinr-question h6.card-header {
   font-weight: normal;
+  padding-right: 6rem;
 }
 html.high-contrast .examinr-question h6.card-header div.shiny-html-output {
   display: inline;
@@ -10626,7 +10635,9 @@ html.high-contrast .examinr-question .card-body > .form-group {
   margin-bottom: 0;
 }
 html.high-contrast .examinr-question .examinr-points {
-  float: right;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
 }
 html.high-contrast .examinr-question .examinr-points .examinr-points-outof::before {
   content: "/";
@@ -10768,8 +10779,8 @@ html.high-contrast .examinr-exam-status .examinr-timer span.min.nosec:after, htm
 }
 html.high-contrast .examinr-exercise .card-header,
 html.high-contrast .examinr-exercise .card-footer {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
   margin: 0;
 }
 html.high-contrast .examinr-exercise .examinr-exercise-status pre {
@@ -10867,7 +10878,6 @@ html.high-contrast .examinr-grading-feedback:not(:last-child) {
 }
 html.high-contrast .examinr-grading-feedback div:not(.input-group-prepend),
 html.high-contrast .examinr-grading-feedback pre {
-  margin-left: 1rem;
   line-height: 1.5;
 }
 html.high-contrast .examinr-grading-feedback h6 {
