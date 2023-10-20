@@ -5,7 +5,7 @@
 #'
 #' @param title title of the exercise. Default: _exercise.panelTitle_ from [status_messages()].
 #' @param button label of the run exercise button. Default: _exercise.buttonLabel_ from [status_messages()].
-#' @param timelimit time limit for the code to run (in seconds). Default: 5.
+#' @param timeout time limit for the code to run (in seconds). Default: 5.
 #' @param lines the minimum number of lines in the code editor. Default: 5.
 #' @param autocomplete enable or disable auto-completion in the code editor. Note that this sends many requests
 #'   to the server and could pose performance issues if many users access the exam at the same time. Default: `FALSE`.
@@ -25,7 +25,7 @@
 #' @importFrom rlang abort
 #' @family exercise configuration
 #' @export
-exercise_options <- function (title, button, timelimit, lines, autocomplete, df_print, points,
+exercise_options <- function (title, button, timeout, lines, autocomplete, df_print, points,
                               setup, solution, checker, label) {
   if (!is_missing(checker)) {
     checker <- match.fun(checker)
@@ -44,7 +44,7 @@ exercise_options <- function (title, button, timelimit, lines, autocomplete, df_
     lines = as.numeric(lines %||% opts_chunk$get('exercise.lines')),
     df_print = df_print %||% opts_chunk$get('exercise.df_print') %||%
       opts_knit$get('rmarkdown.df_print') %||% 'default',
-    timelimit = as.numeric(timelimit %||% opts_chunk$get('exercise.timelimit')),
+    timeout = as.numeric(timeout %||% opts_chunk$get('exercise.timeout')),
     autocomplete = isTRUE(autocomplete %||% opts_chunk$get('exercise.autocomplete')),
     points = as.numeric(points %||% opts_chunk$get('exercise.points')),
     label = label %||% opts_chunk$get('exercise.label')

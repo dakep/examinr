@@ -484,13 +484,13 @@ get_exercise_user_env <- function (exercise_label, session, attempt) {
 }
 
 #' @importFrom rlang abort cnd_message
-setup_exercise_promise <- function (expr, envir, label, timelimit) {
+setup_exercise_promise <- function (expr, envir, label, timeout) {
   withCallingHandlers({
     force(expr)
     force(envir)
     force(label)
-    force(timelimit)
-    .exam_configuration$get('exercise_evaluator')(expr, envir, label, timelimit)
+    force(timeout)
+    .exam_configuration$get('exercise_evaluator')(expr, envir, label, timeout)
   }, error = function (e) {
     abort(sprintf("Cannot setup exercise promise for exercise chunk %s: %s", label, cnd_message(e)))
   })

@@ -7,7 +7,7 @@
 #' @param expr an (un-evaluated) expression to be evaluated.
 #' @param envir the environment in which `expr` is to be evaluated.
 #' @param label the label of the exercise chunk.
-#' @param timelimit the configured time limit in seconds.
+#' @param timeout the configured time limit in seconds.
 #' @param ... additional parameters for future extensions.
 #' @return a [promise][promises::promise()] object, or anything that can be cast to a promise object with
 #'   [as.promise()][promises::as.promise()].
@@ -22,10 +22,10 @@ NULL
 #' @importFrom stringr str_detect
 #' @importFrom future future
 #' @export
-future_evaluator <- function (expr, envir, label, timelimit, ...) {
+future_evaluator <- function (expr, envir, label, timeout, ...) {
   future_expr <- quote({
     tryCatch({
-      setTimeLimit(elapsed = timelimit, transient = TRUE)
+      setTimeLimit(elapsed = timeout, transient = TRUE)
       eval(expr, envir = envir)
     },
     error = function (e) {
@@ -41,5 +41,5 @@ future_evaluator <- function (expr, envir, label, timelimit, ...) {
   })
   return(future(expr = future_expr, substitute = FALSE, envir = baseenv(), seed = NULL,
                 stdout = FALSE,
-                globals = list(expr = expr, envir = envir, label = label, timelimit = timelimit)))
+                globals = list(expr = expr, envir = envir, label = label, timeout = timeout)))
 }

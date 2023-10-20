@@ -7,7 +7,7 @@
 exercise_options(
   title,
   button,
-  timelimit,
+  timeout,
   lines,
   autocomplete,
   df_print,
@@ -23,7 +23,7 @@ exercise_options(
 
 \item{button}{label of the run exercise button. Default: \emph{exercise.buttonLabel} from \code{\link[=status_messages]{status_messages()}}.}
 
-\item{timelimit}{time limit for the code to run (in seconds). Default: 5.}
+\item{timeout}{time limit for the code to run (in seconds). Default: 5.}
 
 \item{lines}{the minimum number of lines in the code editor. Default: 5.}
 

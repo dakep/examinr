@@ -35,11 +35,11 @@ exercise_chunk_server <- function (exercise_data) {
         session$output[[exercise_data$output_id]] <- render_exercise_result(check_result)
       } else {
         # The checks have passed. Evaluate the code.
-        timelimit <- exercise_data$timelimit %||% 1  # ensure that there is a time limit set!
-        endtime <- Sys.time() + timelimit
+        timeout <- exercise_data$timeout %||% 1  # ensure that there is a time limit set!
+        endtime <- Sys.time() + timeout
         local_use_cli(format = FALSE)
 
-        promise <- exercise_promise(input_data, exercise_data, session, timelimit)
+        promise <- exercise_promise(input_data, exercise_data, session, timeout)
         if (!is.promising(promise)) {
           warn(sprintf("Exercise evaluator for exercise %s does not yield a promise.",
                        exercise_data$label))
@@ -193,7 +193,7 @@ check_exercise_code <- function (input, exercise_data) {
   return(NULL)
 }
 
-exercise_promise <- function (input_data, exercise_data, session, timelimit) {
+exercise_promise <- function (input_data, exercise_data, session, timeout) {
   eval_exercise_env <- new.env(parent = baseenv())
   eval_exercise_env$label <- exercise_data$label
   eval_exercise_env$rendering_env <- get_exercise_user_env(exercise_data$label, session = session)
@@ -204,7 +204,7 @@ exercise_promise <- function (input_data, exercise_data, session, timelimit) {
 
   # Construct the expression which will turn the user code into a html result.
   expr <- quote(examinr::evaluate_exercise(code, support_code, options, status_messages, rendering_env, label))
-  setup_exercise_promise(expr, eval_exercise_env, exercise_data$label, timelimit)
+  setup_exercise_promise(expr, eval_exercise_env, exercise_data$label, timeout)
 }
 
 #' Evaluate Exercise

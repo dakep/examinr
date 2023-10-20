@@ -5,7 +5,7 @@
 \alias{future_evaluator}
 \title{Exercise Evaluator}
 \usage{
-future_evaluator(expr, envir, label, timelimit, ...)
+future_evaluator(expr, envir, label, timeout, ...)
 }
 \arguments{
 \item{expr}{an (un-evaluated) expression to be evaluated.}
@@ -14,7 +14,7 @@ future_evaluator(expr, envir, label, timelimit, ...)
 
 \item{label}{the label of the exercise chunk.}
 
-\item{timelimit}{the configured time limit in seconds.}
+\item{timeout}{the configured time limit in seconds.}
 
 \item{...}{additional parameters for future extensions.}
 }

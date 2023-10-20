@@ -120,7 +120,7 @@ knit_hook_exercise <- function (before, options, envir, ...) {
                         input_id = section_ns(paste('Q', label, sep = '-')),
                         output_id = section_ns(paste(label, 'out', sep = '-')),
                         engine = tolower(options$engine %||% 'r'),
-                        timelimit = options$exercise.timeout %||% 5)
+                        timeout = options$exercise.timeout %||% 5)
 
     ex_data_js <- list(label = label,
                        inputLabel = options$exercise.label %||% get_status_message('exercise')$label,
