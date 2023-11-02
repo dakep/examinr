@@ -1,5 +1,7 @@
 # Version 0.3.0
 
+### New functionality
+
 * Save R code chunks when submitting a section (without evaluation the code on the server).
   This prevents cases where users don't run the R code and hence no answer would be recorded.
 * Enable code highlighting in server-rendered sections when using R code chunks (fenced within ```` ```{r ````).
@@ -20,3 +22,7 @@
 ```
 
 ````
+
+### Bug fixes
+
+* Allow `exam_config(points_format=)` to be a function, as stated in the documentation.

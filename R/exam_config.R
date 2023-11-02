@@ -168,7 +168,7 @@
 #'               }))
 #' }
 #'
-#' @importFrom rlang missing_arg abort
+#' @importFrom rlang missing_arg abort is_function
 #' @importFrom knitr opts_current
 #' @family exam configuration
 #' @export
@@ -180,15 +180,20 @@ exam_config <- function (auth_provider, storage_provider, exercise_data_provider
 
   points_format_fun <- missing_arg()
   if (!missing(points_format)) {
-    points_format_fun <- function (pts) {
-      if (pts == 1) {
-        return(sprintf(points_format[[1L]], pts))
-      } else if (length(points_format) > 1L) {
-        return(sprintf(points_format[[2L]], pts))
-      } else {
-        return(sprintf(points_format, pts))
+    points_format_fun <- if (is_function(points_format)) {
+      points_format
+    } else {
+      function (pts) {
+        if (pts == 1) {
+          return(sprintf(points_format[[1L]], pts))
+        } else if (length(points_format) > 1L) {
+          return(sprintf(points_format[[2L]], pts))
+        } else {
+          return(sprintf(points_format, pts))
+        }
       }
     }
+
   }
 
   if (!is_missing(exercise_data_provider)) {
