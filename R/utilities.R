@@ -212,6 +212,7 @@ send_status_message <- function (msg_id, type = c('error', 'locked', 'warning', 
 
 ## Check if the current chunk is in the given context.
 ## If knitr is not in progress, always returns `TRUE`.
+#' @importFrom knitr opts_current
 is_knitr_context <- function (context) {
   return (!isTRUE(getOption('knitr.in.progress')) || identical(opts_current$get('context'), context) ||
             identical(opts_current$get('label'), context))

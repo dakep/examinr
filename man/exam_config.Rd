@@ -3,6 +3,7 @@
 \name{exam_config}
 \alias{exam_config}
 \alias{data_provider}
+\alias{exam_setup}
 \title{Exam Configuration}
 \usage{
 exam_config(
@@ -16,6 +17,8 @@ exam_config(
 )
 
 data_provider(fun, cache_data = FALSE)
+
+exam_setup(points_format, data_provider, cache_data = FALSE)
 }
 \arguments{
 \item{auth_provider}{an authentication provider function to identify a user.
@@ -51,6 +54,9 @@ for (\code{data_provider()}) in the Shiny session.
 This makes sense if generating the data takes a while, but is only small in size.}
 
 \item{fun}{a data provider function which generates the user-specific (e.g., randomized) data for
+the sections. See section \emph{Data provider} for details.}
+
+\item{data_provider}{a data provider function which generates the user-specific (e.g., randomized) data for
 the sections. See section \emph{Data provider} for details.}
 }
 \description{
