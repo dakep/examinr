@@ -1,5 +1,6 @@
 #' @importFrom shiny observeEvent observe invalidateLater isolate getDefaultReactiveDomain
 #' @importFrom promises then is.promising
+#' @importFrom stringr str_replace_all
 #' @importFrom rlang warn cnd_message local_use_cli
 exercise_chunk_server <- function (exercise_data) {
   exercise_data <- unserialize_object(exercise_data)
@@ -26,6 +27,13 @@ exercise_chunk_server <- function (exercise_data) {
 
   observeEvent(session$input[[exercise_data$input_id]], {
     input_data <- session$input[[exercise_data$input_id]]
+
+    ## Sanitize code.
+    ## Any non-alphabetic Unicode character and characters outside the usual ASCII range
+    ## are stripped.
+    input_data$code <- str_replace_all(input_data$code,
+                                       '[^\\x20-\\x7f\\p{Alphabetic}\\p{Math}\n]',
+                                       ' ')
 
     if (isTRUE(input_data$evaluate)) {
       # First do some preliminary checks of the code

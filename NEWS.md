@@ -26,3 +26,6 @@
 ### Bug fixes
 
 * Allow `exam_config(points_format=)` to be a function, as stated in the documentation.
+* Sanitize exercise code before evaluating.
+  Allow only non-control ASCII characters (range 0x1F—0x7E) and Unicode characters with properties "Alphabetical" and "Math".
+  Addresses issue where CRLF line-endings and other invisible characters cause the code to be interpreted as invalid without useful error message.
