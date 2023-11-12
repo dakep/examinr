@@ -18,7 +18,8 @@ mc_question(
   mandatory = FALSE,
   id = NULL,
   title_container = h6,
-  static_title = NULL
+  static_title = NULL,
+  mathjax_dollar
 )
 
 answer(

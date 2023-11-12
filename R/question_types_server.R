@@ -8,7 +8,10 @@ question_title_server <- function (question, ns_str, section_id) {
       output$title <- renderUI({
         rendering_env <- get_rendering_env(session)
         title_html <- with_options(list(digits = question$digits),
-                                   md_as_html(question$title, use_rmarkdown = FALSE, env = rendering_env))
+                                   md_as_html(question$title,
+                                              use_rmarkdown = FALSE,
+                                              mathjax_dollar = !isFALSE(question$mathjax_dollar),
+                                              env = rendering_env))
 
         trigger_mathjax(title_html)
       })
@@ -106,7 +109,9 @@ render_mcquestion_server <- function (question, ns) {
         values <- enc2utf8(vapply(answers, `[[`, 'value', FUN.VALUE = character(1L), USE.NAMES = FALSE))
         labels <- with_options(list(digits = question$digits), {
           lapply(answers, function (answer) {
-            trigger_mathjax(md_as_html(answer$label, use_rmarkdown = FALSE, env = rendering_env))
+            trigger_mathjax(md_as_html(answer$label, use_rmarkdown = FALSE,
+                                       mathjax_dollar = !isFALSE(question$mathjax_dollar),
+                                       env = rendering_env))
           })
         })
 

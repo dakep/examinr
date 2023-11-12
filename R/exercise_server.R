@@ -164,7 +164,8 @@ render_exercise_result <- function (result) {
     if (is_condition(result)) {
       status_class <- switch(cnd_type(result), warning = 'warning', error = 'danger', 'info')
       msg <- md_as_html(str_remove_all(cnd_message(result, prefix = TRUE), r'(\033[\d\[;]+m)'),
-                        use_rmarkdown = FALSE)
+                        use_rmarkdown = FALSE,
+                        mathjax_dollar = FALSE)
       return(list(status_class = status_class, status = str_replace_all(msg, fixed('\n'), '<br />')))
     }
     if (!inherits(result, 'exminar_exercise_result')) {

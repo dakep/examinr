@@ -48,7 +48,9 @@ section_chunk <- function (section_id, content_enc, chunk_counter) {
 knit_print.examinr_section_chunk <- function (x, ...) {
   ns <- NS(paste(x$id, x$counter, sep = '-'))
 
-  metadata <- list(id = x$id, chunk_ns = ns(NULL))
+  metadata <- list(id = x$id,
+                   chunk_ns = ns(NULL),
+                   mathjax_dollar = opts_chunk$get('examinr.mathjax_dollar'))
   shiny_prerendered_chunk('server', code = sprintf('examinr:::section_chunk_server("%s", "%s")',
                                                    serialize_object(metadata), x$content_enc))
 

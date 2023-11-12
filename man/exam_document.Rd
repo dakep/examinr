@@ -28,6 +28,7 @@ exam_document(
   df_print = "default",
   css = NULL,
   mathjax = "default",
+  mathjax_dollar = TRUE,
   md_extensions = NULL,
   extra_dependencies = NULL,
   ...
@@ -104,6 +105,9 @@ Valid values include "default", "kable", "tibble", and "paged". See \code{\link[
 
 \item{mathjax}{if and how to include MathJax. The "default" option uses MathJax v3 from a CDN.
 You can pass an alternate URL or pass \code{NULL} to disable MathJax entirely.}
+
+\item{mathjax_dollar}{Use the dollar sign (\code{$}, \verb{$$}) to denote equations.
+Can cause issues with the dollar sign in inline code.}
 
 \item{md_extensions}{markdown extensions to be added or removed from the default definition of R Markdown.
 See \code{\link[rmarkdown:rmarkdown_format]{rmarkdown::rmarkdown_format()}} for details.}

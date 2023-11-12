@@ -48,6 +48,8 @@
 #'   Pass `NULL` to prevent syntax highlighting.
 #' @param mathjax if and how to include MathJax. The "default" option uses MathJax v3 from a CDN.
 #'   You can pass an alternate URL or pass `NULL` to disable MathJax entirely.
+#' @param mathjax_dollar Use the dollar sign (`$`, `$$`) to denote equations.
+#'   Can cause issues with the dollar sign in inline code.
 #' @param css one or more CSS files to include in the document.
 #' @param md_extensions markdown extensions to be added or removed from the default definition of R Markdown.
 #'   See [rmarkdown::rmarkdown_format()] for details.
@@ -68,7 +70,8 @@ exam_document <- function (id = 'exam', version = '0.1', use_cdn = FALSE, render
                            opens = NA, closes = NA, feedback = NA, grace_period = 120, self_contained = TRUE,
                            fig_width = 7, fig_height = 5, fig_retina = 2, fig_caption = TRUE, keep_md = FALSE,
                            dev = 'png', highlight = 'tango',  df_print = 'default', css = NULL,
-                           mathjax = 'default', md_extensions = NULL,  extra_dependencies = NULL, ...) {
+                           mathjax = 'default', mathjax_dollar = TRUE, md_extensions = NULL,
+                           extra_dependencies = NULL, ...) {
   # Parse attempts configuration
   attempts_config <- set_attempts_config_from_metadata(opens = opens, closes = closes, max_attempts = max_attempts,
                                                        timelimit = timelimit, grace_period = grace_period)
@@ -168,7 +171,9 @@ exam_document <- function (id = 'exam', version = '0.1', use_cdn = FALSE, render
   }
 
   knitr_options <- knitr_options_html(fig_width, fig_height, fig_retina, keep_md, dev)
-  knitr_options$opts_chunk <- c(knitr_options$opts_chunk %||% list(), list(examinr.exam = TRUE))
+  knitr_options$opts_chunk <- c(knitr_options$opts_chunk %||% list(),
+                                list(examinr.exam = TRUE,
+                                     examinr.mathjax_dollar = isTRUE(mathjax_dollar)))
   knitr_options$opts_knit <- c(knitr_options$opts_knit %||% list(), list(examinr.initial_pass = TRUE))
   knitr_options$opts_hooks <- c(knitr_options$opts_hooks %||% list(), list(examinr.exam = opts_hook_exam_format))
 

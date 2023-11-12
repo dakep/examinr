@@ -9,6 +9,7 @@ section_chunk_server <- function (metadata, content) {
     observe_section_change(section_id = metadata$id, {
       output$out <- renderUI(trigger_mathjax(
         md_as_html(content, id_prefix = metadata$chunk_ns,
+                   mathjax_dollar = !isFALSE(metadata$mathjax_dollar),
                    env = get_rendering_env(session))))
     }, domain = session)
   })

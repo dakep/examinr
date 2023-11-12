@@ -42,7 +42,8 @@
 text_question <- function (title, points = 1, type = c('textarea', 'text', 'numeric'), width = '100%', height = NULL,
                            placeholder = NULL, solution = NULL, solution_quoted = FALSE, comp = comp_digits(3, 1),
                            label = "Type your answer below.", hide_label = FALSE, mandatory = FALSE, id = NULL,
-                           title_container = h6, static_title = NULL) {
+                           title_container = h6, static_title = NULL,
+                           mathjax_dollar) {
 
   points_str <- format_points(points)
 
@@ -57,6 +58,12 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
 
   if (!is.null(solution) && !is_expression(solution)) {
     abort("`solution` must be an expression")
+  }
+
+  mathjax_dollar <- if (missing(mathjax_dollar)) {
+    isTRUE(opts_chunk$get('examinr.mathjax_dollar'))
+  } else {
+    isTRUE(mathjax_dollar)
   }
 
   if (length(id) > 0L) {
@@ -84,7 +91,8 @@ text_question <- function (title, points = 1, type = c('textarea', 'text', 'nume
                         label = id,
                         hide_label = isTRUE(hide_label),
                         type = type,
-                        title = prepare_title(title, static_title),
+                        mathjax_dollar = mathjax_dollar,
+                        title = prepare_title(title, static_title, mathjax_dollar),
                         placeholder = placeholder,
                         title_container = title_container,
                         comp_expr = comp,
@@ -166,7 +174,8 @@ comp_digits <- function (digits, pm = 1) {
 #' @export
 mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_order = TRUE, checkbox = TRUE,
                         label = "Select the correct answer(s).", hide_label = FALSE, min_points = 0,
-                        mandatory = FALSE, id = NULL, title_container = h6, static_title = NULL) {
+                        mandatory = FALSE, id = NULL, title_container = h6, static_title = NULL,
+                        mathjax_dollar) {
   if (is.null(label)) {
     abort("Every question must have a meaningful label.")
   }
@@ -184,6 +193,12 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
     }
     return(answer$always_show)
   }))
+
+  mathjax_dollar <- if (missing(mathjax_dollar)) {
+    isTRUE(opts_chunk$get('examinr.mathjax_dollar'))
+  } else {
+    isTRUE(mathjax_dollar)
+  }
 
   # Generate the value to obfuscate, but persist order
   values <- with_seed(digest2int(label), {
@@ -230,7 +245,8 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
   return(structure(list(input_label = label,
                         label = id,
                         hide_label = isTRUE(hide_label),
-                        title = prepare_title(title, static_title),
+                        mathjax_dollar = mathjax_dollar,
+                        title = prepare_title(title, static_title, mathjax_dollar),
                         answers = answers,
                         nr_answers = nr_answers,
                         points = points,
@@ -245,7 +261,7 @@ mc_question <- function(title, ..., points = 1, nr_answers = 5, random_answer_or
 }
 
 #' @importFrom stringr str_detect fixed
-prepare_title <- function (title, static_title) {
+prepare_title <- function (title, static_title, mathjax_dollar) {
   static_title <- if (is.null(static_title)) {
     string_is_html(title) || !str_detect(title, fixed('`r '))
   } else {
@@ -253,7 +269,7 @@ prepare_title <- function (title, static_title) {
   }
 
   if (static_title) {
-    return(md_as_html(title, use_rmarkdown = FALSE))
+    return(md_as_html(title, use_rmarkdown = FALSE, mathjax_dollar = mathjax_dollar))
   }
   return(title)
 }
@@ -352,6 +368,7 @@ knit_print.examinr_question <- function (x, ...) {
   private_ns <- NS(section_ns(x$label))
 
   x$digits <- getOption('digits') %||% 6
+  x$mathjax_dollar <- x$mathjax_dollar %||% opts_chunk$get('examinr.mathjax_dollar')
 
   question_body_html <- render_question_body(x, section_ns)
   points_container <- tags$span(class = 'badge badge-secondary examinr-points', x$points_str)
@@ -430,6 +447,8 @@ render_question_body.mcquestion <- function (question, ns, ...) {
   } else {
     radioButtons(ns(question$input_id), label = question$input_label, choices = c('N/A' = 'N/A'), selected = '')
   }
+
+  question$mathjax_dollar <- question$mathjax_dollar %||% opts_chunk$get('examinr.mathjax_dollar')
 
   shiny_prerendered_chunk('server', sprintf('examinr:::render_mcquestion_server("%s", "%s")',
                                             serialize_object(question), ns(NULL)))
