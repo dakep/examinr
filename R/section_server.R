@@ -113,7 +113,8 @@ initialize_sections_server <- function (session, user_sections, exam_metadata) {
 initialize_section_state <- function (session, sections, current_section = TRUE) {
   session_env <- get_session_env(session)
   session_env$sections <- sections
-  session_env$last_section_id <- sections[[max(2L, length(sections)) - 1L]]$id
+  session_env$last_content_section_id <- sections[[max(2L, length(sections)) - 1L]]$id
+  session_env$final_section_id <- sections[[max(2L, length(sections))]]$id
   if (!is.null(session_env$section_state)) {
     abort("Section state already initialized")
   }
@@ -133,7 +134,8 @@ observe_section_change <- function (x, section_id = NULL, ..., label = NULL, env
     current_attempt <- get_current_attempt(session)
     attempt_status <- isolate(get_attempt_status(session)) # Don't trigger if the status changes.
     current_section <- get_current_section(session)
-    if ((isTRUE(attempt_status) || identical(attempt_status, 'feedback')) &&
+    if ((isTRUE(attempt_status) || identical(attempt_status, 'feedback') ||
+         isTRUE(current_section$is_final_section)) &&
         (isTRUE(current_section) || is.null(section_id) || identical(current_section$id, section_id))) {
       isolate(handler_fun())
     }
@@ -145,7 +147,8 @@ get_current_section <- function (session = getDefaultReactiveDomain()) {
   session_env <- get_session_env(session)
   current_section <- session_env$section_state$current
   if (is.list(current_section)) {
-    current_section$attempt_is_finished <- identical(current_section$id, session_env$last_section_id)
+    current_section$is_last_content_section <- identical(current_section$id, session_env$last_content_section_id)
+    current_section$is_final_section <- identical(current_section$id, session_env$final_section_id)
   }
   return(current_section)
 }
@@ -232,7 +235,7 @@ save_section_data <- function (session, btn_id = NULL) {
       }
 
       # Check if this is the final section (or the last section with a button)
-      if (isTRUE(current_section) || identical(current_section_id, session_env$last_section_id)) {
+      if (isTRUE(current_section) || identical(current_section_id, session_env$last_content_section_id)) {
         return(finish_current_attempt(session))
       }
     } else {

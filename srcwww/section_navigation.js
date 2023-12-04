@@ -42,11 +42,7 @@ Shiny.addCustomMessageHandler('__.examinr.__-sectionChange', function (section) 
     }
     currentSectionEl.show().trigger('shown')
 
-    if (section.attempt_is_finished) {
-      utils.attemptStorage.clear()
-    } else {
-      question.restoreFromStorage()
-    }
+    question.restoreFromStorage()
 
     const outputElements = currentSectionEl.find('.shiny-bound-output')
     if (outputElements.length > 0) {
