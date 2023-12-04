@@ -146,7 +146,6 @@ function initializeExerciseEditor () {
   })
 
   exercise.parents('section').on('shown', utils.autoRetry(function () {
-    // window.console.debug('Resize editor ' + exerciseOptions.inputId + ' after section is shown.')
     updateAceHeight()
     editor.resize(true)
     return $(editor.container).height() > 0
@@ -164,10 +163,11 @@ function initializeEditorBindings () {
     },
     subscribe: function (exercise, callback) {
       exercise = $(exercise)
-      exercise.find('.examinr-run-button').on('click.examinrExerciseInputBinding', function () {
-        if (exerciseRunButtonEnabled) {
+      exercise.find('.examinr-run-button').on('click.examinrExerciseInputBinding', function (event, forceSubmit) {
+        if (exerciseRunButtonEnabled || forceSubmit === true) {
           exercise.data('sendData', true)
-          exerciseRunning(exercise.find('.examinr-exercise-output'), true)
+          exerciseRunning(exercise.find('.examinr-exercise-output'),
+                          exercise.data('evaluate') !== false)
           callback(true)
         }
       })
@@ -181,7 +181,6 @@ function initializeEditorBindings () {
         return null
       }
       exercise.data('sendData', false)
-
       return {
         evaluate: exercise.data('evaluate') !== false,
         label: exercise.data('options').label,
@@ -263,10 +262,11 @@ module.exports = {
     if (!context) {
       context = $("main")
     }
+
     context.find('.examinr-exercise').each(function () {
       let exercise = $(this)
       exercise.data("evaluate", evaluate !== false)
-      exercise.find('.examinr-run-button').trigger("click")
+      exercise.find('.examinr-run-button').trigger("click", [ true ])
     })
   },
 

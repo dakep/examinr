@@ -158,7 +158,8 @@ save_section_data <- function (session, btn_id = NULL) {
   attempt_status <- isolate(get_attempt_status(session))
 
   # Save section data if the current attempt is valid and not-null
-  if (!is.null(current_attempt) && isTRUE(attempt_status)) {
+  if (!is.null(current_attempt) &&
+      (isTRUE(attempt_status) || identical(attempt_status, 'soft_timeout'))) {
     session_env <- get_session_env(session)
     transformers <- session_env$transformer %||% list()
     autograders <- session_env$autograders %||% list()

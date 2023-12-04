@@ -538,9 +538,11 @@ setup_exercise_promise <- function (expr, envir, label, timeout) {
   })
 }
 
+#' @importFrom rlang inform
 signal_feedback_url <- function (url) {
   if (!isTRUE(url %in% .exam_configuration$get('feedback_urls_printed'))) {
-    cat("Exam feedback available under", url, "\n", file = stderr())
+    # cat("Exam feedback available under", url, "\n", file = stderr())
+    inform(paste("Exam feedback available under", url))
     .exam_configuration$append(feedback_urls_printed = url)
   }
 }

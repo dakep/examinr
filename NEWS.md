@@ -29,3 +29,6 @@
 * Sanitize exercise code before evaluating.
   Allow only non-control ASCII characters (range 0x1F—0x7E) and Unicode characters with properties "Alphabetical" and "Math".
   Addresses issue where CRLF line-endings and other invisible characters cause the code to be interpreted as invalid without useful error message.
+* Gracefully handle timed-out exams.
+  After the timelimit + grace period elapsed, a "soft timeout" is initiated, triggering submission
+  of all data from the client up to that point.

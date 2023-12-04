@@ -19,24 +19,33 @@ Shiny.addCustomMessageHandler('__.examinr.__-attemptStatus', function (attempt) 
   if (attempt.gracePeriod) {
     config.gracePeriod = attempt.gracePeriod
   }
-  if (attempt && attempt.active) {
-    // window.console.debug('Attempt is active:', attempt)
-    $('main').show().trigger('shown')
-    progressEl.show()
+  if (attempt) {
+    if (attempt.active) {
+      // window.console.debug('Attempt is active:', attempt)
+      $('main').show().trigger('shown')
+      progressEl.show()
 
-    if (attempt.timelimit !== 0 && (!attempt.timelimit || attempt.timelimit === 'Inf')) {
-      attempt.timelimit = Number.POSITIVE_INFINITY
-    }
-    try {
-      timelimit = new Date(attempt.timelimit * 1000)
-      if (timelimitTimer) {
-        window.clearTimeout(timelimitTimer)
-        timelimitTimer = false
+      if (attempt.timelimit !== 0 && (!attempt.timelimit || attempt.timelimit === 'Inf')) {
+        attempt.timelimit = Number.POSITIVE_INFINITY
       }
-      updateTimeLeft()
-    } catch (e) {
-      window.console.warn('Cannot set timelimit for current attempt:', e)
-      timelimit = Number.POSITIVE_INFINITY
+      try {
+        timelimit = new Date(attempt.timelimit * 1000)
+        if (timelimitTimer) {
+          window.clearTimeout(timelimitTimer)
+          timelimitTimer = false
+        }
+        updateTimeLeft()
+      } catch (e) {
+        window.console.warn('Cannot set timelimit for current attempt:', e)
+        timelimit = Number.POSITIVE_INFINITY
+      }
+    } else if (attempt.status == 'soft_timeout') {
+      const section_navigation = require('./section_navigation')
+      // The server allows us to send a final update before forcing the timeout.
+      section_navigation.submitCurrentSection()
+      uiSoftTimeout()
+    } else {
+      uiHardTimeout()
     }
   } else {
     // window.console.debug('Attempt is inactive.')
@@ -96,15 +105,26 @@ function updateTimeLeft () {
         }
         timelimitTimer = window.setTimeout(updateTimeLeft, 1000) // call every second
       }
+    } else if (msLeft > -2000 * (config.gracePeriod || 5)) {
+      // Soft-timeout. Wait for at least two grace periods, or 10 seconds
+      timelimitTimer = window.setTimeout(updateTimeLeft, 1000) // call every second
     } else {
-      // Time is up. Destroy the interface.
-      $('main').remove()
-      const timeoutMsg = status.getMessage('attemptTimeout')
-      status.showErrorDialog(timeoutMsg.title, timeoutMsg.body, 'none')
+      uiHardTimeout()
     }
   } else {
     timerEl.hide()
   }
+}
+
+function uiHardTimeout () {
+  // Time is up. Destroy the interface.
+  $('main').remove()
+  uiSoftTimeout()
+}
+
+function uiSoftTimeout () {
+  const timeoutMsg = status.getMessage('attemptTimeout')
+  status.showErrorDialog(timeoutMsg.title, timeoutMsg.body, 'none')
 }
 
 module.exports = {

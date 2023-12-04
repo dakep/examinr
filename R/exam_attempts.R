@@ -244,7 +244,7 @@ get_attempts_config <- function (user_id) {
 
 ## Initialize the current attempt.
 #' @importFrom digest digest2int
-#' @importFrom stringr str_replace fixed
+#' @importFrom stringr str_replace fixed str_detect
 #' @importFrom rlang abort warn cnd_message
 #' @importFrom shiny reactiveVal observeEvent observe
 initialize_attempt <- function (session, exam_id, exam_version) {
@@ -308,13 +308,22 @@ initialize_attempt <- function (session, exam_id, exam_version) {
   # Determine when the attempt needs to be finished
   if (config$timelimit < Inf) {
     attempt_timeout <- min(as.numeric(attempt$started_at) + config$timelimit, as.numeric(config$closes), na.rm = TRUE)
+    grace_period <- max(config$grace_period, 1, na.rm = TRUE)
+
     # Automatically finish the attempt at the timeout.
     observe(expr({
       timeout <- !!attempt_timeout - as.numeric(Sys.time())
-      if (timeout < 0) {
+      attempt_status <- isolate(get_attempt_status())
+      if (identical(attempt_status, 'soft_timeout')) {
+        # Hard timeout. The previous status was a soft timeout.
         isolate(finish_current_attempt(timeout = TRUE))
+      } else if (timeout < 0) {
+        # Soft timeout. Notify the client that it's about to time out.
+        set_attempt_status("soft_timeout")
+        invalidateLater(1000 * !!grace_period)
       } else {
-        attempt_timeout_from_now <- 1000 * (timeout + max(!!config$grace_period, 1, na.rm = TRUE))
+        # Timeout not yet reached. Re-check in some time.
+        attempt_timeout_from_now <- 1000 * (timeout + !!grace_period)
         invalidateLater(attempt_timeout_from_now)
       }
     }), quoted = TRUE, env = examinr_ns, label = 'attempted timed out')
@@ -330,7 +339,7 @@ initialize_attempt <- function (session, exam_id, exam_version) {
     status <- get_session_env(session)$attempt_state$status
 
     # Notify the client if the status is still valid or the attempt changed due to a timeout
-    if (isTRUE(status) || identical(status, 'timeout')) {
+    if (isTRUE(status) || isTRUE(str_detect(status, fixed('timeout')))) {
       send_message('attemptStatus', session = session,
                    list(active = isTRUE(status), status = status, timelimit = !!attempt_timeout,
                         gracePeriod = !!config$grace_period))
@@ -347,7 +356,7 @@ initialize_attempt_state <- function (session, status, attempt) {
   if (is.null(session_env$attempt_state)) {
     session_env$attempt_state <- reactiveValues(status = status %||% NULL, current = attempt %||% NULL)
   } else {
-    session_env$attempt_state$status <- status
+    set_attempt_status(status, session)
     session_env$attempt_state$current <- attempt
   }
   return(session_env$attempt_state)
@@ -360,7 +369,7 @@ update_attempt_state <- function (session, status, attempt) {
     abort("Attempt state not initialized")
   }
   if (!missing(status)) {
-    session_env$attempt_state$status <- status
+    set_attempt_status(status, session)
   }
   if (!missing(attempt)) {
     session_env$attempt_state$current <- attempt
@@ -382,6 +391,8 @@ get_current_attempt <- function (session = getDefaultReactiveDomain()) {
 ##
 ## Possible return values:
 ##   TRUE ... an attempt is active
+##   "soft_timeout" ... the attempt has timed out and the UI has been notified to
+##                           send the last update.
 ##   "timeout" ... the attempt is finished because it timed out
 ##   "user_finished" ... the attempt is finished because the user finished it
 ##   "feedback" ... the attempt is finished and shown for feedback
@@ -394,7 +405,36 @@ get_attempt_status <- function (session = getDefaultReactiveDomain()) {
   } else {
     session_env$attempt_state$status
   }
-  # return(get_session_env(session)$attempt_state$status)
+}
+
+## Get/set the status of the current attempt.
+##
+## Possible states are
+##   TRUE ... an attempt is active
+##   "soft_timeout" ... the attempt has timed out and the UI has been notified to
+##                      send the last update.
+##   "timeout" ... the attempt is finished because it timed out.
+##   "user_finished" ... the attempt is finished because the user finished it
+##   "feedback" ... the attempt is finished and shown for feedback
+##   NA,FALSE ... no attempt is available
+#' @importFrom shiny getDefaultReactiveDomain
+#' @importFrom rlang arg_match0
+set_attempt_status <- function (status, session = getDefaultReactiveDomain()) {
+  session_env <- get_session_env(session)
+  if (is.null(session_env$attempt_state)) {
+    abort("Attempt state not initialized")
+  }
+
+  if (is.character(status)) {
+    status <- arg_match0(status, values = c("soft_timeout",
+                                            "timeout",
+                                            "user_finished",
+                                            "feedback"))
+  } else {
+    status <- isTRUE(status)
+  }
+
+  session_env$attempt_state$status <- status
 }
 
 #' @importFrom shiny getDefaultReactiveDomain
@@ -402,12 +442,11 @@ get_attempt_status <- function (session = getDefaultReactiveDomain()) {
 finish_current_attempt <- function (session = getDefaultReactiveDomain(), timeout = FALSE) {
   session_env <- get_session_env()
   current_attempt <- session_env$attempt_state$current
+  attempt_status <- isolate(get_attempt_status())
 
   # Only continue if the attempt is still active.
-  if (!is.null(current_attempt) && isTRUE(isolate(session_env$attempt_state$status))) {
-    # First invalidate the attempt.
-    session_env$attempt_state$status <- if (isTRUE(timeout)) { 'timeout' } else { 'user_finished' }
-
+  if (!is.null(current_attempt) &&
+      (isTRUE(attempt_status) || identical(attempt_status, 'soft_timeout'))) {
     # If the reason for invalidating the attempt is because of a timeout,
     # save the data for the current section(s), but don't try to finish the attempt again.
     if (isTRUE(timeout)) {
@@ -419,6 +458,9 @@ finish_current_attempt <- function (session = getDefaultReactiveDomain(), timeou
       } else {
         save_section_data(session)
       }
+      set_attempt_status('timeout')
+    } else {
+      set_attempt_status('user_finished')
     }
 
     return(sp_finish_attempt(current_attempt$id, Sys.time()))

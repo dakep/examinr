@@ -11,6 +11,7 @@ const exercises = require('./exercises')
 const kRecalculatedDelay = 500
 let currentSectionEl
 let currentSection = {}
+let sectionsConfig
 let actualSections
 
 Shiny.addCustomMessageHandler('__.examinr.__-sectionChange', function (section) {
@@ -64,7 +65,7 @@ Shiny.addCustomMessageHandler('__.examinr.__-sectionChange', function (section) 
   }
 })
 
-function checkMandatory (event) {
+function checkAnswers (event) {
   // Find mandatory questions (either in the current section only, or in the entire document)
   const mandatoryQuestions = event.data.context.find('.examinr-question.examinr-mandatory-question')
 
@@ -110,7 +111,7 @@ function checkMandatory (event) {
 
 module.exports = {
   init: function () {
-    const sectionsConfig = JSON.parse($('script.examinr-sections-config').remove().text() || '{}')
+    sectionsConfig = JSON.parse($('script.examinr-sections-config').remove().text() || '{}')
 
     actualSections = $('section.level1')
     actualSections.each(function () {
@@ -118,11 +119,12 @@ module.exports = {
       // Add the correct label to each section
       accessibility.ariaLabelledBy(section, section.children('h1'))
 
-      // Intercept section navigation to check for mandatory questions being answers.
-      if (sectionsConfig.progressive && section.find('.examinr-question.examinr-mandatory-question').length > 0) {
-        section.find('.examinr-section-next').on("click", { context: section }, checkMandatory)
-      } else if (!sectionsConfig.progressive) {
-        section.find('.examinr-section-next').on("click", { context: $('main') }, checkMandatory)
+      // Intercept section navigation to ensure mandatory questions are answered and exercise
+      // code is being sent to the server.
+      if (sectionsConfig.progressive) {
+        section.find('.examinr-section-next').on("click", { context: section }, checkAnswers)
+      } else {
+        section.find('.examinr-section-next').on("click", { context: $('main') }, checkAnswers)
       }
     })
 
@@ -151,6 +153,24 @@ module.exports = {
         actualSections = actualSections.slice(0, -1)
       }
     }
+  },
+
+  /**
+   * Submit all questions and exercise code in the currently visible section
+   * (or all sections if all are visible).
+   */
+  submitCurrentSection: function (currentSection) {
+    if (!currentSection) {
+      if (!sectionsConfig.progressive) {
+        currentSection = $("main")
+      } else {
+        currentSection = actualSections.filter(":visible")
+      }
+    }
+    // By moving the focus to another element, all answers that are inputs are submitted
+    currentSection.find(".examinr-section-next").trigger("focus")
+    // Then we also have to force-submit the exercises
+    exercises.forceSubmit(false, currentSection)
   },
 
   showAll: function () {
