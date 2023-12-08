@@ -421,7 +421,7 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
         read_stmt <- sprintf('SELECT
                                  section
                               FROM %s
-                              WHERE attempt_id = $4
+                              WHERE attempt_id = $1
                               ORDER BY saved_at DESC
                               LIMIT 1', section_data_table)
         db_tbl <- DBI::dbGetQuery(conn, read_stmt, params = list(attempt_id), n = 1L)

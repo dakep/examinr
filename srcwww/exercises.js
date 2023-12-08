@@ -116,6 +116,7 @@ function initializeExerciseEditor () {
 
   const editor = attachAceEditor(editorId, code)
   editor.setFontSize(0.8125 * parseFloat(exercise.find('.card-body').css('font-size')))
+  editor.setValue(code.trimEnd() + '\n')
   editor.commands.addCommand({
     name: 'run_rcode',
     bindKey: { win: 'Ctrl+Enter', mac: 'Command+Enter' },
