@@ -135,7 +135,7 @@ observe_section_change <- function (x, section_id = NULL, ..., label = NULL, env
     attempt_status <- isolate(get_attempt_status(session)) # Don't trigger if the status changes.
     current_section <- get_current_section(session)
     if ((isTRUE(attempt_status) || identical(attempt_status, 'feedback') ||
-         isTRUE(current_section$is_final_section)) &&
+         (!isTRUE(current_section) && isTRUE(current_section$is_final_section))) &&
         (isTRUE(current_section) || is.null(section_id) || identical(current_section$id, section_id))) {
       isolate(handler_fun())
     }
