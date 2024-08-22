@@ -92,6 +92,7 @@ exercise:
   notYetRun: "Run the code by clicking the button on the bottom right corner of the exercise."
   syntaxError: "Code is invalid: <pre><code>{diagnostics}</code></pre>"
   unknownError: "Code cannot be run."
+  setupError: "Code environment cannot be set up."
   emptyResult: "Code executed successfully, but no output generated."
   timeout: "Code takes too long to execute."
   success: "Code executed successfully."

@@ -25,6 +25,13 @@ exercise_chunk_server <- function (exercise_data) {
                              solution = solution,
                              session = session)
 
+  ## Initial value for the output: empty
+  session$output[[exercise_data$output_id]] <- \() {
+    list(result = NULL,
+         status_class = 'info',
+         status = get_status_message('exercise')$notYetRun)
+  }
+
   observeEvent(session$input[[exercise_data$input_id]], {
     input_data <- session$input[[exercise_data$input_id]]
 
@@ -224,6 +231,7 @@ exercise_promise <- function (input_data, exercise_data, session, timeout) {
 #' @param user_code character vector of user code.
 #' @param support_code list of support codes.
 #' @param chunk_options chunk options for the _user_ code.
+#' @param status_messages all available status messages
 #' @param envir environment in which to execute the user and support code.
 #' @param label the exercise label
 #'
@@ -235,8 +243,15 @@ exercise_promise <- function (input_data, exercise_data, session, timeout) {
 #' @importFrom rlang local_use_cli
 #' @export
 evaluate_exercise <- function (user_code, support_code, chunk_options, status_messages, envir, label) {
-  tmpfile <- tempfile(fileext = '.Rmd')
-  on.exit(unlink(tmpfile, force = TRUE))
+  # Set package-internal state if necessary
+  set_status_messages(status_messages)
+
+  tmpwd <- tempfile(pattern = 'exminrwd')
+  tmpfile <- tempfile(pattern = 'codechunk', fileext = '.Rmd', tmpdir = tmpwd)
+  if (!isTRUE(dir.create(tmpwd, mode = '0700', showWarnings = FALSE))) {
+    return(exercise_result_error(get_status_message('exercise')$setupError))
+  }
+  on.exit(unlink(tmpwd, recursive = TRUE, force = TRUE), add = TRUE)
 
   write_exercise_rmd(tmpfile, user_code, support_code, chunk_options$engine)
   out <- html_fragment(mathjax = FALSE,
@@ -250,9 +265,6 @@ evaluate_exercise <- function (user_code, support_code, chunk_options, status_me
 
   out$knitr$opts_chunk <- c(chunk_options,
                             list(eval = TRUE, echo = FALSE, include = TRUE, fig.keep = 'all', dev = 'png'))
-
-  # Set package-internal state if necessary
-  set_status_messages(status_messages)
 
   # Make error messages from rlang not use CLI:
   local_use_cli(format = FALSE)

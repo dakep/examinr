@@ -49,7 +49,7 @@ Shiny.addCustomMessageHandler('__.examinr.__-sectionChange', function (section) 
       // hide the shim after it's recalculated
       outputElements.one('shiny:recalculated', utils.debounce(function () {
         utils.toggleShim($('body'), false)
-      }, kRecalculatedDelay, false))
+      }, kRecalculatedDelay, 'delayed'))
     } else {
       utils.toggleShim($('body'), false)
     }

@@ -101,7 +101,7 @@ function loadFromAttemptStorage () {
     }
 
     if (editor) {
-      editor.on('change', utils.debounce(storeEditorValue, kDebounceEditorChange, false))
+      editor.on('change', utils.debounce(storeEditorValue, kDebounceEditorChange, 'delayed'))
     }
   })
 }

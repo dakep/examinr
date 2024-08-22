@@ -1,7 +1,8 @@
 Package: examinr
 Type: Package
 Title: Online Exams in R via Interactive Shiny Documents
-Version: 0.3.106
+Version: 0.4.0
+Date: 2024-08-22
 Authors@R: person("David", "Kepplinger", , "david.kepplinger@gmail.com",
         role = c("aut", "cre"))
 Description: Create online exams in R as interactive shiny documents.
@@ -61,5 +62,5 @@ Encoding: UTF-8
 LazyData: true
 Language: en-US
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 VignetteBuilder: knitr

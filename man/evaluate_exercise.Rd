@@ -20,6 +20,8 @@ evaluate_exercise(
 
 \item{chunk_options}{chunk options for the \emph{user} code.}
 
+\item{status_messages}{all available status messages}
+
 \item{envir}{environment in which to execute the user and support code.}
 
 \item{label}{the exercise label}

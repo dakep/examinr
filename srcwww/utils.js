@@ -171,9 +171,20 @@ module.exports = {
    * Debounce the given function, calling it only once for a series of shortly spaced calls.
    * @param {function} fun function to debounce
    * @param {integer} wait time (in ms) to wait before calling `fun`
-   * @param {boolean} immediate if `fun` should be called immediately on the raising edge, not the falling edge.
+   * @param {boolean} when if `fun` should be called immediately on the raising edge ('immediate'),
+   *   the falling edge ('delayed'; default) or both ('both').
    */
-  debounce: function (fun, wait, immediate) {
+  debounce: function (fun, wait, when) {
+    if (when === true) {
+      when = 'immediate'
+    } else if (when === false || when === undefined) {
+      when = 'delayed'
+    }
+
+    const trigger_delayed = when === 'delayed' || when === 'both'
+    const trigger_immediate = when === 'immediate' || when === 'both'
+
+    let trigger_delayed_now = trigger_delayed
     let timerId = null
 
     return function () {
@@ -181,11 +192,12 @@ module.exports = {
       const args = arguments
       const delayed = function () {
         timerId = null
-        if (!immediate) {
+        if (trigger_delayed_now) {
           fun.apply(context, args)
         }
       }
-      const callImmediately = immediate && !timerId
+      const callImmediately = trigger_immediate && !timerId
+      trigger_delayed_now = trigger_delayed && !callImmediately
       window.clearTimeout(timerId)
       timerId = window.setTimeout(delayed, wait)
       if (callImmediately) {

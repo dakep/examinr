@@ -135,6 +135,9 @@ function updateAttemptSelector (attempts, current) {
       if (!current.finishedAt) {
         sel.addClass('is-not-finished')
       }
+    } else {
+      sel.val(attempts[0].id)
+      sel.trigger("change")
     }
   } else {
     sel.prop('disabled', true)
@@ -272,7 +275,7 @@ function saveFeedbackCallback (qid) {
         maxPoints: feedback.maxPoints
       })
     }
-  }, saveFeedbackDelay)
+  }, saveFeedbackDelay, 'both')
 }
 
 function pointsChanged (event) {

@@ -155,8 +155,10 @@ initialize_feedback <- function (session, exam_metadata, sections) {
 
     if (length(all_attempts) > 0L) {
       attempt_obj <- all_attempts[[new_attempt_id %||% 1L]]
-      # "activate" attempt
-      update_attempt_state(session, status = 'feedback', attempt = attempt_obj)
+      if (!is.null(attempt_obj)) {
+        # "activate" attempt
+        update_attempt_state(session, status = 'feedback', attempt = attempt_obj)
+      }
       # send feedback to client
       send_feedback(attempt_obj, all_attempts, session = session)
     } else if (isTRUE(session_env$feedback_grading)) {
