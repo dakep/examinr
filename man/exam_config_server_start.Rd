@@ -67,13 +67,13 @@ the sections. See section \emph{Data provider} for details.}
 \description{
 Set the global exam configuration. Must be called from the server context
 (i.e., in an R code chunk with \code{context="server"}).
-
-\strong{Deprecated} in favor of the function \code{exam_config_server_start()}.
-
-\strong{Deprecated} in favor of the function \code{exam_document_setup()}.
 }
 \details{
 Only non-missing options are set, the others are kept at their previous values.
+
+\code{exam_config()} is \strong{deprecated} in favor of the function \code{exam_config_server_start()}.
+
+\code{exam_setup()} is \strong{deprecated} in favor of the function \code{exam_document_setup()}.
 }
 \section{Data provider}{
 

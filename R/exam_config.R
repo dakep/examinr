@@ -196,8 +196,8 @@ exam_config_server_start <- function (auth_provider, storage_provider, exercise_
 
 #' @rdname exam_config_server_start
 #'
-#' @description
-#' **Deprecated** in favor of the function `exam_config_server_start()`.
+#' @details
+#' `exam_config()` is **deprecated** in favor of the function `exam_config_server_start()`.
 #'
 #' @export
 #'
@@ -303,8 +303,8 @@ exam_document_setup <- function (points_format, data_provider, cache_data = FALS
 
 #' @rdname exam_config_server_start
 #'
-#' @description
-#' **Deprecated** in favor of the function `exam_document_setup()`.
+#' @details
+#' `exam_setup()` is **deprecated** in favor of the function `exam_document_setup()`.
 #'
 #' @export
 #'
