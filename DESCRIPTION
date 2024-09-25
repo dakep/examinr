@@ -1,7 +1,7 @@
 Package: examinr
 Type: Package
 Title: Online Exams in R via Interactive Shiny Documents
-Version: 0.4.1
+Version: 0.4.2
 Date: 2024-09-25
 Authors@R: person("David", "Kepplinger", , "david.kepplinger@gmail.com",
         role = c("aut", "cre"))

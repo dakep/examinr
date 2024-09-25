@@ -48,7 +48,7 @@ const customRCompleter = {
 
 // this message handler is called when new autocomplete results are available.
 Shiny.addCustomMessageHandler('__.examinr.__-autocomplete', function (suggestions) {
-  const completions = suggestions.map(function (item) {
+  const completions = suggestions.map(function (item, index) {
     // Items are an array of the form [namespace (str), symbol (str), isFunction (bool)]
     if (!item || !item[1]) {
       return null
@@ -56,7 +56,7 @@ Shiny.addCustomMessageHandler('__.examinr.__-autocomplete', function (suggestion
     return {
       caption: item[1] + (item[2] ? '()' : ''),
       value: item[1],
-      score: 0,
+      score: -index,
       meta: item[0] ? ('{' + item[0] + '}') : '',
       is_function: item[2],
       completer: customRCompleter
