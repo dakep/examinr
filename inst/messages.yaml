@@ -87,6 +87,10 @@ exercise:
   panelTitle: "Coding question"
   label: "Type your R code here"
   outputTitle: "Code output"
+  points:
+    zero: "Not graded"
+    one: "1 point"
+    many: "%d points"
   # The following messages pertain to individual exercise chunks.
   # If a message should be disabled, it can be left blank
   notYetRun: "Run the code by clicking the button on the bottom right corner of the exercise."

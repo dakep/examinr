@@ -33,6 +33,6 @@ Note that pandoc heading identifiers (anything in \code{{}} at the end of the se
 }
 \seealso{
 Other exam configuration: 
-\code{\link{exam_config}()}
+\code{\link{exam_config_server_start}()}
 }
 \concept{exam configuration}

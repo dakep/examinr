@@ -5,11 +5,12 @@
 #' @include storage_provider.R
 .exam_configuration <- state_frame(list(
   points_format = function (pts) {
-    browser()
-    if (pts == 1) {
-      return('1 point')
+    if (pts <= 0) {
+      return(get_status_message("exercise")$points$zero)
+    } else if (pts == 1) {
+      return(get_status_message("exercise")$points$one)
     } else {
-      return(sprintf('%d points', pts))
+      return(sprintf(get_status_message("exercise")$points$many, pts))
     }
   },
   data_provider = function (...) list(),
@@ -169,10 +170,10 @@
 #' @importFrom knitr opts_current
 #' @family exam configuration
 #' @export
-exam_config <- function (auth_provider, storage_provider, exercise_data_provider, exercise_evaluator, seed_attempt,
-                         points_format, cache_data = FALSE) {
+exam_config_server_start <- function (auth_provider, storage_provider, exercise_data_provider,
+                                      exercise_evaluator, seed_attempt, cache_data = FALSE) {
   if (!is_knitr_context('server-start')) {
-    abort("`exam_config()` must be called in a context='server-start' chunk.")
+    abort("`exam_config_server_start()` must be called in a context='server-start' chunk.")
   }
 
   if (!is_missing(exercise_data_provider)) {
@@ -193,7 +194,20 @@ exam_config <- function (auth_provider, storage_provider, exercise_data_provider
     seed_attempt = seed_attempt)
 }
 
-#' @rdname exam_config
+#' @rdname exam_config_server_start
+#'
+#' @description
+#' **Deprecated** in favor of the function `exam_config_server_start()`.
+#'
+#' @export
+#'
+#' @importFrom lifecycle deprecate_warn
+exam_config <- function (...) {
+  deprecate_warn("0.4.0", "exam_config()", "exam_config_server_start()")
+  exam_config_server_start(...)
+}
+
+#' @rdname exam_config_server_start
 #'
 #' @param fun a data provider function which generates the user-specific (e.g., randomized) data for
 #'   the sections. See section _Data provider_ for details.
@@ -228,7 +242,7 @@ data_provider <- function (fun, cache_data = FALSE) {
   }
 }
 
-#' @rdname exam_config
+#' @rdname exam_config_server_start
 #'
 #' @param points_format formats for showing the number of points per question. The first format
 #'   is for plural, the second for singular. If only a single format is given, it is used for both plural and
@@ -241,9 +255,9 @@ data_provider <- function (fun, cache_data = FALSE) {
 #' @importFrom withr with_preserve_seed
 #' @importFrom rlang abort missing_arg is_function
 #' @export
-exam_setup <- function (points_format, data_provider, cache_data = FALSE) {
+exam_document_setup <- function (points_format, data_provider, cache_data = FALSE) {
   if (!is_knitr_context('setup')) {
-    abort("`exam_setup()` must be called in the setup chunk.")
+    abort("`exam_document_setup()` must be called in the setup chunk.")
   }
 
   if (!missing(points_format)) {
@@ -285,6 +299,19 @@ exam_setup <- function (points_format, data_provider, cache_data = FALSE) {
       .exam_configuration$set(data_provider = cached_data_provider(data_provider, isTRUE(cache_data)))
     }
   }
+}
+
+#' @rdname exam_config_server_start
+#'
+#' @description
+#' **Deprecated** in favor of the function `exam_document_setup()`.
+#'
+#' @export
+#'
+#' @importFrom lifecycle deprecate_warn
+exam_setup <- function (...) {
+  deprecate_warn("0.4.0", "exam_setup()", "exam_document_setup()")
+  exam_document_setup(...)
 }
 
 ## Safe calling of to the configured storage provider
