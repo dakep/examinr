@@ -45,6 +45,7 @@ with_searchpath_and_dir <- function (envir, dir, expr) {
 
 #' @importFrom shiny observeEvent
 #' @importFrom rlang warn
+#' @importFrom utils rc.options rc.settings
 #' @importFrom stringr str_split fixed str_sub
 bind_exercise_autocomplete <- function () {
   moduleServer('__.examinr.__', function (input, output, session) {
@@ -56,6 +57,20 @@ bind_exercise_autocomplete <- function () {
         list()
       } else {
         tryCatch({
+          # Configure R's completion generator
+          # set completion settings
+          old_rc_options <- as.list(rc.options())
+          rc.options(package.suffix = "::",
+                     funarg.suffix = " = ",
+                     function.suffix = "(")
+          on.exit(do.call(rc.options, old_rc_options), add = TRUE)
+
+          old_rc_settings <- as.list(rc.settings())
+          rc.settings(ops = TRUE, ns = TRUE, args = TRUE, func = FALSE,
+                      ipck = TRUE, S3 = TRUE, data = TRUE, help = FALSE,
+                      argdb = TRUE, fuzzy = FALSE, files = TRUE, quotes = TRUE)
+          on.exit(do.call(rc.settings, old_rc_settings), add = TRUE)
+
           utils <- asNamespace('utils')
           utils$.assignLinebuffer(payload$code)
           utils$.assignEnd(nchar(payload$code))
@@ -63,16 +78,32 @@ bind_exercise_autocomplete <- function () {
 
           with_searchpath_and_dir(envir, 'examinr_autocompletion_sandbox', {
             utils$.completeToken()
-            # Split the completions at the ns token. We don't care if it's an exported or unexported object,
+            # Split the completions at the ns token.
+            # We don't care if it's an exported or unexported object,
             # as the namespace will be stripped (unless the element on the right is empty)
             completions <- str_split(as.character(utils$.retrieveCompletions()), ':{2,3}', n = 2L)
 
-            lapply(completions, function (symbol_ns) {
+            # For files and directories, only allow listing files inside the
+            # autocompletion sandbox directory.
+            # This also allows all tokens that are not files/directories.
+            # If a token is also a file/directory outside the sandbox directory,
+            # it will also be removed, but the chance that a valid R token matches
+            # something outside the working directory is very small.
+            allowed_files <- vapply(completions, FUN.VALUE = logical(1), FUN = \(fname) {
+              tryCatch({
+                fname <- normalizePath(fname, mustWork = TRUE)
+                str_starts(fname, coll(getwd()))
+              },
+              error = \(e) TRUE)
+            })
+
+            lapply(completions[allowed_files], function (symbol_ns) {
               ns <- globalenv()
               ns_name <- ''
               symbol <- symbol_ns[[1L]]
               if (length(symbol_ns) == 1L) {
-                ns_name <- tryCatch(getNamespaceName(environment(get(symbol)))[[1L]], error = function (e) '')
+                ns_name <- tryCatch(getNamespaceName(environment(get(symbol)))[[1L]],
+                                    error = function (e) '')
               } else {
                 ns <- asNamespace(symbol_ns[[1L]])
                 symbol <- if (nzchar(symbol_ns[[2L]])) {
