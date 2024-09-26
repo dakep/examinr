@@ -1,10 +1,141 @@
 ---
-title: "Exam"
-output: examinr::exam_document
-exam:
-  id: myexam
-  version: 0.1.0
-  render: server
-  order: fixed
+title: "Exam with random elements"
+lang: en-US
+author: "Author"
+date: last-modified
+output:
+  examinr::exam_document:
+    id: examinr.test.random
+    opens: 2024-09-01 23:59 America/New_York
+    closes: 2139-08-31 23:59 America/New_York
+    feedback: 2024-09-01 23:59 America/New_York
+    timelimit: 1:00
+    grace_period: 60
+    version: 1.0.0
 runtime: shiny_prerendered
 ---
+
+```{r setup, include=FALSE}
+# Load the package
+library(examinr)
+
+subset_data <- function (...) {
+  exam_data <- data.frame(
+    a = sample(letters[1:5], size = 100, replace = TRUE),
+    x = rnorm(100),
+    y = rnorm(100)
+  )
+  
+  list(exam_data = exam_data,
+       question_el = exam_data$a[[1]])
+}
+
+data_provider(subset_data)
+
+exercise_options(autocomplete = TRUE,
+                 lines = 20,
+                 timeout = 60,
+                 setup = 'all-probs-setup')
+```
+
+```{r, context="server-start"}
+requireNamespace(c('pool', 'RSQLite', 'future', 'shiny', 'examinr'))
+
+configure_attempts("preview",
+                   opens = "2024-08-30 13:30 America/New_York",
+                   timelimit = "2:00")
+# Evaluate exercises asynchronously in several worker process
+future::plan(future::multisession, workers = 2)
+
+# Create a pool of connections to a temporary SQLite database
+sqlite_db <- tempfile("examinr-sqlite")
+db_pool <- pool::dbPool(drv = RSQLite::RSQLite(),
+                        dbname = tempfile("examinr-sqlite"),
+                        minSize = 1,
+                        maxSize = 5)
+
+# Close all connections in the pool shiny stops
+shiny::onStop(\() {
+  pool::poolClose(db_pool)
+  unlink(sqlite_db)
+})
+
+# Configure the use of the SQLite database as storage for the exam
+exam_config_server_start(
+  auth_provider = ui_token_auth(data.frame(
+    token = c('learner', 'instructor'),
+    grading = c(FALSE, TRUE))),
+  storage_provider = dbi_storage_provider(db_pool, 'attempts', 'section_data'))
+
+# Configure the data provider for the exercise code chunks
+exam_config_server_start(
+  exercise_data_provider = function (label, attempt, session, ...) {
+    prob_data <- subset_data()
+    env <- new.env()
+    env$exam_data <- prob_data$exam_data
+    
+    for (i in setdiff(names(prob_data), ls(env))) {
+      assign(sprintf('.__%s__', i), prob_data[[i]], envir = env)
+    }
+    env
+  })
+```
+
+```{r all-probs-setup}
+# Save data in sub-folder
+dir.create('data', mode = '0700')
+write.csv(exam_data, 'data/exam_data.csv')
+rm(exam_data)
+```
+
+# Introduction
+
+This is a sample exam with randomized questions and data.
+
+# Problem 1
+
+Read the exam data from the file *exam_data.csv* in the *data/* sub-folder.
+
+Plot the variables `x` versus `y` for all rows where variable `a` is `r question_el`.
+How many data points are there?
+
+
+```{r prob1, exercise=TRUE, exercise.solution=TRUE, exercise.points=1}
+
+
+```
+
+```{r prob1-solution, eval=FALSE}
+exam_data <- read.csv("data/exam_data.csv")
+subset <- exam_data[exam_data$a == .__question_el__, ]
+plot(y ~ x, data = subset)
+nrow(subset)
+```
+
+
+# Problem 2
+
+Now answer some questions related to Problem 1.
+
+```{r prob1-text_question}
+text_question(
+  "What are your observations?",
+  points = 2,
+  type = "textarea",
+  height = '8em'
+)
+```
+
+```{r prob1-text_question}
+text_question(
+  "How many observations are there?",
+  points = 1,
+  type = "numeric",
+  height = '8em'
+)
+```
+
+# Congratulations
+
+You successfully submitted quiz 1!
+

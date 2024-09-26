@@ -35,7 +35,8 @@ Suggests:
   DBI,
   pool,
   testthat,
-  sodium
+  sodium,
+  RSQLite
 Collate:
     'authentication_provider.R'
     'create_exam_rmd.R'
