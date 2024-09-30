@@ -47,17 +47,18 @@ configure_attempts("preview",
 # Evaluate exercises asynchronously in several worker process
 future::plan(future::multisession, workers = 2)
 
-# Create a pool of connections to a temporary SQLite database
-sqlite_db <- tempfile("examinr-sqlite")
-db_pool <- pool::dbPool(drv = RSQLite::RSQLite(),
-                        dbname = tempfile("examinr-sqlite"),
+# Create a pool of connections to a ephemeral in-memory SQLite database
+db_pool <- pool::dbPool(drv = RSQLite::SQLite(),
+                        dbname = ":memory:",
                         minSize = 1,
                         maxSize = 5)
+
+# Setup the proper database structure
+setup_database(db_pool)
 
 # Close all connections in the pool shiny stops
 shiny::onStop(\() {
   pool::poolClose(db_pool)
-  unlink(sqlite_db)
 })
 
 # Configure the use of the SQLite database as storage for the exam
@@ -126,7 +127,7 @@ text_question(
 )
 ```
 
-```{r prob1-text_question}
+```{r prob1-text_question-2}
 text_question(
   "How many observations are there?",
   points = 1,
@@ -137,5 +138,5 @@ text_question(
 
 # Congratulations
 
-You successfully submitted quiz 1!
+You successfully submitted the exam!
 

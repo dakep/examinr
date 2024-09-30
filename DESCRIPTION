@@ -40,6 +40,7 @@ Suggests:
 Collate:
     'authentication_provider.R'
     'create_exam_rmd.R'
+    'dbi_utilities.R'
     'state_frame.R'
     'exam_attempts.R'
     'storage_provider.R'

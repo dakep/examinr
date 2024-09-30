@@ -92,6 +92,7 @@ CREATE INDEX section_data_index ON section_data
 }
 \seealso{
 Other storage configuration: 
+\code{\link{setup_database}()},
 \code{\link{storage_provider}}
 }
 \concept{storage configuration}

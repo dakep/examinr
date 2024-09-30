@@ -114,6 +114,7 @@ In case of an error, or if there is no data available for the given filter, the 
 
 \seealso{
 Other storage configuration: 
-\code{\link{dbi_storage_provider}()}
+\code{\link{dbi_storage_provider}()},
+\code{\link{setup_database}()}
 }
 \concept{storage configuration}
