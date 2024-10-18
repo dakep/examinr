@@ -482,7 +482,7 @@ format_points <- function (points) {
     }
     .exam_configuration$get('points_format')(points[[1L]])
   }, error = function (e) {
-    abort("Cannot format points: ", cnd_message(e))
+    abort(paste("Cannot format points:", cnd_message(e)))
   })
   if (!is.character(ptstr) || length(ptstr) != 1L) {
     abort("Wrong points string returned from formatter.")
