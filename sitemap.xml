@@ -1,90 +1,39 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://dakep.github.io/examinr/index.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/authentication_provider.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/configure_attempts.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/dbi_storage_provider.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/evaluate_exercise.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/exam_config.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/exam_document.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/exercise_evaluator.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/exercise_options.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/exercise_result.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/knit_print.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/mc_question.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/password_auth.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/rsconnect_auth.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/section_config.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/status_message_template.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/storage_provider.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/reference/text_question.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/config_access.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/config_storage.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/deployment.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/deployment_shinyapps.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/examinr.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/exercises.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/grading.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/localization.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/navigation.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/question_types.html</loc>
-  </url>
-  <url>
-    <loc>https://dakep.github.io/examinr/articles/randomized_exam.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://dakep.github.io/examinr/404.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/LICENSE-text.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/config_access.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/config_storage.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/deployment.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/deployment_shinyapps.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/examinr.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/exercises.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/grading.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/index.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/localization.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/navigation.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/question_types.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/articles/randomized_exam.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/authors.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/index.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/news/index.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/authentication_provider.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/configure_attempts.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/dbi_storage_provider.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/evaluate_exercise.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/exam_config_server_start.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/exam_document.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/exercise_evaluator.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/exercise_options.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/exercise_result.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/index.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/knit_print.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/mc_question.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/password_auth.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/rsconnect_auth.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/section_config.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/setup_database.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/status_message_template.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/storage_provider.html</loc></url>
+<url><loc>https://dakep.github.io/examinr/reference/text_question.html</loc></url>
 </urlset>
+

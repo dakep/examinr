@@ -6,20 +6,21 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Coding exercises • examinr</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
 <meta property="og:title" content="Coding exercises">
-<meta property="og:description" content="examinr">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+
+
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -32,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">examinr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.2</span>
       </span>
     </div>
 
@@ -45,9 +46,9 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
@@ -62,7 +63,8 @@
       <a href="../articles/exercises.html">Coding exercises</a>
     </li>
     <li class="divider">
-    <li>
+    </li>
+<li>
       <a href="../articles/grading.html">Grading</a>
     </li>
     <li>
@@ -72,7 +74,8 @@
       <a href="../articles/deployment.html">Deploying (general)</a>
     </li>
     <li class="divider">
-    <li class="dropdown-header">Configuration</li>
+    </li>
+<li class="dropdown-header">Configuration</li>
     <li>
       <a href="../articles/navigation.html">Section navigation</a>
     </li>
@@ -87,12 +90,15 @@
     </li>
   </ul>
 </li>
+<li>
+  <a href="../news/index.html">Changelog</a>
+</li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/dakep/examinr/">
+  <a href="https://github.com/dakep/examinr/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul>
@@ -103,7 +109,7 @@
 </div>
 <!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
@@ -111,74 +117,115 @@
       <h1 data-toc-skip>Coding exercises</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/dakep/examinr/blob/master/vignettes/exercises.Rmd"><code>vignettes/exercises.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/dakep/examinr/blob/main/vignettes/exercises.Rmd" class="external-link"><code>vignettes/exercises.Rmd</code></a></small>
       <div class="hidden name"><code>exercises.Rmd</code></div>
 
     </div>
 
     
     
-<p>Coding exercises allow you to incorporate assessing R coding skills in your exams. Exercises are modeled after the concept with the same name in the <a href="https://rstudio.github.io/learnr/exercises.html">learnr package</a>. Although there are many similarities between exercises in examinr and learnr, there are also some important differences, which are highlighted below to avoid issues.</p>
-<div id="using-exercises-in-exams" class="section level2">
-<h2 class="hasAnchor">
-<a href="#using-exercises-in-exams" class="anchor"></a>Using exercises in exams</h2>
-<p>Using exercises in an exam document is as simple as adding an R code chunk to the document, with chunk option <code>exercise=TRUE</code>, for example:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode md"><code class="sourceCode markdown"><a class="sourceLine" id="cb1-1" data-line-number="1">```{r question_1, exercise=TRUE}</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="fu"># The user will see the current code pre-filled in the editor</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">```</a></code></pre></div>
+<p>Coding exercises allow you to incorporate assessing R coding skills
+in your exams. Exercises are modeled after the concept with the same
+name in the <a href="https://rstudio.github.io/learnr/exercises.html" class="external-link">learnr
+package</a>. Although there are many similarities between exercises in
+examinr and learnr, there are also some important differences, which are
+highlighted below to avoid issues.</p>
+<div class="section level2">
+<h2 id="using-exercises-in-exams">Using exercises in exams<a class="anchor" aria-label="anchor" href="#using-exercises-in-exams"></a>
+</h2>
+<p>Using exercises in an exam document is as simple as adding an R code
+chunk to the document, with chunk option <code>exercise=TRUE</code>, for
+example:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode md"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="in">```{r question_1, exercise=TRUE}</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="in"># The user will see the current code pre-filled in the editor</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="in">```</span></span></code></pre></div>
 <p>The user would see this as</p>
-<div class="figure">
-<img src="figures/exercises/simple_exercise.png" alt="A simple coding exercise block." style="width:75.0%"><p class="caption">A simple coding exercise block.</p>
+<div class="float">
+<img src="figures%2Fexercises%2Fsimple_exercise.png" style="width:75.0%" alt="A simple coding exercise block."><div class="figcaption">A simple coding exercise block.</div>
 </div>
-<p>The code in the exercise chunk is pre-filled in the editor, but will not be evaluated automatically. The code will only be evaluated when the user clicks the <em>Run code</em> button.</p>
-<p><strong>Difference to learnr:</strong> user code has access only to the environment created by the exercise data provider. User code does not have access to any R objects from the R markdown document.</p>
-<div id="setup-and-solution-chunks" class="section level3">
-<h3 class="hasAnchor">
-<a href="#setup-and-solution-chunks" class="anchor"></a>Setup and solution chunks</h3>
-<p>Exercises can reference other R code chunks in the document by their label to be used as setup code or solution. Neither setup nor solution chunks will be evaluated when rendering the document, but are extracted for later use.</p>
-<p>Setup chunks are run immediately before the user code in the exact same environment. This is useful for preparing the environment (e.g., creating files or transforming data). Setup chunks can also create output (if the chunk options are set accordingly) which is included in the output of the user code. It is important to know that the setup chunk, just like user code, doesn’t have access to the environment of the exam document. Both are completely separated. Furthermore, the state of the random number generator in the setup chunk is not determined by the current attempt. As such, randomization in the setup chunk is <strong>not reproducible.</strong> Any randomization must be done in the exercise data provider, as explained in the <a href="randomized_exam.html#randomization-in-exercises">companion vignette on randomizing exams</a>.</p>
-<p>Solution chunks are currently only used for feedback and are not intended for grading the user code. They are never evaluated.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode markdown"><code class="sourceCode markdown"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="fu"># Boxplots</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">You are given a dataset available as CSV file <span class="bn">`cars_data.csv`</span>.</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">Write the R code to load the data set into R and create side-by-side boxplots</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">of the mileage (column <span class="bn">`mpg`</span>), grouped by the number of cylinders (column <span class="bn">`cyl`</span>).</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">```{r q_2-setup}</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="fu"># The code in the setup chunk is run immediately before the user code.</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="fu"># We can, for instance, write data to a file which is accessible by the user code.</span></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">write.csv(mtcars, file = 'cars_data.csv', row.names = TRUE)</a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">```</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">```{r question_2, exercise=TRUE, exercise.setup='q_2-setup', exercise.solution='q_2-sol'}</a>
-<a class="sourceLine" id="cb2-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">```</a>
-<a class="sourceLine" id="cb2-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">```{r q_2-sol}</a>
-<a class="sourceLine" id="cb2-18" data-line-number="18"><span class="fu"># First, read in the file</span></a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">cars_data &lt;- read.csv('cars_data.csv')</a>
-<a class="sourceLine" id="cb2-20" data-line-number="20"><span class="fu"># Second, create the boxplots</span></a>
-<a class="sourceLine" id="cb2-21" data-line-number="21">boxplot(mpg ~ cyl, data = cars_data)</a>
-<a class="sourceLine" id="cb2-22" data-line-number="22">```</a></code></pre></div>
-<p>During the exam, the user would only see the exercise chunk and have access to the environment transformed by the setup chunk:</p>
-<div class="figure">
-<img src="figures/exercises/boxplot_user.png" alt="Exercise with setup and solution chunks (during the exam)" style="width:75.0%"><p class="caption">Exercise with setup and solution chunks (during the exam)</p>
+<p>The code in the exercise chunk is pre-filled in the editor, but will
+not be evaluated automatically. The code will only be evaluated when the
+user clicks the <em>Run code</em> button.</p>
+<p><strong>Difference to learnr:</strong> user code has access only to
+the environment created by the exercise data provider. User code does
+not have access to any R objects from the R markdown document.</p>
+<div class="section level3">
+<h3 id="setup-and-solution-chunks">Setup and solution chunks<a class="anchor" aria-label="anchor" href="#setup-and-solution-chunks"></a>
+</h3>
+<p>Exercises can reference other R code chunks in the document by their
+label to be used as setup code or solution. Neither setup nor solution
+chunks will be evaluated when rendering the document, but are extracted
+for later use.</p>
+<p>Setup chunks are run immediately before the user code in the exact
+same environment. This is useful for preparing the environment (e.g.,
+creating files or transforming data). Setup chunks can also create
+output (if the chunk options are set accordingly) which is included in
+the output of the user code. It is important to know that the setup
+chunk, just like user code, doesn’t have access to the environment of
+the exam document. Both are completely separated. Furthermore, the state
+of the random number generator in the setup chunk is not determined by
+the current attempt. As such, randomization in the setup chunk is
+<strong>not reproducible.</strong> Any randomization must be done in the
+exercise data provider, as explained in the <a href="randomized_exam.html#randomization-in-exercises">companion
+vignette on randomizing exams</a>.</p>
+<p>Solution chunks are currently only used for feedback and are not
+intended for grading the user code. They are never evaluated.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu"># Boxplots</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>You are given a dataset available as CSV file <span class="in">`cars_data.csv`</span>.</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>Write the R code to load the data set into R and create side-by-side boxplots</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>of the mileage (column <span class="in">`mpg`</span>), grouped by the number of cylinders (column <span class="in">`cyl`</span>).</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="in">```{r q_2-setup}</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="in"># The code in the setup chunk is run immediately before the user code.</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="in"># We can, for instance, write data to a file which is accessible by the user code.</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="in">write.csv(mtcars, file = 'cars_data.csv', row.names = TRUE)</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="in">```{r question_2, exercise=TRUE, exercise.setup='q_2-setup', exercise.solution='q_2-sol'}</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="in">```{r q_2-sol}</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="in"># First, read in the file</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="in">cars_data &lt;- read.csv('cars_data.csv')</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="in"># Second, create the boxplots</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="in">boxplot(mpg ~ cyl, data = cars_data)</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="in">```</span></span></code></pre></div>
+<p>During the exam, the user would only see the exercise chunk and have
+access to the environment transformed by the setup chunk:</p>
+<div class="float">
+<img src="figures%2Fexercises%2Fboxplot_user.png" style="width:75.0%" alt="Exercise with setup and solution chunks (during the exam)"><div class="figcaption">Exercise with setup and solution chunks (during
+the exam)</div>
 </div>
-<p>The code from the solution chunk will be shown on the feedback page:</p>
-<div class="figure">
-<img src="figures/exercises/boxplot_feedback.png" alt="Exercise with setup and solution chunks (feedback)" style="width:75.0%"><p class="caption">Exercise with setup and solution chunks (feedback)</p>
+<p>The code from the solution chunk will be shown on the feedback
+page:</p>
+<div class="float">
+<img src="figures%2Fexercises%2Fboxplot_feedback.png" style="width:75.0%" alt="Exercise with setup and solution chunks (feedback)"><div class="figcaption">Exercise with setup and solution chunks
+(feedback)</div>
 </div>
-<div id="caveats" class="section level4">
-<h4 class="hasAnchor">
-<a href="#caveats" class="anchor"></a>Caveats</h4>
-<p>It is important to note that every <strong>exercise chunk must have a label</strong> (in the example above this is <em>question_1</em>). This is used as the question identifier in the exported grades. Furthermore, exercise chunks <strong>must not be completely empty</strong>. A single blank line is sufficient.</p>
+<div class="section level4">
+<h4 id="caveats">Caveats<a class="anchor" aria-label="anchor" href="#caveats"></a>
+</h4>
+<p>It is important to note that every <strong>exercise chunk must have a
+label</strong> (in the example above this is <em>question_1</em>). This
+is used as the question identifier in the exported grades. Furthermore,
+exercise chunks <strong>must not be completely empty</strong>. A single
+blank line is sufficient.</p>
 </div>
 </div>
 </div>
-<div id="configuration" class="section level2">
-<h2 class="hasAnchor">
-<a href="#configuration" class="anchor"></a>Configuration</h2>
-<p>Exercise chunks can be configured via chunk options or globally via the <code>exam_configuration()</code> function. Options set as chunk options must be prefixed with <code>exercise.</code> and take precedence over the global configuration. For example setting the time-limit to 10 seconds for all exercises can be done via <code><a href="../reference/exercise_options.html">exercise_options(timelimit = 10)</a></code>, while adding the chunk option <code>exercise.timelimit=10</code> to an exercise chunk changes the time limit only for this one exercise.</p>
+<div class="section level2">
+<h2 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a>
+</h2>
+<p>Exercise chunks can be configured via chunk options or globally via
+the <code>exam_configuration()</code> function. Options set as chunk
+options must be prefixed with <code>exercise.</code> and take precedence
+over the global configuration. For example setting the time-limit to 10
+seconds for all exercises can be done via
+<code>exercise_options(timelimit = 10)</code>, while adding the chunk
+option <code>exercise.timelimit=10</code> to an exercise chunk changes
+the time limit only for this one exercise.</p>
 <p>The supported options are</p>
 <table class="table">
 <thead><tr class="header">
@@ -194,12 +241,14 @@
 </tr>
 <tr class="even">
 <td align="left"><code>setup</code></td>
-<td align="left">label of an R code chunk which is evaluated before the user code</td>
+<td align="left">label of an R code chunk which is evaluated before the
+user code</td>
 <td align="left">none</td>
 </tr>
 <tr class="odd">
 <td align="left"><code>solution</code></td>
-<td align="left">label of an R code chunk holding the solution to the exercise code chunk</td>
+<td align="left">label of an R code chunk holding the solution to the
+exercise code chunk</td>
 <td align="left">none</td>
 </tr>
 <tr class="even">
@@ -211,21 +260,25 @@
 <td align="left"><code>title</code></td>
 <td align="left">title of the exercise</td>
 <td align="left">
-<code>exercise$panelTitle</code> from <code><a href="../reference/status_message_template.html">status_messages()</a></code>
+<code>exercise$panelTitle</code> from
+<code><a href="../reference/status_message_template.html">status_messages()</a></code>
 </td>
 </tr>
 <tr class="even">
 <td align="left"><code>button</code></td>
 <td align="left">label of the run exercise button</td>
 <td align="left">
-<code>exercise$buttonLabel</code> from <code><a href="../reference/status_message_template.html">status_messages()</a></code>
+<code>exercise$buttonLabel</code> from
+<code><a href="../reference/status_message_template.html">status_messages()</a></code>
 </td>
 </tr>
 <tr class="odd">
 <td align="left"><code>label</code></td>
-<td align="left">a label to help screen readers describe the purpose of the input element</td>
+<td align="left">a label to help screen readers describe the purpose of
+the input element</td>
 <td align="left">
-<code>exercise$label</code> from <code><a href="../reference/status_message_template.html">status_messages()</a></code>
+<code>exercise$label</code> from
+<code><a href="../reference/status_message_template.html">status_messages()</a></code>
 </td>
 </tr>
 <tr class="even">
@@ -235,34 +288,59 @@
 </tr>
 <tr class="odd">
 <td align="left"><code>autocomplete</code></td>
-<td align="left">enable or disable auto-completion in the code editor</td>
+<td align="left">enable or disable auto-completion in the code
+editor</td>
 <td align="left"><code>TRUE</code></td>
 </tr>
 <tr class="even">
 <td align="left"><code>df_print</code></td>
-<td align="left">method used for printing data frames created by the user code</td>
+<td align="left">method used for printing data frames created by the
+user code</td>
 <td align="left">Inherited from the document</td>
 </tr>
 </tbody>
 </table>
-<p>Some options only make sense when set for a particular exercise chunk, especially <code>exercise.solution</code>. Several exercise chunks can share the same setup chunk.</p>
-<p><strong>Difference to learnr:</strong> note that examinr does not use the label of code chunks to determine setup and solution chunks. An exercise only uses the setup/solution chunk set via <code>exercise.setup</code> and <code>exercise.solution</code>.</p>
+<p>Some options only make sense when set for a particular exercise
+chunk, especially <code>exercise.solution</code>. Several exercise
+chunks can share the same setup chunk.</p>
+<p><strong>Difference to learnr:</strong> note that examinr does not use
+the label of code chunks to determine setup and solution chunks. An
+exercise only uses the setup/solution chunk set via
+<code>exercise.setup</code> and <code>exercise.solution</code>.</p>
 </div>
-<div id="evaluating-user-code" class="section level2">
-<h2 class="hasAnchor">
-<a href="#evaluating-user-code" class="anchor"></a>Evaluating user code</h2>
-<p>User code is evaluated on the server which raises security and performance issues. By default, examinr uses the <a href="https://cran.r-project.org/package=future">future</a> package for evaluating the user code, possibly asynchronously.</p>
-<p>The examinr package sanitizes the environment variables to avoid possibly leaking secrets and other sensitive information to user code, but there are currently no other restrictions.</p>
-<p>To leverage asynchronous evaluation of user code you must use <code><a href="https://rdrr.io/pkg/future/man/plan.html">future::plan()</a></code> to configure the future strategy. The following plan is the minimum recommended for asynchronous evaluation, but more worker processes may be necessary for exams with heavy computing:</p>
+<div class="section level2">
+<h2 id="evaluating-user-code">Evaluating user code<a class="anchor" aria-label="anchor" href="#evaluating-user-code"></a>
+</h2>
+<p>User code is evaluated on the server which raises security and
+performance issues. By default, examinr uses the <a href="https://cran.r-project.org/package=future" class="external-link">future</a> package for
+evaluating the user code, possibly asynchronously.</p>
+<p>The examinr package sanitizes the environment variables to avoid
+possibly leaking secrets and other sensitive information to user code,
+but there are currently no other restrictions.</p>
+<p>To leverage asynchronous evaluation of user code you must use
+<code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> to configure the future strategy. The
+following plan is the minimum recommended for asynchronous evaluation,
+but more worker processes may be necessary for exams with heavy
+computing:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co">#! context="server-start"</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/HenrikBengtsson/future">future</a></span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/pkg/future/man/plan.html">plan</a></span><span class="op">(</span><span class="va">cluster</span>, workers <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></code></pre></div>
-<div id="writing-your-own-evaluator" class="section level3">
-<h3 class="hasAnchor">
-<a href="#writing-your-own-evaluator" class="anchor"></a>Writing your own evaluator</h3>
-<p>The default <code><a href="../reference/exercise_evaluator.html">future_evaluator()</a></code> function creates a future according to the specified <code>plan</code>, but you can change the exercise evaluator with <code><a href="../reference/exam_config.html">exam_config(exercise_evaluator=)</a></code>. This would be useful if you want to impose further restrictions on the evaluation of user code, e.g., stricter limits on hardware limits and access rights. On Unix systems, you could use functions <code>rlimit_*()</code> from package <a href="https://cran.r-project.org/package=unix">unix</a> for setting resource limits or use <a href="https://cran.r-project.org/package=RAppArmor">RAppArmor</a> for even more control.</p>
-<p>The exercise evaluator is a function taking the arguments specified below and returning a <a href="https://rstudio.github.io/promises/"><em>promise</em> object</a>.</p>
+<code class="sourceCode R"><span><span class="co">#! context="server-start"</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">cluster</span>, workers <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="writing-your-own-evaluator">Writing your own evaluator<a class="anchor" aria-label="anchor" href="#writing-your-own-evaluator"></a>
+</h3>
+<p>The default <code><a href="../reference/exercise_evaluator.html">future_evaluator()</a></code> function creates a future
+according to the specified <code>plan</code>, but you can change the
+exercise evaluator with <code>exam_config(exercise_evaluator=)</code>.
+This would be useful if you want to impose further restrictions on the
+evaluation of user code, e.g., stricter limits on hardware limits and
+access rights. On Unix systems, you could use functions
+<code>rlimit_*()</code> from package <a href="https://cran.r-project.org/package=unix" class="external-link">unix</a> for setting
+resource limits or use <a href="https://cran.r-project.org/package=RAppArmor" class="external-link">RAppArmor</a> for
+even more control.</p>
+<p>The exercise evaluator is a function taking the arguments specified
+below and returning a <a href="https://rstudio.github.io/promises/" class="external-link"><em>promise</em>
+object</a>.</p>
 <table class="table">
 <thead><tr class="header">
 <th align="left">Argument</th>
@@ -291,33 +369,38 @@
 </tr>
 </tbody>
 </table>
-<p>Your exercise evaluator is expected to ensure that the time limit is adhered to. The expression <code>expr</code> must be evaluated in <code>envir</code> and the examinr package must be available in the R process evaluating the expression.</p>
+<p>Your exercise evaluator is expected to ensure that the time limit is
+adhered to. The expression <code>expr</code> must be evaluated in
+<code>envir</code> and the examinr package must be available in the R
+process evaluating the expression.</p>
 </div>
 </div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
-    </nav>
-</div>
+      </div>
 
 </div>
 
 
 
       <footer><div class="copyright">
-  <p>Developed by David Kepplinger.</p>
+  <p></p>
+<p>Developed by David Kepplinger.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer>
 </div>
 
-  
+
+
+
 
 
   </body>

@@ -1,11 +1,11 @@
-pandoc: '2.2'
-pkgdown: 1.6.1
+pandoc: 3.1.11
+pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   config_access: config_access.html
   config_storage: config_storage.html
-  deployment: deployment.html
   deployment_shinyapps: deployment_shinyapps.html
+  deployment: deployment.html
   examinr: examinr.html
   exercises: exercises.html
   grading: grading.html
@@ -13,8 +13,7 @@ articles:
   navigation: navigation.html
   question_types: question_types.html
   randomized_exam: randomized_exam.html
-last_built: 2021-04-30T22:19Z
+last_built: 2024-10-30T13:53Z
 urls:
   reference: https://dakep.github.io/examinr/reference
   article: https://dakep.github.io/examinr/articles
-

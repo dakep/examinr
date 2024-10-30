@@ -6,20 +6,21 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Localizing exams • examinr</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
 <meta property="og:title" content="Localizing exams">
-<meta property="og:description" content="examinr">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+
+
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -32,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">examinr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.2</span>
       </span>
     </div>
 
@@ -45,9 +46,9 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
@@ -62,7 +63,8 @@
       <a href="../articles/exercises.html">Coding exercises</a>
     </li>
     <li class="divider">
-    <li>
+    </li>
+<li>
       <a href="../articles/grading.html">Grading</a>
     </li>
     <li>
@@ -72,7 +74,8 @@
       <a href="../articles/deployment.html">Deploying (general)</a>
     </li>
     <li class="divider">
-    <li class="dropdown-header">Configuration</li>
+    </li>
+<li class="dropdown-header">Configuration</li>
     <li>
       <a href="../articles/navigation.html">Section navigation</a>
     </li>
@@ -87,12 +90,15 @@
     </li>
   </ul>
 </li>
+<li>
+  <a href="../news/index.html">Changelog</a>
+</li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/dakep/examinr/">
+  <a href="https://github.com/dakep/examinr/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul>
@@ -103,7 +109,7 @@
 </div>
 <!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
@@ -111,24 +117,43 @@
       <h1 data-toc-skip>Localizing exams</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/dakep/examinr/blob/master/vignettes/localization.Rmd"><code>vignettes/localization.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/dakep/examinr/blob/main/vignettes/localization.Rmd" class="external-link"><code>vignettes/localization.Rmd</code></a></small>
       <div class="hidden name"><code>localization.Rmd</code></div>
 
     </div>
 
     
     
-<p>Exams are typically a stressful and task for learners. You may not want to add an extra layer of difficulty for your learners if they are not English speakers. The examinr package allows you to customize and translate every message the user may encounter during an exam: error messages, status messages, buttons, and so on.</p>
-<p>In examinr, these strings are generally referred to as <em>status messages</em>. The package comes with pre-defined status messages in English, stored in a YAML file. These messages are loaded as the examinr package is loaded.</p>
-<p>You can overwrite the default status messages by loading them from your own YAML file with <code><a href="../reference/status_message_template.html">status_messages()</a></code>. This YAML file can be created by calling <code><a href="../reference/status_message_template.html">status_message_template()</a></code> from an interactive R session on your local computer. In an R session with working directory set to the folder containing the exam document, run</p>
+<p>Exams are typically a stressful and task for learners. You may not
+want to add an extra layer of difficulty for your learners if they are
+not English speakers. The examinr package allows you to customize and
+translate every message the user may encounter during an exam: error
+messages, status messages, buttons, and so on.</p>
+<p>In examinr, these strings are generally referred to as <em>status
+messages</em>. The package comes with pre-defined status messages in
+English, stored in a YAML file. These messages are loaded as the examinr
+package is loaded.</p>
+<p>You can overwrite the default status messages by loading them from
+your own YAML file with <code><a href="../reference/status_message_template.html">status_messages()</a></code>. This YAML file
+can be created by calling <code><a href="../reference/status_message_template.html">status_message_template()</a></code> from an
+interactive R session on your local computer. In an R session with
+working directory set to the folder containing the exam document,
+run</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://dakep.github.io/examinr/">examinr</a></span><span class="op">)</span>
-<span class="fu"><a href="../reference/status_message_template.html">status_message_template</a></span><span class="op">(</span><span class="st">"www/examinr_messages.yaml"</span><span class="op">)</span></code></pre></div>
-<p>to create the file <em>examinr_messages.yaml</em> in sub-directory <em>www</em>. (Note: exam documents are shiny prerendered documents, as such the file <strong>must</strong> be located in the <em>www</em> sub-directory to be available at run-time.) This file contains all default status messages used by examinr. To define your own status messages, edit the file and ensure it is saved in <em>UTF-8</em> encoding.</p>
-<p>You can include your custom set of status messages in the exam document via</p>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dakep.github.io/examinr/">examinr</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/status_message_template.html">status_message_template</a></span><span class="op">(</span><span class="st">"www/examinr_messages.yaml"</span><span class="op">)</span></span></code></pre></div>
+<p>to create the file <em>examinr_messages.yaml</em> in sub-directory
+<em>www</em>. (Note: exam documents are shiny prerendered documents, as
+such the file <strong>must</strong> be located in the <em>www</em>
+sub-directory to be available at run-time.) This file contains all
+default status messages used by examinr. To define your own status
+messages, edit the file and ensure it is saved in <em>UTF-8</em>
+encoding.</p>
+<p>You can include your custom set of status messages in the exam
+document via</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co">#! context="server-start"</span>
-<span class="fu"><a href="../reference/status_message_template.html">status_messages</a></span><span class="op">(</span><span class="st">"www/examinr_messages.yaml"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co">#! context="server-start"</span></span>
+<span><span class="fu"><a href="../reference/status_message_template.html">status_messages</a></span><span class="op">(</span><span class="st">"www/examinr_messages.yaml"</span><span class="op">)</span></span></code></pre></div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -140,17 +165,21 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by David Kepplinger.</p>
+  <p></p>
+<p>Developed by David Kepplinger.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer>
 </div>
 
-  
+
+
+
 
 
   </body>
