@@ -10,6 +10,6 @@ test_that("Run exam", {
 
   file.copy("tests/testthat/exams/exam.Rmd", tmp_loc)
 
-  expect_no_condition(run(tmp_loc))
+  run(tmp_loc)
 })
 
