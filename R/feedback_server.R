@@ -105,8 +105,10 @@ initialize_feedback <- function (session, exam_metadata, sections) {
           }
           current_attempt <- isolate(get_current_attempt(session))
 
-          warn(paste0("Received updated feedback for attempt ", new_feedback$attempt, " in session",
-                      "for attempt ", current_attempt$id))
+          warn(c(i = paste0("Received updated feedback for attempt ", new_feedback$attempt, " in session",
+                            "for attempt ", current_attempt$id),
+                 ">" = paste("QID:", new_feedback$qid),
+                 ">" = paste("Points:", new_feedback$points)))
 
           if (identical(current_attempt$id, new_feedback$attempt)) {
             qid <- new_feedback$qid %||% NA_character_
