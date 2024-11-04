@@ -356,6 +356,8 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
 
     # Grade an attempt
     grade_attempt = function (attempt_id, points, ...) {
+      warn(paste0("Grading attempt ", attempt_id, " with serialized points\n'",
+                  serialize_object(points), "'"))
       tryCatch({
         if (conn_is_pool) {
           conn <- pool::poolCheckout(conn)
@@ -365,6 +367,8 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
         affected_rows <- DBI::dbExecute(conn, update_sql, params = list(
           serialize_object(points), attempt_id))
         DBI::dbCommit(conn)
+        warn(paste0("Committed grading for attempt ", attempt_id,
+                    ". Affected rows: ", affected_rows))
         isTRUE(affected_rows == 1L)
       }, error = function (e) {
         tryCatch(DBI::dbRollback(conn), error = function (...) {}, warning = function (...) {})

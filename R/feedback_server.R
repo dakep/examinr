@@ -1,5 +1,5 @@
 ## Initialize feedback display
-#' @importFrom shiny observe getDefaultReactiveDomain observeEvent
+#' @importFrom shiny observe getDefaultReactiveDomain observeEvent parseQueryString
 #' @importFrom rlang abort warn
 initialize_feedback <- function (session, exam_metadata, sections) {
   session_env <- get_session_env(session)
@@ -14,6 +14,9 @@ initialize_feedback <- function (session, exam_metadata, sections) {
 
   # Initialize section state (display all sections at once)
   initialize_section_state(session, sections, TRUE)
+
+  # Determine the user from the URL query
+  query_str <- parseQueryString(isolate(reactiveValuesToList(session$clientData)$url_search))
 
   clean_env <- new.env(parent = getNamespace('examinr'))
   clean_env$exam_metadata <- exam_metadata
@@ -34,8 +37,14 @@ initialize_feedback <- function (session, exam_metadata, sections) {
       })
       session_env$feedback_all_users <- session_env$feedback_all_users[sort.list(user_order)]
 
-      # Initialize using the latest finished attempt (or the latest started attempt) for the first user
-      selected_user_id <- session_env$feedback_all_users[[1L]]$user_id
+      # Initialize using the latest finished attempt (or the latest started attempt) for
+      # the selected user (if available) or the first user otherwise.
+      selected_user_id <- if (!is.null(query_str$user) &&
+                              isTRUE(query_str$user %in% user_ids)) {
+        query_str$user
+      } else {
+        session_env$feedback_all_users[[1L]]$user_id
+      }
       user_attempts_finished <- vapply(all_attempts, FUN.VALUE = numeric(1L), function (at) {
         if (identical(at$user$user_id, selected_user_id)) {
           return(as.numeric(at$finished_at) %|NA|% -as.numeric(at$started_at))
@@ -94,6 +103,9 @@ initialize_feedback <- function (session, exam_metadata, sections) {
           }
           current_attempt <- isolate(get_current_attempt(session))
 
+          warn(paste0("Received updated feedback for attempt ", new_feedback$attempt, " in session",
+                      "for attempt ", current_attempt$id))
+
           if (identical(current_attempt$id, new_feedback$attempt)) {
             qid <- new_feedback$qid %||% NA_character_
             attempt_feedback <- session_env$feedback_points_cache[[current_attempt$id]] %||% list()
@@ -101,7 +113,6 @@ initialize_feedback <- function (session, exam_metadata, sections) {
             if (is.null(attempt_feedback[[qid]])) {
               attempt_feedback[[qid]] <- new_question_feedback(max_points = new_feedback$maxPoints %||% 0)
             }
-
             # Update points. If NULL or non-numeric, set the points to NA.
             withCallingHandlers(attempt_feedback[[qid]]$points <- as.numeric(new_feedback$points %||% NA_real_),
                                 warning = function (w) { warn("Received non-numeric points:", new_feedback$points) })
