@@ -356,8 +356,10 @@ dbi_storage_provider <- function (conn, attempts_table, section_data_table, hash
 
     # Grade an attempt
     grade_attempt = function (attempt_id, points, ...) {
-      warn(c(i = paste0("Grading attempt ", attempt_id, " with serialized points"),
-             str_split_width(serialize_object(points), 80)))
+      warn(c(i = paste0("Grading attempt ", attempt_id, " with serialized points")))
+      for (line in str_split_width(serialize_object(points), 80)) {
+        warn(c(">" = line))
+      }
       tryCatch({
         if (conn_is_pool) {
           conn <- pool::poolCheckout(conn)
