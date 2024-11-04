@@ -1,3 +1,13 @@
+## Split a string into sub-strings of fixed width
+#' @importFrom stringr str_length str_sub
+str_split_width <- function (x, width) {
+  len <- str_length(x)
+  starts <- seq(1, len, by = width)
+  str_sub(x,
+          start = starts,
+          end = c((starts - 1)[-1], len + 1))
+}
+
 ## Serialize an R object into a base64 encoded string
 #' @importFrom base64enc base64encode
 serialize_object <- function (x) {

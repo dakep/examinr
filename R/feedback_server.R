@@ -45,6 +45,7 @@ initialize_feedback <- function (session, exam_metadata, sections) {
       } else {
         session_env$feedback_all_users[[1L]]$user_id
       }
+
       user_attempts_finished <- vapply(all_attempts, FUN.VALUE = numeric(1L), function (at) {
         if (identical(at$user$user_id, selected_user_id)) {
           return(as.numeric(at$finished_at) %|NA|% -as.numeric(at$started_at))
@@ -69,6 +70,7 @@ initialize_feedback <- function (session, exam_metadata, sections) {
         session <- getDefaultReactiveDomain()
         session_env <- get_session_env(session)
         new_user_id <- session$input[['__.examinr.__-gradingUserSel']] %||% 1L
+
         # Load all attempts for selected user
         user <- session_env$feedback_all_users[[new_user_id]]
         if (!is.null(user)) {
