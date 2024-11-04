@@ -269,7 +269,7 @@ function saveFeedbackCallback (qid) {
     if (currentAttemptId) {
       Shiny.setInputValue('__.examinr.__-saveFeedback', {
         attempt: currentAttemptId,
-        qid: qid,
+        qid: feedback.qid,
         points: feedback.points,
         comment: feedback.comment,
         maxPoints: feedback.maxPoints
