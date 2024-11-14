@@ -2,7 +2,6 @@
 # examinr R package
 
 <!-- begin badges -->
-
 <!-- [![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/examinr)](https://CRAN.R-project.org/package=examinr) -->
 
 ![Lifecycle:
@@ -33,41 +32,45 @@ devtools::install_github("dakep/examinr")
 
 ## Highlights
 
-  - Questions and text are rendered on-demand for each attempt:
-      - Allows for user- and attempt-specific content (e.g., randomized
-        values in questions and answers)
-      - Questions are not sent to the user’s browser until they are
-        allowed to see them
-  - Support for different question types:
-      - Simple text answers
-      - R code exercises
-      - Numeric answers (with auto-grading support)
-      - Multiple-choice (with auto-grading support)
-  - Users are authenticated via configurable authentication providers
-  - Exams can be configured to show only one section at a time
-  - Fine-grained control over attempts:
-      - Control how many attempts each user gets
-      - Configure exams to be only accessible after the opening time and
-        until the closing time
-      - Timed attempts where users are required to submit the exam
-        within the specific time limits
-      - Adjust the configuration for specific users
-  - Support for message localization
-  - Interfaces for grading (for instructors) and for accessing feedback
-    (for users).
-  - High-contrast theme and screen-reader friendly output
-  - Users’ inputs are also stored in their browser to allow restoring
-    input values after a reload or in case of server issues.
+- Questions and text are rendered on-demand for each attempt:
+  - Allows for user- and attempt-specific content (e.g., randomized
+    values in questions and answers)
+  - Questions are not sent to the user’s browser until they are allowed
+    to see them
+- Support for different question types:
+  - Simple text answers
+  - R code exercises
+  - Numeric answers (with auto-grading support)
+  - Multiple-choice (with auto-grading support)
+- Users are authenticated via configurable authentication providers
+- Exams can be configured to show only one section at a time
+- Fine-grained control over attempts:
+  - Control how many attempts each user gets
+  - Configure exams to be only accessible after the opening time and
+    until the closing time
+  - Timed attempts where users are required to submit the exam within
+    the specific time limits
+  - Adjust the configuration for specific users
+- Support for message localization
+- Interfaces for grading (for instructors) and for accessing feedback
+  (for users).
+- High-contrast theme and screen-reader friendly output
+- Users’ inputs are also stored in their browser to allow restoring
+  input values after a reload or in case of server issues.
 
 ## Features to be added
 
 The package is still in a development phase and some features are not
 yet available, most notably the following:
 
-  - File upload question.
-  - Multiple text inputs per text question.
-  - Improved rendering of help pages.
-  - Support auto-grading of code exercises.
+- Download an exam as RStudio project to give learners the option to
+  write the code on their local computer.
+- Storing the evaluation environment to allow results from one code box
+  being used in other code boxes.
+- File upload question.
+- Multiple text inputs per text question.
+- Improved rendering of help pages.
+- Auto-grading of code exercises.
 
 If you are looking for specific features which are not yet supported by
 examinr and not yet requested, please create an

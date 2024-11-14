@@ -20,7 +20,7 @@ Imports:
   digest,
   rlang,
   jsonlite,
-  knitr (>= 1.23),
+  knitr (>= 1.46),
   commonmark,
   ellipsis,
   lifecycle,

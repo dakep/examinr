@@ -64,10 +64,12 @@ devtools::install_github("dakep/examinr")
 
 The package is still in a development phase and some features are not yet available, most notably the following:
 
+- Download an exam as RStudio project to give learners the option to write the code on their local computer.
+- Storing the evaluation environment to allow results from one code box being used in other code boxes.
 - File upload question.
 - Multiple text inputs per text question.
 - Improved rendering of help pages.
-- Support auto-grading of code exercises.
+- Auto-grading of code exercises.
 
 If you are looking for specific features which are not yet supported by examinr and not yet requested, please create an [issue](https://github.com/dakep/examinr/issues) or, even better, a [pull request](https://github.com/dakep/examinr/pulls).
 
